@@ -608,3 +608,58 @@ This change ensures that `st.session_state.scenario` is always available, preven
 ## 4. Verification
 
 The fix was verified by running the application again. The `AttributeError` no longer occurs, and the application now loads with the default 'normal' scenario as expected. The dashboard now correctly displays the data for the selected scenario, and the user can switch between scenarios without any issues.
+
+---
+
+## Navigation Issue Resolution
+
+**Date Fixed:** August 17, 2025
+
+**Problem:** Dashboard was only showing the 'monitoring' section in navigation, missing analytics, operations, scenarios, and settings sections.
+
+**Root Cause:** The `navigation.py` file only had the 'monitoring' section defined in the sections dictionary, while the main app was trying to initialize all five pages.
+
+**Solution:**
+1. Updated `navigation.py` to include all five sections (monitoring, analytics, operations, scenarios, settings) with proper icons, titles, and descriptions
+2. Updated `main_app.py` to ensure page initialization matches the navigation sections
+3. Fixed constructor parameters for pages (e.g., OperationsPage() with no arguments, ScenariosPage(self.layout))
+
+**Key Learnings:**
+- Always ensure navigation framework sections are synchronized with page implementations
+- Page constructor parameters must match between navigation setup and page initialization
+- Use backup directories (_pages_backup) when restructuring to avoid losing working code
+
+**Result:** Dashboard now properly displays all five sections in navigation and runs without errors at http://localhost:8501
+
+---
+
+## Automatic Navigation Buttons Issue
+
+**Date Fixed:** August 17, 2025
+
+**Problem:** Streamlit was displaying automatic navigation buttons above the custom navigation section in the sidebar, showing "main app", "analysis page", "monitoring page", "operations page", "scenarios page", "settings page", and "simulation page".
+
+**Root Cause:** Streamlit automatically detects any `.py` files in the same directory as the main app and creates navigation buttons for them, even when `showSidebarNavigation = false` is set in the config.
+
+**Files Causing the Issue:**
+- `vessel_charts.py`
+- `marine_traffic_integration.py` 
+- `scenario_tab_consolidation.py`
+- `unified_simulations_tab.py`
+- `streamlit_app_17Aug_v1.1 (before removing Live Maps).py`
+- `_streamlit_app_v2.py`
+- Files in the `pages/` directory
+
+**Solution:**
+1. Created a `utils/` subdirectory in the dashboard folder
+2. Moved all non-essential Python files from the dashboard root to `utils/`
+3. Moved the entire `pages/` directory to `utils/pages/`
+4. Left only `main_app.py` in the dashboard root directory
+
+**Key Learnings:**
+- Streamlit's automatic page discovery scans for `.py` files in the same directory as the main app
+- The `showSidebarNavigation = false` config only hides the navigation UI but doesn't prevent page detection
+- Keep only the main application file in the root directory when using custom navigation
+- Organize utility files, old versions, and unused components in subdirectories
+
+**Result:** Automatic navigation buttons are eliminated, leaving only the custom navigation framework visible.

@@ -25,7 +25,157 @@ def render_analytics_view(data, view_types=None):
         _render_performance_metrics(data)
 
 def _render_cargo_statistics(data):
-    st.warning("Cargo statistics not implemented yet.")
+    """Render comprehensive cargo statistics using real data from CSV files."""
+    # Import the new cargo analysis functions
+    from ...utils.data_loader import load_port_cargo_statistics, get_cargo_breakdown_analysis
+    
+    try:
+        # Load real cargo statistics data
+        cargo_analysis = get_cargo_breakdown_analysis()
+        
+        if 'error' in cargo_analysis:
+            st.error(f"Error loading cargo statistics: {cargo_analysis['error']}")
+            st.info("Please ensure the Port Cargo Statistics CSV files are available in the data/cargo_statistics directory.")
+            return
+        
+        # Display key metrics overview
+        st.subheader("📊 Key Metrics (2023)")
+        
+        key_metrics = cargo_analysis.get('key_metrics', {})
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            total_throughput = key_metrics.get('total_throughput_2023', 0)
+            st.metric(
+                "Total Throughput", 
+                f"{total_throughput:,.0f}" if total_throughput > 1000 else f"{total_throughput:.1f}",
+                help="Total port cargo throughput in 2023"
+            )
+        
+        with col2:
+            growth_rate = key_metrics.get('annual_growth_rate', 0)
+            st.metric(
+                "Annual Growth Rate", 
+                f"{growth_rate:+.1f}%",
+                delta=f"{growth_rate:.1f}%",
+                help="Average annual growth rate (2014-2023)"
+            )
+        
+        with col3:
+            transhipment_ratio = key_metrics.get('transhipment_ratio', 0)
+            st.metric(
+                "Transhipment Ratio", 
+                f"{transhipment_ratio:.1%}",
+                help="Percentage of cargo that is transhipment"
+            )
+        
+        with col4:
+            seaborne_ratio = key_metrics.get('seaborne_ratio', 0)
+            st.metric(
+                "Seaborne Cargo", 
+                f"{seaborne_ratio:.1%}",
+                help="Percentage of cargo transported by sea"
+            )
+        
+        # Create tabs for detailed analysis
+        tab1, tab2 = st.tabs(["📦 Shipment Types", "🚛 Transport Modes"])
+        
+        with tab1:
+            st.subheader("Shipment Type Analysis")
+            shipment_analysis = cargo_analysis.get('shipment_type_analysis', {})
+            
+            if shipment_analysis:
+                # Display shipment breakdown
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.write("**Direct Shipment vs Transhipment (2023)**")
+                    
+                    direct = shipment_analysis.get('direct_shipment_2023', {})
+                    tranship = shipment_analysis.get('transhipment_2023', {})
+                    
+                    shipment_data = {
+                        'Type': ['Direct Shipment', 'Transhipment'],
+                        'Volume': [direct.get('volume', 0), tranship.get('volume', 0)],
+                        'Percentage': [direct.get('percentage', 0), tranship.get('percentage', 0)]
+                    }
+                    
+                    shipment_df = pd.DataFrame(shipment_data)
+                    st.dataframe(shipment_df, use_container_width=True)
+                
+                with col2:
+                    # Create pie chart for shipment types
+                    if shipment_data['Volume'][0] > 0 or shipment_data['Volume'][1] > 0:
+                        fig = go.Figure(data=[
+                            go.Pie(
+                                labels=shipment_data['Type'],
+                                values=shipment_data['Volume'],
+                                hole=0.4,
+                                textinfo='label+percent',
+                                textposition='outside'
+                            )
+                        ])
+                        
+                        fig.update_layout(
+                            title="Shipment Type Distribution",
+                            height=400,
+                            margin=dict(t=40, b=40, l=40, r=40)
+                        )
+                        
+                        st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No shipment type data available")
+        
+        with tab2:
+            st.subheader("Transport Mode Analysis")
+            transport_analysis = cargo_analysis.get('transport_mode_analysis', {})
+            
+            if transport_analysis:
+                # Display transport mode breakdown
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.write("**Transport Mode Distribution (2023)**")
+                    
+                    waterborne = transport_analysis.get('waterborne_2023', {})
+                    seaborne = transport_analysis.get('seaborne_2023', {})
+                    river = transport_analysis.get('river_2023', {})
+                    
+                    transport_data = {
+                        'Mode': ['Waterborne', 'Seaborne', 'River'],
+                        'Volume': [waterborne.get('volume', 0), seaborne.get('volume', 0), river.get('volume', 0)],
+                        'Percentage': [waterborne.get('percentage', 0), seaborne.get('percentage', 0), river.get('percentage', 0)]
+                    }
+                    
+                    transport_df = pd.DataFrame(transport_data)
+                    st.dataframe(transport_df, use_container_width=True)
+                
+                with col2:
+                    # Create bar chart for transport modes
+                    if any(vol > 0 for vol in transport_data['Volume']):
+                        fig = px.bar(
+                            transport_df,
+                            x='Mode',
+                            y='Volume',
+                            color='Volume',
+                            color_continuous_scale='viridis',
+                            title="Volume by Transport Mode"
+                        )
+                        
+                        fig.update_layout(
+                            height=400,
+                            margin=dict(t=40, b=40, l=40, r=40),
+                            xaxis_title="Transport Mode",
+                            yaxis_title="Volume"
+                        )
+                        
+                        st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No transport mode data available")
+        
+    except Exception as e:
+        st.error(f"Error rendering cargo statistics: {str(e)}")
+        st.info("Please ensure the data loader module is properly configured and CSV files are available.")
 
 def _render_performance_metrics(data):
     _render_performance_overview(data)

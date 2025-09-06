@@ -314,6 +314,122 @@ def load_focused_cargo_statistics() -> Dict[str, pd.DataFrame]:
     }
 
 
+def load_port_cargo_statistics() -> Dict[str, pd.DataFrame]:
+    """Loads real port cargo statistics from CSV files.
+    
+    Returns:
+        A dictionary mapping table names to DataFrames with cargo statistics data.
+        Returns empty dict if files are not found or cannot be loaded.
+    """
+    import os
+    from pathlib import Path
+    
+    # Define the path to cargo statistics data
+    current_dir = Path(__file__).parent.parent.parent  # Go up to hk_port_digital_twin root
+    cargo_stats_dir = current_dir / "data" / "cargo_statistics"
+    
+    cargo_stats = {}
+    
+    try:
+        # Load Table 1: Shipment types (Direct vs Transhipment)
+        table1_path = cargo_stats_dir / "Port Cargo Statistics_CSV_Eng-Table_1_Eng.CSV"
+        if table1_path.exists():
+            df1 = pd.read_csv(table1_path, encoding='utf-8-sig')
+            cargo_stats['Table_1_Eng'] = df1
+            logger.info(f"Loaded Table 1 cargo statistics: {len(df1)} rows")
+        
+        # Load Table 2: Transport modes (Waterborne, Seaborne, River)
+        table2_path = cargo_stats_dir / "Port Cargo Statistics_CSV_Eng-Table_2_Eng.CSV"
+        if table2_path.exists():
+            df2 = pd.read_csv(table2_path, encoding='utf-8-sig')
+            cargo_stats['Table_2_Eng'] = df2
+            logger.info(f"Loaded Table 2 cargo statistics: {len(df2)} rows")
+            
+    except Exception as e:
+        logger.error(f"Error loading cargo statistics: {e}")
+        return {}
+    
+    logger.info(f"Successfully loaded {len(cargo_stats)} cargo statistics tables")
+    return cargo_stats
+
+def get_cargo_breakdown_analysis() -> Dict[str, Any]:
+    """Provides comprehensive cargo breakdown analysis from real data.
+    
+    Returns:
+        A dictionary with detailed cargo analysis including shipment types,
+        transport modes, trends, and key metrics.
+    """
+    cargo_stats = load_port_cargo_statistics()
+    
+    if not cargo_stats:
+        return {
+            'error': 'No cargo statistics data available',
+            'shipment_type_analysis': {},
+            'transport_mode_analysis': {},
+            'trends_analysis': {},
+            'key_metrics': {}
+        }
+    
+    analysis = {
+        'shipment_type_analysis': {},
+        'transport_mode_analysis': {},
+        'trends_analysis': {},
+        'key_metrics': {}
+    }
+    
+    # Analyze shipment types (Table 1)
+    if 'Table_1_Eng' in cargo_stats:
+        table1 = cargo_stats['Table_1_Eng']
+        
+        # Get 2023 data (latest year)
+        analysis['shipment_type_analysis'] = {
+            'direct_shipment_2023': {
+                'volume': table1.loc[table1['Shipment_type'] == 'Direct shipment cargo', 'Port_cargo_throughput_2023'].iloc[0] if len(table1) > 0 else 0,
+                'percentage': table1.loc[table1['Shipment_type'] == 'Direct shipment cargo', 'Port_cargo_throughput_percentage_distribution_2023'].iloc[0] if len(table1) > 0 else 0
+            },
+            'transhipment_2023': {
+                'volume': table1.loc[table1['Shipment_type'] == 'Transhipment cargo', 'Port_cargo_throughput_2023'].iloc[0] if len(table1) > 1 else 0,
+                'percentage': table1.loc[table1['Shipment_type'] == 'Transhipment cargo', 'Port_cargo_throughput_percentage_distribution_2023'].iloc[0] if len(table1) > 1 else 0
+            },
+            'total_2023': {
+                'volume': table1.loc[table1['Shipment_type'] == 'Overall', 'Port_cargo_throughput_2023'].iloc[0] if len(table1) > 2 else 0,
+                'growth_rate': table1.loc[table1['Shipment_type'] == 'Overall', 'Port_cargo_throughput_average_annual_rate_of_change_2014_2023'].iloc[0] if len(table1) > 2 else 0
+            }
+        }
+    
+    # Analyze transport modes (Table 2)
+    if 'Table_2_Eng' in cargo_stats:
+        table2 = cargo_stats['Table_2_Eng']
+        
+        analysis['transport_mode_analysis'] = {
+            'waterborne_2023': {
+                'volume': table2.loc[table2['Transport_mode'] == 'Waterborne', 'Port_cargo_throughput_2023'].iloc[0] if len(table2) > 0 else 0,
+                'percentage': table2.loc[table2['Transport_mode'] == 'Waterborne', 'Port_cargo_throughput_percentage_distribution_2023'].iloc[0] if len(table2) > 0 else 0
+            },
+            'seaborne_2023': {
+                'volume': table2.loc[table2['Transport_mode'] == 'Seaborne', 'Port_cargo_throughput_2023'].iloc[0] if len(table2) > 1 else 0,
+                'percentage': table2.loc[table2['Transport_mode'] == 'Seaborne', 'Port_cargo_throughput_percentage_distribution_2023'].iloc[0] if len(table2) > 1 else 0
+            },
+            'river_2023': {
+                'volume': table2.loc[table2['Transport_mode'] == 'River', 'Port_cargo_throughput_2023'].iloc[0] if len(table2) > 2 else 0,
+                'percentage': table2.loc[table2['Transport_mode'] == 'River', 'Port_cargo_throughput_percentage_distribution_2023'].iloc[0] if len(table2) > 2 else 0
+            }
+        }
+    
+    # Calculate key metrics
+    ship_analysis = analysis['shipment_type_analysis']
+    transport_analysis = analysis['transport_mode_analysis']
+    
+    analysis['key_metrics'] = {
+        'total_throughput_2023': ship_analysis.get('total_2023', {}).get('volume', 0),
+        'annual_growth_rate': ship_analysis.get('total_2023', {}).get('growth_rate', 0),
+        'transhipment_ratio': ship_analysis.get('transhipment_2023', {}).get('percentage', 0) / 100,
+        'seaborne_ratio': transport_analysis.get('seaborne_2023', {}).get('percentage', 0) / 100,
+        'river_ratio': transport_analysis.get('river_2023', {}).get('percentage', 0) / 100
+    }
+    
+    return analysis
+
 def load_container_throughput():
     """Loads container throughput data for the dashboard."""
     config_manager = ConfigManager()
