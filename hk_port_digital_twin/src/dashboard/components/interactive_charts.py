@@ -1,44 +1,57 @@
 import streamlit as st
 import plotly.express as px
-from ...utils.data_loader import load_container_throughput, get_enhanced_cargo_analysis
+from typing import Dict, Any
+from ..styles.theme_manager import ThemeManager
 
-def render_interactive_charts():
+def render_interactive_charts(data: Dict[str, Any], theme_manager: ThemeManager):
     """
-    Renders interactive charts for container throughput and cargo analysis.
-
-    This function loads relevant data and uses Plotly to generate and display:
-    - A line chart for monthly container throughput (Total, Seaborne, River).
-    - A bar chart comparing different shipment and transport types based on trend analysis.
+    Renders interactive charts for container throughput and shipment analysis.
+    
+    Args:
+        data (Dict[str, Any]): A dictionary containing data for the charts.
+        theme_manager (ThemeManager): An instance of the ThemeManager to handle chart styling.
     """
-    st.subheader("Interactive Data Charts")
-
-    # Load data
-    container_throughput = load_container_throughput()
-    enhanced_analysis = get_enhanced_cargo_analysis()
-
-    if not container_throughput.empty:
-        st.write("#### Monthly Container Throughput")
-        fig = px.line(
-            container_throughput.reset_index(), 
-            x='Date', 
-            y=['total_teus', 'seaborne_teus', 'river_teus'],
-            title="Container Throughput Over Time",
-            labels={'value': 'Throughput (x1000 TEUs)', 'variable': 'Transport Mode'}
+    
+    st.header("Container Throughput and Shipment Analysis")
+    
+    chart_colors = theme_manager.get_chart_colors()
+    
+    # Monthly Container Throughput (TEUs)
+    if "container_throughput" in data and not data["container_throughput"].empty:
+        fig_line = px.line(
+            data["container_throughput"],
+            x="month",
+            y="total_teus",
+            title="Monthly Container Throughput (TEUs)",
+            labels={"month": "Month", "total_teus": "Total TEUs"},
+            color_discrete_sequence=[chart_colors[0]]
         )
-        st.plotly_chart(fig, use_container_width=True)
+        fig_line.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font_color=theme_manager.get_theme_colors()['text_primary']
+        )
+        st.plotly_chart(fig_line, use_container_width=True)
+    else:
+        st.warning("Container throughput data is not available.")
 
-    if enhanced_analysis and 'time_series_data' in enhanced_analysis:
-        st.write("#### Cargo Analysis")
-        
-        shipment_types = enhanced_analysis['time_series_data'].get('shipment_types')
-        
-        if shipment_types is not None:
-            st.write("##### Shipment Type Trends")
-            fig2 = px.bar(
-                shipment_types.reset_index(),
-                x='Year',
-                y=shipment_types.columns,
-                title="Shipment Types Over Time",
-                labels={'value': 'Tonnes', 'variable': 'Shipment Type'}
-            )
-            st.plotly_chart(fig2, use_container_width=True)
+    # Shipment Type Trend
+    if "enhanced_analysis" in data and not data["enhanced_analysis"].empty:
+        fig_bar = px.bar(
+            data["enhanced_analysis"],
+            x="month",
+            y="shipment_count",
+            color="shipment_type",
+            title="Shipment Type Trend",
+            labels={"month": "Month", "shipment_count": "Number of Shipments"},
+            color_discrete_sequence=chart_colors[1:]
+        )
+        fig_bar.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font_color=theme_manager.get_theme_colors()['text_primary'],
+            legend_title_text='Shipment Type'
+        )
+        st.plotly_chart(fig_bar, use_container_width=True)
+    else:
+        st.warning("Shipment analysis data is not available.")

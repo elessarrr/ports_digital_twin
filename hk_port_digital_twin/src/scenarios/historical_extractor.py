@@ -64,22 +64,14 @@ class HistoricalParameterExtractor:
                 logger.warning("No time series data available")
                 return False
                 
-            # Analyze seasonal patterns - use shipment_types data if available
-            if 'shipment_types' in time_series_data and not time_series_data['shipment_types'].empty:
-                # Convert to format expected by _analyze_seasonal_patterns
-                shipment_df = time_series_data['shipment_types']
-                # Create a combined DataFrame with datetime index for seasonal analysis
-                combined_data = pd.DataFrame()
-                combined_data['total_teus'] = shipment_df.sum(axis=1)
-                if 'Direct shipment cargo' in shipment_df.columns:
-                    combined_data['seaborne_teus'] = shipment_df['Direct shipment cargo']
-                if 'Transhipment cargo' in shipment_df.columns:
-                    combined_data['river_teus'] = shipment_df['Transhipment cargo']
+            # Analyze seasonal patterns - use monthly_throughput data if available
+            if 'monthly_throughput' in time_series_data and not time_series_data['monthly_throughput'].empty:
+                monthly_df = time_series_data['monthly_throughput'].copy()
+                # Create a datetime index from year and month columns
+                monthly_df['date'] = pd.to_datetime(monthly_df[['year', 'month']].assign(DAY=1))
+                monthly_df = monthly_df.set_index('date')
                 
-                # Convert year index to datetime
-                combined_data.index = pd.to_datetime(combined_data.index, format='%Y')
-                
-                self.seasonal_patterns = _analyze_seasonal_patterns(combined_data)
+                self.seasonal_patterns = _analyze_seasonal_patterns(monthly_df)
             else:
                 logger.warning("No suitable time series data for seasonal analysis")
                 self.seasonal_patterns = {}
@@ -122,7 +114,7 @@ class HistoricalParameterExtractor:
         try:
             if scenario_name == "Peak Season":
                 return self._extract_peak_season_parameters()
-            elif scenario_name == "Normal Operations":
+            elif scenario_name in ["Normal Operations", "normal"]:
                 return self._extract_normal_operations_parameters()
             elif scenario_name == "Low Season":
                 return self._extract_low_season_parameters()
@@ -158,17 +150,23 @@ class HistoricalParameterExtractor:
             
             # Update parameters based on historical data
             updated_params = ScenarioParameters(
-                name="Peak Season",
-                description="High-volume operations during peak shipping season",
-                ship_arrival_rate_multiplier=min(peak_multiplier, 2.0),  # Cap at 2x
+                scenario_name="Peak Season",
+                scenario_description="High-volume operations during peak shipping season",
+                arrival_rate_multiplier=min(peak_multiplier, 2.0),  # Cap at 2x
                 ship_type_distribution=self._adjust_ship_distribution_for_peak(),
-                container_volume_multiplier=min(peak_multiplier * 0.9, 1.8),
-                operational_efficiency_factor=max(0.85, 1.0 - (peak_multiplier - 1.0) * 0.3),
-                berth_utilization_target=min(0.95, 0.8 + (peak_multiplier - 1.0) * 0.15),
-                priority_factors=base_params.priority_factors,
-                seasonal_months=peak_months,
-                weather_impact_factor=base_params.weather_impact_factor,
-                crane_efficiency_factor=max(0.9, 1.0 - (peak_multiplier - 1.0) * 0.1)
+                average_ship_size_multiplier=min(peak_multiplier * 0.9, 1.8),
+                processing_rate_multiplier=max(0.85, 1.0 - (peak_multiplier - 1.0) * 0.3),
+                target_berth_utilization=min(0.95, 0.8 + (peak_multiplier - 1.0) * 0.15),
+                large_ship_priority_boost=base_params.large_ship_priority_boost,
+                container_ship_priority_boost=base_params.container_ship_priority_boost,
+                primary_months=peak_months,
+                crane_efficiency_multiplier=max(0.9, 1.0 - (peak_multiplier - 1.0) * 0.1),
+                peak_hour_multiplier=base_params.peak_hour_multiplier,
+                weekend_multiplier=base_params.weekend_multiplier,
+                container_volume_multipliers=base_params.container_volume_multipliers,
+                docking_time_multiplier=base_params.docking_time_multiplier,
+                berth_availability_factor=base_params.berth_availability_factor,
+                secondary_months=[]
             )
             
             logger.info(f"Extracted peak season parameters with {peak_multiplier:.2f}x multiplier")
@@ -194,17 +192,23 @@ class HistoricalParameterExtractor:
             normal_baseline = self._calculate_normal_baseline(monthly_patterns)
             
             updated_params = ScenarioParameters(
-                name="Normal Operations",
-                description="Standard port operations during regular periods",
-                ship_arrival_rate_multiplier=normal_baseline,
+                scenario_name="Normal Operations",
+                scenario_description="Standard port operations during regular periods",
+                arrival_rate_multiplier=normal_baseline,
                 ship_type_distribution=self._get_balanced_ship_distribution(),
-                container_volume_multiplier=normal_baseline,
-                operational_efficiency_factor=0.92,
-                berth_utilization_target=0.75,
-                priority_factors=base_params.priority_factors,
-                seasonal_months=normal_months,
-                weather_impact_factor=base_params.weather_impact_factor,
-                crane_efficiency_factor=0.95
+                average_ship_size_multiplier=normal_baseline,
+                processing_rate_multiplier=0.92,
+                target_berth_utilization=0.75,
+                large_ship_priority_boost=base_params.large_ship_priority_boost,
+                container_ship_priority_boost=base_params.container_ship_priority_boost,
+                primary_months=normal_months,
+                crane_efficiency_multiplier=0.95,
+                peak_hour_multiplier=base_params.peak_hour_multiplier,
+                weekend_multiplier=base_params.weekend_multiplier,
+                container_volume_multipliers=base_params.container_volume_multipliers,
+                docking_time_multiplier=base_params.docking_time_multiplier,
+                berth_availability_factor=base_params.berth_availability_factor,
+                secondary_months=[]
             )
             
             logger.info(f"Extracted normal operations parameters with {normal_baseline:.2f}x baseline")
@@ -230,17 +234,23 @@ class HistoricalParameterExtractor:
             low_multiplier = self._calculate_low_multiplier(monthly_patterns, low_months)
             
             updated_params = ScenarioParameters(
-                name="Low Season",
-                description="Reduced operations during low shipping season",
-                ship_arrival_rate_multiplier=max(low_multiplier, 0.4),  # Floor at 0.4x
+                scenario_name="Low Season",
+                scenario_description="Reduced operations during low shipping season",
+                arrival_rate_multiplier=max(low_multiplier, 0.4),  # Floor at 0.4x
                 ship_type_distribution=self._adjust_ship_distribution_for_low(),
-                container_volume_multiplier=max(low_multiplier * 1.1, 0.5),
-                operational_efficiency_factor=min(0.98, 0.92 + (1.0 - low_multiplier) * 0.1),
-                berth_utilization_target=max(0.45, 0.75 - (1.0 - low_multiplier) * 0.3),
-                priority_factors=base_params.priority_factors,
-                seasonal_months=low_months,
-                weather_impact_factor=base_params.weather_impact_factor,
-                crane_efficiency_factor=min(0.98, 0.95 + (1.0 - low_multiplier) * 0.05)
+                average_ship_size_multiplier=max(low_multiplier * 1.1, 0.5),
+                processing_rate_multiplier=min(0.98, 0.92 + (1.0 - low_multiplier) * 0.1),
+                target_berth_utilization=max(0.45, 0.75 - (1.0 - low_multiplier) * 0.3),
+                large_ship_priority_boost=base_params.large_ship_priority_boost,
+                container_ship_priority_boost=base_params.container_ship_priority_boost,
+                primary_months=low_months,
+                crane_efficiency_multiplier=min(0.98, 0.95 + (1.0 - low_multiplier) * 0.05),
+                peak_hour_multiplier=base_params.peak_hour_multiplier,
+                weekend_multiplier=base_params.weekend_multiplier,
+                container_volume_multipliers=base_params.container_volume_multipliers,
+                docking_time_multiplier=base_params.docking_time_multiplier,
+                berth_availability_factor=base_params.berth_availability_factor,
+                secondary_months=[]
             )
             
             logger.info(f"Extracted low season parameters with {low_multiplier:.2f}x multiplier")

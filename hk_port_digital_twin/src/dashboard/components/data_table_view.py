@@ -2,15 +2,19 @@ import streamlit as st
 import pandas as pd
 from ...utils.data_loader import load_container_throughput
 
-def render_data_table():
+def render_data_table(enhanced_analysis):
     """
-    Renders an interactive data table of the container throughput data.
-
-    This function loads the container throughput data and displays it in a 
-    Streamlit dataframe, allowing for easy sorting, filtering, and exploration 
-    of the raw data.
+    Renders the data table view with enhanced cargo analysis data.
+    
+    Args:
+        enhanced_analysis (pd.DataFrame): DataFrame containing enhanced cargo analysis data.
     """
-    st.subheader("Container Throughput Data")
+    st.subheader("Enhanced Cargo Analysis Data")
+    
+    if enhanced_analysis is not None and not enhanced_analysis.empty:
+        st.dataframe(enhanced_analysis)
+    else:
+        st.warning("No enhanced cargo analysis data available to display.")
 
     # Load data
     container_throughput = load_container_throughput()

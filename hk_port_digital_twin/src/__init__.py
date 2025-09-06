@@ -76,8 +76,6 @@ from .integration import (
 
 # Utilities
 from .utils import (
-    ConfigManager,
-    DataLoader,
     Logger,
     ValidationUtils
 )
@@ -133,8 +131,6 @@ __all__ = [
     'run_enhanced_simulation_demo',
     
     # Utilities
-    'ConfigManager',
-    'DataLoader',
     'Logger',
     'ValidationUtils'
 ]

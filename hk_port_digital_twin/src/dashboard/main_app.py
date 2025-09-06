@@ -9,15 +9,15 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import components
-from .components.navigation import NavigationFramework
-from .components.layout import LayoutManager
-from .components.user_preferences import UserPreferences
-from .styles.theme_manager import ThemeManager
-from .pages.dashboard_page import DashboardPage
-from .pages.operations_page import OperationsPage
-from .pages.analytics_page import AnalyticsPage
-from .pages.scenarios_page import ScenariosPage
-from .pages.settings_page import SettingsPage
+from hk_port_digital_twin.src.dashboard.components.navigation import NavigationFramework
+from hk_port_digital_twin.src.dashboard.components.layout import LayoutManager
+from hk_port_digital_twin.src.dashboard.components.user_preferences import UserPreferences
+from hk_port_digital_twin.src.dashboard.styles.theme_manager import ThemeManager
+from hk_port_digital_twin.src.dashboard._pages_backup._monitoring_page import MonitoringPage
+from hk_port_digital_twin.src.dashboard._pages_backup._analytics_page import AnalyticsPage
+from hk_port_digital_twin.src.dashboard._pages_backup._operations_page import OperationsPage
+from hk_port_digital_twin.src.dashboard._pages_backup._scenarios_page import ScenariosPage
+from hk_port_digital_twin.src.dashboard._pages_backup._settings_page import SettingsPage
 
 # Import data utilities
 try:
@@ -41,11 +41,11 @@ class PortDashboardApp:
         
         # Initialize pages
         self.pages = {
-            'dashboard': DashboardPage(),
-            'operations': OperationsPage(),
+            'monitoring': MonitoringPage(),
             'analytics': AnalyticsPage(self.layout),
+            'operations': OperationsPage(),
             'scenarios': ScenariosPage(self.layout),
-            'settings': SettingsPage()
+            'settings': SettingsPage(self.theme_manager, self.user_preferences)
         }
         
         self._initialize_session_state()
@@ -53,13 +53,10 @@ class PortDashboardApp:
     def _initialize_session_state(self):
         """Initialize session state variables"""
         if 'current_page' not in st.session_state:
-            st.session_state.current_page = 'dashboard'
+            st.session_state.current_page = 'monitoring'
         
         if 'dashboard_settings' not in st.session_state:
             st.session_state.dashboard_settings = self.user_preferences.load_settings()
-        
-        if 'data_cache' not in st.session_state:
-            st.session_state.data_cache = {}
         
         if 'last_refresh' not in st.session_state:
             st.session_state.last_refresh = None
@@ -73,6 +70,9 @@ class PortDashboardApp:
                 'dashboard_layout': 'default',
                 'quick_actions': ['refresh_data', 'export_report', 'view_alerts']
             }
+        
+        if 'data_cache' not in st.session_state:
+            st.session_state.data_cache = {}
     
     def configure_page(self):
         """Configure Streamlit page settings"""
@@ -89,28 +89,45 @@ class PortDashboardApp:
         )
     
     def load_data(self):
-        """Load data for the dashboard"""
-        try:
-            if self.data_loader:
-                # Try to load real data
-                data = self.data_loader.load_all_data()
-                st.session_state.data_cache.update(data)
-            elif self.sample_generator:
-                # Fallback to sample data
-                data = {
-                    'vessel_data': self.sample_generator.generate_vessel_data(),
-                    'cargo_data': self.sample_generator.generate_cargo_data(),
-                    'berth_data': self.sample_generator.generate_berth_data(),
-                    'performance_data': self.sample_generator.generate_performance_data()
-                }
-                st.session_state.data_cache.update(data)
-            else:
-                # Use minimal fallback data
+        """Load data for the dashboard, utilizing a cache."""
+        # Attempt to load data if the cache is empty or needs refreshing
+        if not st.session_state.data_cache or self._should_refresh_data():
+            try:
+                if self.data_loader:
+                    # Comprehensive data loading from the primary data loader
+                    data = {
+                        'container_throughput': self.data_loader.load_container_throughput(),
+                        'enhanced_analysis': self.data_loader.get_enhanced_cargo_analysis(),
+                        'vessel_movements': self.data_loader.get_vessel_movements(),
+                        'berth_allocation': self.data_loader.get_berth_allocation(),
+                        'time_series_data': self.data_loader.get_time_series_data(),
+                        'focused_cargo_stats': self.data_loader.load_focused_cargo_statistics(),
+                    }
+                    st.session_state.data_cache.update(data)
+                    st.session_state.last_refresh = datetime.now()
+                elif self.sample_generator:
+                    # Fallback to generated sample data if DataLoader is not available
+                    self._load_sample_data()
+                else:
+                    # Fallback to minimal, static data if all else fails
+                    self._load_fallback_data()
+            except Exception as e:
+                st.error(f"Error loading data: {str(e)}")
+                # On error, attempt to load fallback data to prevent a crash
                 self._load_fallback_data()
-                
-        except Exception as e:
-            st.error(f"Error loading data: {str(e)}")
-            self._load_fallback_data()
+        
+        # Return data from cache
+        return st.session_state.data_cache
+
+    def _load_sample_data(self):
+        """Load sample data from the generator and cache it."""
+        sample_data = {
+            'vessel_data': self.sample_generator.generate_vessel_data(),
+            'cargo_data': self.sample_generator.generate_cargo_data(),
+            'berth_data': self.sample_generator.generate_berth_data(),
+            'performance_data': self.sample_generator.generate_performance_data()
+        }
+        st.session_state.data_cache.update(sample_data)
     
     def _load_fallback_data(self):
         """Load minimal fallback data when other sources fail"""
@@ -175,11 +192,14 @@ class PortDashboardApp:
         try:
             if current_page in self.pages:
                 # Load fresh data if needed
-                if self._should_refresh_data():
-                    self.load_data()
+                data = self.load_data()
                 
                 # Render the page with data
-                self.pages[current_page].render(st.session_state.data_cache)
+                page_to_render = self.pages[current_page]
+                if current_page == 'monitoring':
+                    page_to_render.render(data, self.theme_manager)
+                else:
+                    page_to_render.render(data)
             else:
                 st.error(f"Page '{current_page}' not found")
                 
@@ -255,9 +275,8 @@ class PortDashboardApp:
         self._apply_theme()
         
         # Load initial data
-        if not st.session_state.data_cache:
-            with st.spinner("Loading dashboard data..."):
-                self.load_data()
+        with st.spinner("Loading dashboard data..."):
+            self.load_data()
         
         # Handle navigation
         self.handle_navigation()

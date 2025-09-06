@@ -1,5 +1,6 @@
 import streamlit as st
 from typing import List, Optional, Union
+from contextlib import contextmanager
 
 class LayoutManager:
     """Layout manager for consistent spacing and grid system"""
@@ -11,6 +12,15 @@ class LayoutManager:
         'md': 24,
         'lg': 32,
         'xl': 48
+    }
+    
+    # Mapping from custom spacing keys to Streamlit's gap sizes
+    GAP_MAP = {
+        'xs': 'small',
+        'sm': 'small',
+        'md': 'medium',
+        'lg': 'large',
+        'xl': 'large',
     }
     
     # Standard column ratios for 12-column grid
@@ -39,17 +49,19 @@ class LayoutManager:
         else:
             ratios = layout
         
-        gap_size = LayoutManager.SPACING.get(gap, 24)
+        # Map custom gap size to Streamlit's expected values
+        streamlit_gap = LayoutManager.GAP_MAP.get(gap, 'medium')
         
         # Create columns with gap
-        columns = st.columns(ratios, gap=gap_size)
+        columns = st.columns(ratios, gap=streamlit_gap)
         return columns
     
     @staticmethod
+    @contextmanager
     def create_card(title: Optional[str] = None, 
                    subtitle: Optional[str] = None,
                    border: bool = True,
-                   padding: str = 'md') -> None:
+                   padding: str = 'md'):
         """Create a card container with consistent styling"""
         padding_px = LayoutManager.SPACING.get(padding, 24)
         
@@ -73,11 +85,13 @@ class LayoutManager:
         
         if subtitle:
             st.markdown(f"*{subtitle}*")
+
+        try:
+            yield
+        finally:
+            st.markdown("</div>", unsafe_allow_html=True)
     
-    @staticmethod
-    def close_card() -> None:
-        """Close card container"""
-        st.markdown("</div>", unsafe_allow_html=True)
+
     
     @staticmethod
     def create_metric_grid(metrics: List[dict], columns: int = 4) -> None:

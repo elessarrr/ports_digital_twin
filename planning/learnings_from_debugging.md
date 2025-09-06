@@ -222,6 +222,19 @@ This ensures that `shipment_data` is a non-empty dictionary before the applicati
 
 This document captures debugging processes, insights, and solutions discovered during the development of the Hong Kong Port Digital Twin project.
 
+## Missing Navigation Sections in Streamlit Dashboard
+
+- **Caused by:** The navigation framework in `navigation.py` only defined the 'monitoring' section in the `sections` dictionary, causing only the "Monitoring" button to appear in the sidebar. The other expected navigation sections (Analytics, Operations, Scenarios, Settings) were missing from the configuration, even though their corresponding page classes existed in the `_pages_backup` directory.
+- **How fixed:** Updated the `NavigationFramework` class in `navigation.py` to include all sections: 'analytics', 'operations', 'scenarios', and 'settings'. Added imports for all page classes (`AnalyticsPage`, `OperationsPage`, `ScenariosPage`, `SettingsPage`) from `_pages_backup` directory to `main_app.py`. Updated the `self.pages` dictionary in `PortDashboardApp.__init__()` to instantiate all page classes with correct constructor parameters - `OperationsPage()` with no arguments, `ScenariosPage(self.layout)`, and `SettingsPage(self.theme_manager, self.user_preferences)`.
+- **Learnings/Takeaway:** Navigation configuration must be synchronized with available page implementations. When adding new pages to a dashboard, ensure both the navigation framework and page initialization are updated together. Constructor parameter mismatches can cause `TypeError` exceptions - always verify the expected parameters for each page class before instantiation. Backup directories often contain working implementations that can be integrated into the main application.
+- **Date fixed:** 2025-01-27
+
+**Additional Insight:**
+- The issue was discovered when only one navigation button appeared instead of the expected five sections
+- Page classes in backup directories may have different constructor signatures than expected
+- Streamlit apps require restart after navigation changes to reflect updates in the UI
+- Proper error handling during page initialization prevents the entire application from crashing
+
 ## Chart Alignment and Decimal Year Display Issues
 
 - **Caused by:** Streamlit's `st.line_chart` was displaying decimal years (e.g., 2014.5, 2015.3) in chart legends instead of integer years, and charts were not properly centered on the page. This occurred because `st.line_chart` automatically interpolates time series data and doesn't provide fine-grained control over axis formatting and chart positioning.
@@ -529,6 +542,25 @@ Regularly sync project plan status with actual codebase implementation to avoid 
 - **How fixed:** Ran `pip install -r hk_port_digital_twin/requirements.txt` to install all required packages into the environment.
 - **Learnings/Takeaway:** Always run `pip install -r requirements.txt` when setting up a new development environment or pulling new code. Use virtual environments to isolate project dependencies.
 - **Date fixed:** 2025-01-27
+
+---
+
+## Error 9: `AttributeError: 'ThemeManager' object has no attribute 'get_current_theme'`
+
+- **Caused by:** The `SettingsPage` class was calling methods (`get_current_theme`, `get_available_themes`, `set_theme`) on the `ThemeManager` instance that didn't exist in the class definition. The `ThemeManager` class only had methods like `apply_theme`, `get_theme_colors`, and `get_chart_colors`.
+- **How fixed:** Added the missing methods to the `ThemeManager` class in `theme_manager.py`: 1) `get_current_theme()` - returns the current theme name, 2) `get_available_themes()` - returns list of available theme names (alias for compatibility), 3) `set_theme(theme_name)` - sets the current theme and applies it immediately.
+- **Learnings/Takeaway:** When developing UI components that interact with backend classes, ensure all required methods are implemented in the backend before calling them. Use interface contracts or abstract base classes to define expected methods upfront.
+- **Date fixed:** 2025-01-27
+
+---
+
+## Error 10: `StreamlitAPIException: Progress Value has invalid value [0.0, 1.0]: 1.083333`
+
+- **Caused by:** The `st.progress()` function in Streamlit requires progress values to be within the range [0.0, 1.0], but the KPI dashboard was calculating progress as `values['value'] / values['target']` which could exceed 1.0 when actual performance exceeded targets (e.g., Crane Productivity: 32.5/30 = 1.083333).
+- **How fixed:** Added range clamping using `min(1.0, max(0.0, values['value'] / values['target']))` in both `analytics_view.py` and `scenarios_page.py` to ensure progress values always stay within the valid [0.0, 1.0] range before passing to `st.progress()`.
+- **Learnings/Takeaway:** Always validate input ranges for UI components that have strict constraints. When displaying performance metrics that can exceed targets, consider using alternative visualizations or clamping values to valid ranges while preserving the actual data display.
+- **Date fixed:** 2025-01-27
+
 # Debugging `AttributeError: st.session_state has no attribute "scenario"`
 
 ## 1. Error Description

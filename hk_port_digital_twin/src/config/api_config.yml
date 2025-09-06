@@ -1,0 +1,18 @@
+# API Configuration for Hong Kong Port Digital Twin
+# This file contains API endpoint configurations for external data sources
+# Note: These are placeholder URLs for development/demo purposes
+
+api_endpoints:
+  cargo_throughput: "https://api.example.com/cargo-throughput"
+  vessel_arrivals: "https://api.example.com/vessel-arrivals"
+
+# Additional configuration options
+api_settings:
+  timeout: 30
+  retry_attempts: 3
+  retry_delay: 1
+
+# Development settings
+development:
+  use_mock_data: true
+  mock_data_path: "data/sample/"

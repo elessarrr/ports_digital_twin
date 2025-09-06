@@ -50,8 +50,76 @@ self.unified_framework = UnifiedSimulationController()
 ### Key Learnings
 
 1. **Class Name Verification**: Always verify that class names match their actual definitions in the imported modules.
-2. **Import vs Usage**: Ensure that imported classes are used with their correct names throughout the codebase.
-3. **Error Message Analysis**: The error message clearly indicated the undefined name, making it straightforward to identify and fix.
+2. **Import vs Usage**: Ensure that imported class names are used consistently throughout the code.
+3. **IDE Support**: Use IDE features like "Go to Definition" to verify class names and their locations.
+
+## Error 4: `TypeError: render_analytics_view() takes 1 positional argument but 2 were given`
+
+### Symptom
+
+The Streamlit application crashed when accessing the Analytics page with the following error:
+
+```
+TypeError: render_analytics_view() takes 1 positional argument but 2 were given
+Traceback:
+File "/Users/Bhavesh/Documents/GitHub/ports_digital_twin/hk_port_digital_twin/src/dashboard/main_app.py", line 204, in render_page_content
+    page_to_render.render(data)
+File "/Users/Bhavesh/Documents/GitHub/ports_digital_twin/hk_port_digital_twin/src/dashboard/pages/analytics_page.py", line 39, in render
+    self.render_cargo_statistics_tab(data)
+File "/Users/Bhavesh/Documents/GitHub/ports_digital_twin/hk_port_digital_twin/src/dashboard/pages/analytics_page.py", line 55, in render_cargo_statistics_tab
+    render_analytics_view(data, ['cargo_statistics'])
+```
+
+### Root Cause
+
+The error was caused by a function signature mismatch. The `render_analytics_view()` function in `analytics_view.py` was defined to accept only one parameter (`data`), but it was being called from `analytics_page.py` with two arguments: `data` and a list of view types (`['cargo_statistics']` or `['performance_metrics']`).
+
+### Resolution
+
+The fix involved updating the function signature to accept an optional second parameter and implementing conditional rendering logic.
+
+**Original Function Signature:**
+
+```python
+def render_analytics_view(data):
+    """Renders the analytics view, combining cargo statistics and performance metrics."""
+    st.subheader("Cargo Statistics")
+    _render_cargo_statistics(data)
+    st.subheader("Performance Metrics")
+    _render_performance_metrics(data)
+```
+
+**Updated Function Signature:**
+
+```python
+def render_analytics_view(data, view_types=None):
+    """Renders the analytics view, combining cargo statistics and performance metrics.
+    
+    Args:
+        data (dict): A dictionary containing the data for the view.
+        view_types (list, optional): List of view types to render. Defaults to None (renders all).
+    """
+    # If no view types specified, render all sections
+    if view_types is None:
+        view_types = ['cargo_statistics', 'performance_metrics']
+    
+    # Render sections based on view_types
+    if 'cargo_statistics' in view_types:
+        st.subheader("Cargo Statistics")
+        _render_cargo_statistics(data)
+
+    if 'performance_metrics' in view_types:
+        st.subheader("Performance Metrics")
+        _render_performance_metrics(data)
+```
+
+### Key Learnings
+
+1. **Function Signature Consistency**: Always ensure that function definitions match how they are called throughout the codebase.
+2. **Optional Parameters**: Use optional parameters with default values to maintain backward compatibility when extending function signatures.
+3. **Conditional Logic**: Implement conditional rendering logic to handle different view types or modes within the same function.
+4. **Error Analysis**: TypeError messages clearly indicate parameter count mismatches, making them relatively straightforward to diagnose.
+5. **Code Search**: Use regex search tools to find all instances of function calls when modifying function signatures.
 
 ## Error 4: `ModuleNotFoundError: No module named 'simpy'`
 

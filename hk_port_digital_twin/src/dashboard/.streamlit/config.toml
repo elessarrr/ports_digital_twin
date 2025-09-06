@@ -1,0 +1,13 @@
+[ui]
+# Hide the automatic page navigation that appears when Streamlit detects multiple .py files
+showSidebarNavigation = false
+
+# Optional: Also hide the "Deploy" button and other UI elements for a cleaner look
+hideTopBar = false
+# Fixed: Allow sidebar navigation to be visible
+hideSidebarNav = false
+
+[server]
+# Keep the server running smoothly
+runOnSave = true
+allowRunOnSave = true

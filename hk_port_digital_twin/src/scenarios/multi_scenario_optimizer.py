@@ -65,7 +65,7 @@ sys.path.insert(0, str(current_dir))
 
 try:
     from optimization import BerthAllocationOptimizer, Ship, Berth, OptimizationResult
-    from data_loader import load_port_cargo_statistics, get_time_series_data
+    from utils.data_loader import load_focused_cargo_statistics as load_port_cargo_statistics
     from scenario_parameters import (
         ScenarioParameters, ALL_SCENARIOS, get_scenario_parameters,
         PEAK_SEASON_PARAMETERS, NORMAL_OPERATIONS_PARAMETERS, LOW_SEASON_PARAMETERS

@@ -6,67 +6,69 @@ class NavigationFramework:
     
     def __init__(self):
         self.sections = {
-            "dashboard": {
+            "monitoring": {
                 "icon": "🏠",
-                "title": "Dashboard",
+                "title": "Main App",
                 "description": "Overview + Key Metrics"
-            },
-            "operations": {
-                "icon": "🚢",
-                "title": "Operations",
-                "description": "Vessels + Berths + Live Data"
             },
             "analytics": {
                 "icon": "📊",
                 "title": "Analytics",
-                "description": "Cargo Statistics + Performance"
+                "description": "Performance metrics and data analysis"
+            },
+            "operations": {
+                "icon": "🚢",
+                "title": "Operations",
+                "description": "Ships, berths, and operational monitoring"
             },
             "scenarios": {
-                "icon": "🎯",
+                "icon": "🔬",
                 "title": "Scenarios",
-                "description": "Simulation Controls"
+                "description": "Simulation and scenario planning"
             },
             "settings": {
                 "icon": "⚙️",
                 "title": "Settings",
-                "description": "Configuration + Preferences"
+                "description": "Configuration and preferences"
             }
         }
     
     def render_sidebar_navigation(self) -> str:
-        """Render the sidebar navigation and return selected section"""
-        st.sidebar.markdown("## 🏗️ Navigation")
+        """Render navigation in sidebar and return selected section"""
+
         
-        # Initialize session state for navigation
+        # Initialize session state for current section
         if 'current_section' not in st.session_state:
-            st.session_state.current_section = 'dashboard'
-        
-        selected_section = None
+            st.session_state.current_section = list(self.sections.keys())[0]
         
         # Create navigation buttons
-        for section_key, section_info in self.sections.items():
-            # Create button with icon and title
-            button_label = f"{section_info['icon']} {section_info['title']}"
+        with st.sidebar:
+            st.markdown("### 📍 Navigation")
             
-            # Check if this is the current section
-            is_current = st.session_state.current_section == section_key
+            for section_key, section_config in self.sections.items():
+                icon = section_config.get('icon', '📄')
+                title = section_config.get('title', section_key.title())
+                
+                if st.button(
+                    f"{icon} {title}",
+                    key=f"nav_{section_key}",
+                    use_container_width=True
+                ):
+                    st.session_state.current_section = section_key
+                    st.rerun()
             
-            # Create button with different styling for current section
-            if st.sidebar.button(
-                button_label,
-                key=f"nav_{section_key}",
-                help=section_info['description'],
-                use_container_width=True
-            ):
-                st.session_state.current_section = section_key
-                selected_section = section_key
-                st.rerun()
+            # Show current section indicator
+            current_config = self.sections[st.session_state.current_section]
+            current_icon = current_config.get('icon', '📄')
+            current_title = current_config.get('title', st.session_state.current_section.title())
+            st.markdown(f"**Current:** {current_icon} {current_title}")
+            
+            # Show description if available
+            description = current_config.get('description')
+            if description:
+                st.markdown(f"*{description}*")
         
-        # Show current section indicator
-        current_info = self.sections[st.session_state.current_section]
-        st.sidebar.markdown(f"**Current:** {current_info['icon']} {current_info['title']}")
-        st.sidebar.markdown(f"*{current_info['description']}*")
-        
+
         return st.session_state.current_section
     
     def render_breadcrumb(self, current_section: str, subsection: Optional[str] = None) -> None:

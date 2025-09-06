@@ -9,6 +9,7 @@ import numpy as np
 from ..components.layout import LayoutManager
 from ..styles.theme_manager import ThemeManager
 from ..components.weather_impact_analysis import render_weather_impact_analysis
+from ..components.analytics_view import render_analytics_view
 
 class AnalyticsPage:
     """Analytics page with cargo statistics, performance metrics, and data visualization"""
@@ -35,13 +36,13 @@ class AnalyticsPage:
         tabs = self.layout.create_tabs_container(tab_names, tab_icons)
         
         with tabs[0]:
-            self._render_cargo_statistics(data)
+            self.render_cargo_statistics_tab(data)
         
         with tabs[1]:
-            self._render_performance_metrics(data)
+            self.render_performance_metrics_tab(data)
         
         with tabs[2]:
-            self._render_trend_analysis(data)
+            self.render_trend_analysis_tab(data)
         
         with tabs[3]:
             self._render_forecasting(data)
@@ -49,321 +50,16 @@ class AnalyticsPage:
         with tabs[4]:
             render_weather_impact_analysis()
     
-    def _render_cargo_statistics(self, data: Dict[str, Any]) -> None:
-        """Render cargo statistics section"""
-        self.layout.add_spacing('md')
-        
-        # Cargo overview metrics
-        with self.layout.create_card("📦 Cargo Overview"):
-            self._render_cargo_overview(data)
-        self.layout.add_spacing('lg')
-        
-        # Cargo breakdown charts
-        cols = self.layout.create_columns('half')
-        
-        with cols[0]:
-            with self.layout.create_card("📊 Cargo Types Distribution"):
-                self._render_cargo_types_chart(data)
-        
-        with cols[1]:
-            with self.layout.create_card("🚛 Transport Modes"):
-                self._render_transport_modes_chart(data)
-        
-        self.layout.add_spacing('lg')
-        
-        # Detailed cargo statistics
-        with self.layout.create_card("📋 Detailed Cargo Statistics"):
-            self._render_cargo_details_table(data)
-    
-    def _render_cargo_overview(self, data: Dict[str, Any]) -> None:
-        """Render cargo overview metrics"""
-        cargo_data = data.get('cargo_statistics', {})
-        
-        metrics = [
-            {
-                'label': 'Total Throughput',
-                'value': f"{cargo_data.get('total_throughput', 125000):,} TEU",
-                'delta': f"+{cargo_data.get('throughput_delta', 5200):,}",
-                'help': 'Total cargo throughput this month'
-            },
-            {
-                'label': 'Container Volume',
-                'value': f"{cargo_data.get('container_volume', 98000):,} TEU",
-                'delta': f"+{cargo_data.get('container_delta', 4100):,}",
-                'help': 'Container cargo volume this month'
-            },
-            {
-                'label': 'Bulk Cargo',
-                'value': f"{cargo_data.get('bulk_cargo', 27000):,} tons",
-                'delta': f"+{cargo_data.get('bulk_delta', 1100):,}",
-                'help': 'Bulk cargo volume this month'
-            },
-            {
-                'label': 'Average Dwell Time',
-                'value': f"{cargo_data.get('avg_dwell_time', 3.2):.1f} days",
-                'delta': f"-{cargo_data.get('dwell_delta', 0.3):.1f}",
-                'help': 'Average cargo dwell time in port'
-            }
-        ]
-        
-        self.layout.create_metric_grid(metrics, columns=4)
-    
-    def _render_cargo_types_chart(self, data: Dict[str, Any]) -> None:
-        """Render cargo types distribution chart"""
-        cargo_types_data = data.get('cargo_types', self._get_fallback_cargo_types())
-        
-        # Create donut chart
-        fig = go.Figure(data=[
-            go.Pie(
-                labels=list(cargo_types_data.keys()),
-                values=list(cargo_types_data.values()),
-                hole=0.4,
-                textinfo='label+percent',
-                textposition='outside'
-            )
-        ])
-        
-        fig.update_layout(
-            height=400,
-            margin=dict(t=40, b=40, l=40, r=40)
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-    
-    def _render_transport_modes_chart(self, data: Dict[str, Any]) -> None:
-        """Render transport modes chart"""
-        transport_data = data.get('transport_modes', self._get_fallback_transport_modes())
-        
-        if transport_data:
-            df = pd.DataFrame(list(transport_data.items()), columns=['Mode', 'Volume'])
-            
-            # Create bar chart
-            fig = px.bar(
-                df,
-                x='Mode',
-                y='Volume',
-                color='Volume',
-                color_continuous_scale='viridis'
-            )
-            
-            fig.update_layout(
-                height=400,
-                margin=dict(t=40, b=40, l=40, r=40),
-                xaxis_title="Transport Mode",
-                yaxis_title="Volume (TEU)"
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("No transport mode data available")
-    
-    def _render_cargo_details_table(self, data: Dict[str, Any]) -> None:
-        """Render detailed cargo statistics table"""
-        cargo_details = data.get('cargo_details', self._get_fallback_cargo_details())
-        
-        if cargo_details:
-            df = pd.DataFrame(cargo_details)
-            
-            # Add filters
-            cols = st.columns(3)
-            
-            with cols[0]:
-                period_filter = st.selectbox(
-                    "Time Period",
-                    options=['Last 7 Days', 'Last 30 Days', 'Last 90 Days', 'Year to Date'],
-                    key="cargo_period_filter"
-                )
-            
-            with cols[1]:
-                cargo_type_filter = st.selectbox(
-                    "Cargo Type",
-                    options=['All'] + list(df['cargo_type'].unique()) if 'cargo_type' in df.columns else ['All'],
-                    key="cargo_type_filter"
-                )
-            
-            with cols[2]:
-                terminal_filter = st.selectbox(
-                    "Terminal",
-                    options=['All'] + list(df['terminal'].unique()) if 'terminal' in df.columns else ['All'],
-                    key="terminal_filter"
-                )
-            
-            # Apply filters
-            filtered_df = df.copy()
-            
-            if cargo_type_filter != 'All' and 'cargo_type' in df.columns:
-                filtered_df = filtered_df[filtered_df['cargo_type'] == cargo_type_filter]
-            
-            if terminal_filter != 'All' and 'terminal' in df.columns:
-                filtered_df = filtered_df[filtered_df['terminal'] == terminal_filter]
-            
-            # Display table
-            st.dataframe(filtered_df, use_container_width=True)
-        else:
-            st.info("No cargo details available")
-    
-    def _render_performance_metrics(self, data: Dict[str, Any]) -> None:
-        """Render performance metrics section"""
-        self.layout.add_spacing('md')
-        
-        # Performance overview
-        with self.layout.create_card("⚡ Performance Overview"):
-            self._render_performance_overview(data)
-        self.layout.add_spacing('lg')
-        
-        # Performance charts
-        cols = self.layout.create_columns('half')
-        
-        with cols[0]:
-            with self.layout.create_card("📊 Efficiency Metrics"):
-                self._render_efficiency_metrics_chart(data)
-        
-        with cols[1]:
-            with self.layout.create_card("📈 Productivity Trends"):
-                self._render_productivity_chart(data)
-        
-        self.layout.add_spacing('lg')
-        
-        with self.layout.create_card("🎯 Key Performance Indicators"):
-            self._render_kpi_dashboard(data)
-    
-    def _render_performance_overview(self, data: Dict[str, Any]) -> None:
-        """Render performance overview metrics"""
-        performance_data = data.get('performance_metrics', {})
-        
-        metrics = [
-            {
-                'label': 'Overall Efficiency',
-                'value': f"{performance_data.get('overall_efficiency', 87.5):.1f}%",
-                'delta': f"+{performance_data.get('efficiency_delta', 2.3):.1f}%",
-                'help': 'Overall port operational efficiency'
-            },
-            {
-                'label': 'Vessel Turnaround',
-                'value': f"{performance_data.get('vessel_turnaround', 18.5):.1f}h",
-                'delta': f"-{performance_data.get('turnaround_delta', 1.2):.1f}h",
-                'help': 'Average vessel turnaround time'
-            },
-            {
-                'label': 'Crane Productivity',
-                'value': f"{performance_data.get('crane_productivity', 32):.0f} moves/h",
-                'delta': f"+{performance_data.get('crane_delta', 3):.0f}",
-                'help': 'Average crane moves per hour'
-            },
-            {
-                'label': 'Berth Utilization',
-                'value': f"{performance_data.get('berth_utilization', 78.2):.1f}%",
-                'delta': f"+{performance_data.get('berth_delta', 4.1):.1f}%",
-                'help': 'Average berth utilization rate'
-            }
-        ]
-        
-        self.layout.create_metric_grid(metrics, columns=4)
-    
-    def _render_efficiency_metrics_chart(self, data: Dict[str, Any]) -> None:
-        """Render efficiency metrics radar chart"""
-        efficiency_data = data.get('efficiency_metrics', self._get_fallback_efficiency_metrics())
-        
-        if efficiency_data:
-            categories = list(efficiency_data.keys())
-            values = list(efficiency_data.values())
-            
-            # Create radar chart
-            fig = go.Figure()
-            
-            fig.add_trace(go.Scatterpolar(
-                r=values,
-                theta=categories,
-                fill='toself',
-                name='Current Performance',
-                line_color='#ff6b6b'
-            ))
-            
-            # Add target line
-            target_values = [90] * len(categories)  # 90% target for all metrics
-            fig.add_trace(go.Scatterpolar(
-                r=target_values,
-                theta=categories,
-                fill='toself',
-                name='Target',
-                line_color='#51cf66',
-                opacity=0.3
-            ))
-            
-            fig.update_layout(
-                polar=dict(
-                    radialaxis=dict(
-                        visible=True,
-                        range=[0, 100]
-                    )
-                ),
-                height=400,
-                margin=dict(t=40, b=40, l=40, r=40)
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("No efficiency metrics available")
-    
-    def _render_productivity_chart(self, data: Dict[str, Any]) -> None:
-        """Render productivity trend chart"""
-        productivity_data = data.get('productivity_trends', self._get_fallback_productivity_trends())
-        
-        if productivity_data:
-            df = pd.DataFrame(productivity_data)
-            
-            # Create multi-line chart
-            fig = go.Figure()
-            
-            for column in df.columns[1:]:  # Skip date column
-                fig.add_trace(go.Scatter(
-                    x=df['date'],
-                    y=df[column],
-                    mode='lines+markers',
-                    name=column,
-                    line=dict(width=3)
-                ))
-            
-            fig.update_layout(
-                height=400,
-                margin=dict(t=40, b=40, l=40, r=40),
-                xaxis_title="Date",
-                yaxis_title="Productivity Index"
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("No productivity trend data available")
-    
-    def _render_kpi_dashboard(self, data: Dict[str, Any]) -> None:
-        """Render KPI dashboard"""
-        kpi_data = data.get('kpi_data', self._get_fallback_kpi_data())
-        
-        # Create KPI cards
-        cols = self.layout.create_columns('third')
-        
-        for i, (kpi_name, kpi_info) in enumerate(kpi_data.items()):
-            with cols[i % 3]:
-                with self.layout.create_card(kpi_name):
-                    current_value = kpi_info.get('current', 0)
-                    target_value = kpi_info.get('target', 100)
-                    unit = kpi_info.get('unit', '%')
-                    
-                    # Calculate progress
-                    progress = (current_value / target_value) * 100 if target_value > 0 else 0
-                    
-                    st.metric(
-                        label=f"Current ({unit})",
-                        value=f"{current_value:.1f}",
-                        delta=f"Target: {target_value:.1f}"
-                    )
-                    
-                    # Progress bar
-                    st.progress(min(progress / 100, 1.0))
-                    st.markdown(f"Progress: {progress:.1f}%")
-    
-    def _render_trend_analysis(self, data: Dict[str, Any]) -> None:
-        """Render trend analysis section"""
+    def render_cargo_statistics_tab(self, data: dict) -> None:
+        """Render the cargo statistics tab"""
+        render_analytics_view(data, ['cargo_statistics'])
+
+    def render_performance_metrics_tab(self, data: dict) -> None:
+        """Render the performance metrics tab"""
+        render_analytics_view(data, ['performance_metrics'])
+
+    def render_trend_analysis_tab(self, data: dict) -> None:
+        """Render the trend analysis tab"""
         self.layout.add_spacing('md')
         
         with self.layout.create_card("📈 Trend Analysis"):
@@ -380,7 +76,15 @@ class AnalyticsPage:
             
             # Comparative analysis
             self._render_comparative_analysis(data)
-    
+
+    def render_forecasting_tab(self, data: dict) -> None:
+        """Render the forecasting tab"""
+        self._render_forecasting(data)
+
+    def render_weather_impact_tab(self, data: dict) -> None:
+        """Render the weather impact analysis tab"""
+        render_weather_impact_analysis(data)
+
     def _render_throughput_trends(self, data: Dict[str, Any]) -> None:
         """Render throughput trends chart"""
         throughput_trends = data.get('throughput_trends', self._get_fallback_throughput_trends())
@@ -459,7 +163,7 @@ class AnalyticsPage:
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No comparative analysis data available")
-    
+
     def _render_forecasting(self, data: Dict[str, Any]) -> None:
         """Render forecasting section"""
         self.layout.add_spacing('md')
@@ -716,3 +420,122 @@ class AnalyticsPage:
 def create_analytics_page(layout_manager: LayoutManager) -> AnalyticsPage:
     """Factory function to create analytics page"""
     return AnalyticsPage(layout_manager)
+
+    def _render_cargo_statistics(self, data: dict) -> None:
+        """Render cargo statistics and visualizations."""
+        st.header("📦 Cargo Analytics")
+        
+        cargo_data = data.get('cargo_volume', pd.DataFrame())
+        
+        if cargo_data.empty:
+            st.warning("No cargo data available.")
+            return
+
+        with self.layout.create_card("📦 Cargo Overview"):
+            total_cargo = cargo_data['Actual Tonnage'].sum()
+            avg_tonnage = cargo_data['Actual Tonnage'].mean()
+            
+            col1, col2 = self.layout.create_columns('half')
+            
+            with col1:
+                st.metric("Total Cargo Handled", f"{total_cargo:,.0f} tons")
+            
+            with col2:
+                st.metric("Average Tonnage per Vessel", f"{avg_tonnage:,.2f} tons")
+
+            self.layout.add_spacing()
+
+            fig = px.bar(
+                cargo_data,
+                x='Date',
+                y='Actual Tonnage',
+                title='Daily Cargo Volume',
+                labels={'Actual Tonnage': 'Tonnage (tons)'}
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+    def _render_vessel_analytics(self, data: dict) -> None:
+        """Render vessel-related analytics."""
+        vessel_data = data.get('vessel_movements', pd.DataFrame())
+        
+        if vessel_data.empty:
+            st.warning("No vessel movement data available.")
+            return
+
+        with self.layout.create_card("⚓ Vessel Analytics"):
+            total_movements = len(vessel_data)
+            avg_turnaround = vessel_data['Turnaround Time (hours)'].mean()
+            
+            col1, col2 = self.layout.create_columns('half')
+            
+            with col1:
+                st.metric("Total Vessel Movements", f"{total_movements}")
+            
+            with col2:
+                st.metric("Average Turnaround Time", f"{avg_turnaround:.2f} hours")
+
+            self.layout.add_spacing()
+
+            turnaround_fig = px.histogram(
+                vessel_data,
+                x='Turnaround Time (hours)',
+                title='Distribution of Vessel Turnaround Time',
+                nbins=20
+            )
+            st.plotly_chart(turnaround_fig, use_container_width=True)
+
+    def _render_berth_occupancy(self, data: dict) -> None:
+        """Render berth occupancy analytics."""
+        berth_data = data.get('berth_occupancy', pd.DataFrame())
+        
+        if berth_data.empty:
+            st.warning("No berth occupancy data available.")
+            return
+
+        with self.layout.create_card("📊 Berth Occupancy"):
+            avg_occupancy = berth_data['Occupancy Rate'].mean() * 100
+            
+            st.metric("Average Berth Occupancy", f"{avg_occupancy:.2f}%")
+
+            self.layout.add_spacing()
+
+            occupancy_fig = px.line(
+                berth_data,
+                x='Date',
+                y='Occupancy Rate',
+                title='Berth Occupancy Over Time',
+                labels={'Occupancy Rate': 'Occupancy (%)'}
+            )
+            st.plotly_chart(occupancy_fig, use_container_width=True)
+
+    def _render_environmental_impact(self, data: dict) -> None:
+        """Render environmental impact section"""
+        self.layout.add_spacing('md')
+        
+        with self.layout.create_card("🌍 Environmental Impact"):
+            # Environmental controls
+            cols = st.columns(2)
+            
+            with cols[0]:
+                emission_type = st.selectbox(
+                    "Emission Type",
+                    options=['CO2', 'SOx', 'NOx'],
+                    key="emission_type"
+                )
+            
+            with cols[1]:
+                env_time_period = st.selectbox(
+                    "Time Period",
+                    options=['Last 30 Days', 'Last 90 Days', 'Last Year'],
+                    key="env_time_period"
+                )
+        
+        self.layout.add_spacing('md')
+        
+        # Environmental visualization
+        self._render_environmental_chart(data, emission_type, env_time_period)
+        
+        self.layout.add_spacing('lg')
+        
+        # Environmental insights
+        self._render_environmental_insights(data)

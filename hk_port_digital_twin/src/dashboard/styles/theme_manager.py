@@ -611,6 +611,22 @@ class ThemeManager:
         """Get list of available theme names"""
         return list(self.themes.keys())
     
+    def get_current_theme(self) -> str:
+        """Get the current theme name"""
+        return self.current_theme
+    
+    def get_available_themes(self) -> list:
+        """Get list of available theme names (alias for compatibility)"""
+        return self.get_available_theme_names()
+    
+    def set_theme(self, theme_name: str) -> None:
+        """Set the current theme"""
+        if theme_name in self.themes:
+            self.current_theme = theme_name
+            st.session_state.current_theme = theme_name
+            # Apply the theme immediately
+            self.apply_theme(theme_name)
+    
     def get_theme_info(self, theme_name: str) -> Dict[str, Any]:
         """Get theme information"""
         return self.themes.get(theme_name, {})

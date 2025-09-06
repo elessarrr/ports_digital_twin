@@ -113,15 +113,15 @@ class ScenariosPage:
                     
                     with col3:
                         if scenario['progress'] > 0:
-                            st.progress(scenario['progress'] / 100)
+                            # Ensure progress value stays within valid range [0.0, 1.0]
+                            progress_value = min(1.0, max(0.0, scenario['progress'] / 100))
+                            st.progress(progress_value)
                             st.caption(f"{scenario['progress']}%")
                     
                     with col4:
                         st.write(scenario['eta'])
                     
                     st.divider()
-    
-
     
     def _render_scenario_comparison(self, data: Dict[str, Any]) -> None:
         """Render scenario comparison section"""
@@ -167,7 +167,6 @@ class ScenariosPage:
                 )
                 fig_efficiency.update_layout(height=400)
                 st.plotly_chart(fig_efficiency, use_container_width=True)
-    
 
 
 def create_scenarios_page(layout_manager: LayoutManager) -> ScenariosPage:

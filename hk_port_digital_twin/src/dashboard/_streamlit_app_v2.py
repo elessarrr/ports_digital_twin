@@ -1,10 +1,10 @@
 import streamlit as st
 from components.navigation import NavigationFramework
 from pages.dashboard_page import DashboardPage
-from pages.operations_page import OperationsPage
-from pages.simulation_page import SimulationPage
-from pages.analysis_page import AnalysisPage
-from pages.settings_page import SettingsPage
+from pages._operations_page import OperationsPage
+from pages._simulation_page import SimulationPage
+from pages._analysis_page import AnalysisPage
+from pages._settings_page import SettingsPage
 
 class MainApp:
     def __init__(self):

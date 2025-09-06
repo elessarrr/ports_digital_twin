@@ -1,31 +1,24 @@
 import streamlit as st
 import pandas as pd
-from ...utils.data_loader import load_container_throughput, get_enhanced_cargo_analysis
 
-def render_kpi_summary():
+def render_executive_summary(data):
     """
-    Renders a summary of Key Performance Indicators (KPIs).
-
-    This function loads container throughput data and enhanced cargo analysis 
-    to display critical metrics such as total container throughput, year-over-year 
-    growth, and trend analysis for different cargo types. It is designed to 
-    provide a high-level overview of the port's performance on the main dashboard.
+    Renders the executive summary view with key performance indicators.
     """
-    st.subheader("Key Performance Indicators")
+    st.header("Executive Summary")
+    st.markdown("High-level overview of port performance and key metrics.")
 
-    # Load data
-    container_throughput = load_container_throughput()
-    enhanced_analysis = get_enhanced_cargo_analysis()
+    container_throughput = data.get('container_throughput')
+    enhanced_analysis = data.get('enhanced_analysis')
 
-    if not container_throughput.empty:
+    if container_throughput is not None and not container_throughput.empty:
         latest_data = container_throughput.iloc[-1]
-        previous_data = container_throughput.iloc[-2]
-
+        
         col1, col2, col3 = st.columns(3)
 
         # KPI: Total Container Throughput
-        total_teus = latest_data['total_teus']
-        yoy_change = latest_data['total_yoy_change']
+        total_teus = latest_data.get('total_teus', 0)
+        yoy_change = latest_data.get('total_yoy_change', 0)
         col1.metric(
             label="Total Container Throughput (x1000 TEUs)",
             value=f"{total_teus:,.0f}",
@@ -33,17 +26,17 @@ def render_kpi_summary():
         )
 
         # KPI: Seaborne vs. River
-        seaborne_teus = latest_data['seaborne_teus']
-        river_teus = latest_data['river_teus']
+        seaborne_teus = latest_data.get('seaborne_teus', 0)
+        river_teus = latest_data.get('river_teus', 0)
         col2.metric(
             label="Seaborne Throughput (x1000 TEUs)",
             value=f"{seaborne_teus:,.0f}",
-            delta=f"{latest_data['seaborne_yoy_change']:.2f}%"
+            delta=f"{latest_data.get('seaborne_yoy_change', 0):.2f}%"
         )
         col3.metric(
             label="River Throughput (x1000 TEUs)",
             value=f"{river_teus:,.0f}",
-            delta=f"{latest_data['river_yoy_change']:.2f}%"
+            delta=f"{latest_data.get('river_yoy_change', 0):.2f}%"
         )
 
     if enhanced_analysis and 'trend_analysis' in enhanced_analysis:
@@ -74,3 +67,5 @@ def render_kpi_summary():
                 - Trend: {transhipment_trend.get('trend_direction', 'N/A')}
                 - CAGR: {transhipment_trend.get('cagr', 0):.2f}%
                 """)
+
+    st.markdown("---")

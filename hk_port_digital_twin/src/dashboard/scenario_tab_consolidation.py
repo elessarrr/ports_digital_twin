@@ -164,9 +164,7 @@ class ConsolidatedScenariosTab:
         if 'section_anchors' not in st.session_state:
             st.session_state.section_anchors = {}
             
-        # Section data cache
-        if 'section_data_cache' not in st.session_state:
-            st.session_state.section_data_cache = {}
+
     
     def render(self) -> None:
         """Render the consolidated scenarios tab (legacy method for backward compatibility)."""

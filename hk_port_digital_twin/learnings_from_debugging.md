@@ -123,3 +123,49 @@ Added comprehensive cargo-specific parameters for each scenario:
 - Implement historical trend analysis
 - Add scenario comparison features
 - Include confidence intervals for forecasted values
+
+## Error 5: TypeError - Missing Required Positional Argument 'data'
+
+### Symptom
+- **Error**: `TypeError: render() missing 1 required positional argument: 'data'`
+- **Location**: `/Users/Bhavesh/Documents/GitHub/ports_digital_twin/hk_port_digital_twin/src/dashboard/main_app.py`, line 202
+- **Context**: Error occurred when trying to render the settings page in the Streamlit dashboard.
+
+### Root Cause
+- **Function Signature Mismatch**: The `SettingsPage.render()` method was defined to accept a `data` parameter, but in `main_app.py` it was being called without any arguments.
+- **Inconsistent Page Interface**: Different pages had different render method signatures - some required data, others didn't, leading to inconsistent handling in the main app.
+
+### Resolution
+1. **Updated Main App Logic**: Modified `main_app.py` to consistently pass the `data` parameter to all page render methods, removing the special case for settings page.
+   
+   ```python
+   # Before (problematic)
+   if current_page == 'monitoring':
+       page_to_render.render(data, self.theme_manager)
+   elif current_page == 'settings':
+       page_to_render.render()  # Missing data parameter
+   else:
+       page_to_render.render(data)
+   
+   # After (fixed)
+   if current_page == 'monitoring':
+       page_to_render.render(data, self.theme_manager)
+   else:
+       page_to_render.render(data)  # All pages now receive data
+   ```
+
+2. **Verified Page Interface Consistency**: Confirmed that all page classes expect a `data` parameter in their render methods.
+
+### Key Learnings
+
+1. **Function Signature Consistency**: Always ensure that function signatures match their usage across the codebase. When modifying function signatures, update all call sites accordingly.
+
+2. **Optional Parameters**: Use optional parameters with default values to maintain backward compatibility when extending function signatures.
+
+3. **Conditional Logic**: Implement conditional rendering logic to handle different view types or configurations gracefully.
+
+4. **Error Analysis**: When encountering TypeError related to function arguments, examine both the function definition and all call sites to identify mismatches.
+
+5. **Code Search**: Use comprehensive code search to identify all instances of function calls that might be affected by signature changes.
+
+6. **Interface Consistency**: Maintain consistent interfaces across similar components (like page classes) to avoid special case handling that can lead to errors.
