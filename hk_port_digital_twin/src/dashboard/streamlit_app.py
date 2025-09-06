@@ -12,6 +12,14 @@ import simpy
 # Use Path for more robust path handling in cloud environments
 from pathlib import Path
 
+# Import new modular dashboard components
+try:
+    from main_app import PortDashboardApp
+    NEW_DASHBOARD_AVAILABLE = True
+except ImportError:
+    NEW_DASHBOARD_AVAILABLE = False
+    PortDashboardApp = None
+
 def find_project_root(marker_file='streamlit_app.py'):
     """Find the project root by searching for a marker file."""
     current_path = Path(__file__).resolve()
@@ -396,7 +404,29 @@ def main():
         initial_sidebar_state="expanded"
     )
 
-    # Initialize session state
+    # Dashboard interface selector
+    if NEW_DASHBOARD_AVAILABLE:
+        with st.sidebar:
+            st.markdown("---")
+            dashboard_mode = st.radio(
+                "🎛️ Dashboard Interface",
+                options=["Legacy Dashboard", "New Modular Dashboard"],
+                index=1,
+                help="Choose between the original dashboard and the new improved interface"
+            )
+            
+            if dashboard_mode == "New Modular Dashboard":
+                st.markdown("---")
+                # Run the new modular dashboard
+                try:
+                    app = PortDashboardApp()
+                    app.run()
+                    return
+                except Exception as e:
+                    st.error(f"Error loading new dashboard: {str(e)}")
+                    st.info("Falling back to legacy dashboard...")
+    
+    # Initialize session state for legacy dashboard
     initialize_session_state()
 
     # --- Sidebar ---
