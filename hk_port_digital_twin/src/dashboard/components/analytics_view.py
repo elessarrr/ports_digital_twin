@@ -46,19 +46,21 @@ def _render_cargo_statistics(data):
         
         with col1:
             total_throughput = key_metrics.get('total_throughput_2023', 0)
+            growth_rate = key_metrics.get('annual_growth_rate', 0)
             st.metric(
                 "Total Throughput", 
-                f"{total_throughput:,.0f}" if total_throughput > 1000 else f"{total_throughput:.1f}",
+                f"{total_throughput:,.0f} tonnes" if total_throughput > 1000 else f"{total_throughput:.1f} tonnes",
+                delta=f"{growth_rate:.1f}% annual growth" if growth_rate != 0 else None,
                 help="Total port cargo throughput in 2023"
             )
         
         with col2:
-            growth_rate = key_metrics.get('annual_growth_rate', 0)
+            direct_pct = cargo_analysis.get('shipment_type_analysis', {}).get('direct_shipment_2023', {}).get('percentage', 0)
             st.metric(
-                "Annual Growth Rate", 
-                f"{growth_rate:+.1f}%",
-                delta=f"{growth_rate:.1f}%",
-                help="Average annual growth rate (2014-2023)"
+                "Direct Shipment Share", 
+                f"{direct_pct:.1f}%",
+                delta="vs Transhipment cargo",
+                help="Percentage of direct shipment cargo"
             )
         
         with col3:
@@ -70,11 +72,13 @@ def _render_cargo_statistics(data):
             )
         
         with col4:
-            seaborne_ratio = key_metrics.get('seaborne_ratio', 0)
+            waterborne_pct = cargo_analysis.get('transport_mode_analysis', {}).get('waterborne_2023', {}).get('percentage', 0)
+            waterborne_growth = cargo_analysis.get('transport_mode_analysis', {}).get('waterborne_2023', {}).get('growth_rate', 0)
             st.metric(
-                "Seaborne Cargo", 
-                f"{seaborne_ratio:.1%}",
-                help="Percentage of cargo transported by sea"
+                "Waterborne Transport", 
+                f"{waterborne_pct:.1f}%",
+                delta=f"{waterborne_growth:.1f}% annual growth" if waterborne_growth != 0 else None,
+                help="Percentage of cargo transported by water"
             )
         
         # Create tabs for detailed analysis

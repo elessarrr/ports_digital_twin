@@ -381,40 +381,60 @@ def get_cargo_breakdown_analysis() -> Dict[str, Any]:
     if 'Table_1_Eng' in cargo_stats:
         table1 = cargo_stats['Table_1_Eng']
         
-        # Get 2023 data (latest year)
-        analysis['shipment_type_analysis'] = {
-            'direct_shipment_2023': {
-                'volume': table1.loc[table1['Shipment_type'] == 'Direct shipment cargo', 'Port_cargo_throughput_2023'].iloc[0] if len(table1) > 0 else 0,
-                'percentage': table1.loc[table1['Shipment_type'] == 'Direct shipment cargo', 'Port_cargo_throughput_percentage_distribution_2023'].iloc[0] if len(table1) > 0 else 0
-            },
-            'transhipment_2023': {
-                'volume': table1.loc[table1['Shipment_type'] == 'Transhipment cargo', 'Port_cargo_throughput_2023'].iloc[0] if len(table1) > 1 else 0,
-                'percentage': table1.loc[table1['Shipment_type'] == 'Transhipment cargo', 'Port_cargo_throughput_percentage_distribution_2023'].iloc[0] if len(table1) > 1 else 0
-            },
-            'total_2023': {
-                'volume': table1.loc[table1['Shipment_type'] == 'Overall', 'Port_cargo_throughput_2023'].iloc[0] if len(table1) > 2 else 0,
-                'growth_rate': table1.loc[table1['Shipment_type'] == 'Overall', 'Port_cargo_throughput_average_annual_rate_of_change_2014_2023'].iloc[0] if len(table1) > 2 else 0
+        # Get 2023 data (latest year) - values are in thousands of tonnes
+        try:
+            direct_row = table1[table1['Shipment_type'] == 'Direct shipment cargo']
+            tranship_row = table1[table1['Shipment_type'] == 'Transhipment cargo']
+            overall_row = table1[table1['Shipment_type'] == 'Overall']
+            
+            analysis['shipment_type_analysis'] = {
+                'direct_shipment_2023': {
+                    'volume': float(direct_row['Port_cargo_throughput_2023'].iloc[0]) * 1000 if len(direct_row) > 0 else 0,  # Convert to tonnes
+                    'percentage': float(direct_row['Port_cargo_throughput_percentage_distribution_2023'].iloc[0]) if len(direct_row) > 0 else 0
+                },
+                'transhipment_2023': {
+                    'volume': float(tranship_row['Port_cargo_throughput_2023'].iloc[0]) * 1000 if len(tranship_row) > 0 else 0,  # Convert to tonnes
+                    'percentage': float(tranship_row['Port_cargo_throughput_percentage_distribution_2023'].iloc[0]) if len(tranship_row) > 0 else 0
+                },
+                'total_2023': {
+                    'volume': float(overall_row['Port_cargo_throughput_2023'].iloc[0]) * 1000 if len(overall_row) > 0 else 0,  # Convert to tonnes
+                    'growth_rate': float(overall_row['Port_cargo_throughput_average_annual_rate_of_change_2014_2023'].iloc[0]) if len(overall_row) > 0 else 0
+                }
             }
-        }
+        except (IndexError, KeyError, ValueError) as e:
+            logger.error(f"Error parsing shipment type data: {e}")
+            analysis['shipment_type_analysis'] = {}
     
     # Analyze transport modes (Table 2)
     if 'Table_2_Eng' in cargo_stats:
         table2 = cargo_stats['Table_2_Eng']
         
-        analysis['transport_mode_analysis'] = {
-            'waterborne_2023': {
-                'volume': table2.loc[table2['Transport_mode'] == 'Waterborne', 'Port_cargo_throughput_2023'].iloc[0] if len(table2) > 0 else 0,
-                'percentage': table2.loc[table2['Transport_mode'] == 'Waterborne', 'Port_cargo_throughput_percentage_distribution_2023'].iloc[0] if len(table2) > 0 else 0
-            },
-            'seaborne_2023': {
-                'volume': table2.loc[table2['Transport_mode'] == 'Seaborne', 'Port_cargo_throughput_2023'].iloc[0] if len(table2) > 1 else 0,
-                'percentage': table2.loc[table2['Transport_mode'] == 'Seaborne', 'Port_cargo_throughput_percentage_distribution_2023'].iloc[0] if len(table2) > 1 else 0
-            },
-            'river_2023': {
-                'volume': table2.loc[table2['Transport_mode'] == 'River', 'Port_cargo_throughput_2023'].iloc[0] if len(table2) > 2 else 0,
-                'percentage': table2.loc[table2['Transport_mode'] == 'River', 'Port_cargo_throughput_percentage_distribution_2023'].iloc[0] if len(table2) > 2 else 0
+        # Get 2023 data (latest year) - values are in thousands of tonnes
+        try:
+            waterborne_row = table2[table2['Transport_mode'] == 'Waterborne']
+            seaborne_row = table2[table2['Transport_mode'] == 'Seaborne']
+            river_row = table2[table2['Transport_mode'] == 'River']
+            
+            analysis['transport_mode_analysis'] = {
+                'waterborne_2023': {
+                    'volume': float(waterborne_row['Port_cargo_throughput_2023'].iloc[0]) * 1000 if len(waterborne_row) > 0 else 0,  # Convert to tonnes
+                    'percentage': float(waterborne_row['Port_cargo_throughput_percentage_distribution_2023'].iloc[0]) if len(waterborne_row) > 0 else 0,
+                    'growth_rate': float(waterborne_row['Port_cargo_throughput_average_annual_rate_of_change_2014_2023'].iloc[0]) if len(waterborne_row) > 0 else 0
+                },
+                'seaborne_2023': {
+                    'volume': float(seaborne_row['Port_cargo_throughput_2023'].iloc[0]) * 1000 if len(seaborne_row) > 0 else 0,  # Convert to tonnes
+                    'percentage': float(seaborne_row['Port_cargo_throughput_percentage_distribution_2023'].iloc[0]) if len(seaborne_row) > 0 else 0,
+                    'growth_rate': float(seaborne_row['Port_cargo_throughput_average_annual_rate_of_change_2014_2023'].iloc[0]) if len(seaborne_row) > 0 else 0
+                },
+                'river_2023': {
+                    'volume': float(river_row['Port_cargo_throughput_2023'].iloc[0]) * 1000 if len(river_row) > 0 else 0,  # Convert to tonnes
+                    'percentage': float(river_row['Port_cargo_throughput_percentage_distribution_2023'].iloc[0]) if len(river_row) > 0 else 0,
+                    'growth_rate': float(river_row['Port_cargo_throughput_average_annual_rate_of_change_2014_2023'].iloc[0]) if len(river_row) > 0 else 0
+                }
             }
-        }
+        except (IndexError, KeyError, ValueError) as e:
+            logger.error(f"Error parsing transport mode data: {e}")
+            analysis['transport_mode_analysis'] = {}
     
     # Calculate key metrics
     ship_analysis = analysis['shipment_type_analysis']
