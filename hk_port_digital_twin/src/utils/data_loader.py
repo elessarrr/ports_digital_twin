@@ -1240,7 +1240,7 @@ def get_comprehensive_vessel_analysis() -> Dict[str, any]:
         Dict: Comprehensive vessel analytics including trends and patterns
     """
     cache_key = "comprehensive_vessel_analysis"
-    if is_cache_valid(cache_key):
+    if _is_cache_valid(cache_key):
         return cache.get(cache_key)
 
     try:

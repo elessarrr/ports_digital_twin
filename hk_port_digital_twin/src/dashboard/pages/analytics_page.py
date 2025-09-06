@@ -6,8 +6,9 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 import numpy as np
 
-from components.layout import LayoutManager
-from styles.theme_manager import ThemeManager
+from ..components.layout import LayoutManager
+from ..styles.theme_manager import ThemeManager
+from ..components.weather_impact_analysis import render_weather_impact_analysis
 
 class AnalyticsPage:
     """Analytics page with cargo statistics, performance metrics, and data visualization"""
@@ -28,8 +29,8 @@ class AnalyticsPage:
         )
         
         # Create tabs for different analytics views
-        tab_names = ["Cargo Statistics", "Performance Metrics", "Trend Analysis", "Forecasting"]
-        tab_icons = ["📦", "⚡", "📈", "🔮"]
+        tab_names = ["Cargo Statistics", "Performance Metrics", "Trend Analysis", "Forecasting", "Weather Impact"]
+        tab_icons = ["📦", "⚡", "📈", "🔮", "🌦️"]
         
         tabs = self.layout.create_tabs_container(tab_names, tab_icons)
         
@@ -44,6 +45,9 @@ class AnalyticsPage:
         
         with tabs[3]:
             self._render_forecasting(data)
+
+        with tabs[4]:
+            render_weather_impact_analysis()
     
     def _render_cargo_statistics(self, data: Dict[str, Any]) -> None:
         """Render cargo statistics section"""

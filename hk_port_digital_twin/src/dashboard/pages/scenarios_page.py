@@ -4,21 +4,14 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, List
-import sys
-import os
-from pathlib import Path
-
-# Add project root to path for imports
-project_root = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
-
-from components.layout import LayoutManager
-from styles.theme_manager import ThemeManager
+from ..components.layout import LayoutManager
+from ..styles.theme_manager import ThemeManager
+from ..components.scenario_editor import render_scenario_editor
 
 # Import scenario management components
 try:
-    from src.scenarios.scenario_manager import ScenarioManager, create_scenario_manager
-    from src.scenarios.scenario_parameters import (
+    from ...scenarios.scenario_manager import ScenarioManager, create_scenario_manager
+    from ...scenarios.scenario_parameters import (
         ScenarioParameters,
         ALL_SCENARIOS,
         SCENARIO_ALIASES,
@@ -62,55 +55,17 @@ class ScenariosPage:
         )
         
         # Render main sections
-        self._render_scenario_controls(data)
+        self._render_scenario_editor(data)
         self.layout.add_spacing('lg')
         
         self._render_active_scenarios(data)
         self.layout.add_spacing('lg')
         
         self._render_scenario_comparison(data)
-    
-    def _render_scenario_controls(self, data: Dict[str, Any]) -> None:
-        """Render scenario control interface"""
-        with self.layout.create_card("🎯 Scenario Controls"):
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                # Scenario selection dropdown
-                scenarios = [
-                    "Current State",
-                    "Peak Season", 
-                    "Weather Disruption",
-                    "Equipment Maintenance",
-                    "Custom Scenario"
-                ]
-                
-                selected_scenario = st.selectbox(
-                    "Select Scenario",
-                    scenarios,
-                    help="Choose a predefined scenario or create a custom one"
-                )
-                
-                # Scenario description
-                scenario_descriptions = {
-                    "Current State": "Real-time port operations with current parameters",
-                    "Peak Season": "High traffic scenario with increased vessel arrivals",
-                    "Weather Disruption": "Operations during adverse weather conditions",
-                    "Equipment Maintenance": "Reduced capacity due to equipment maintenance",
-                    "Custom Scenario": "User-defined parameters and conditions"
-                }
-                
-                st.info(scenario_descriptions.get(selected_scenario, "No description available"))
-            
-            with col2:
-                # Simulation controls
-                st.markdown("**Simulation Parameters**")
-                
-                duration = st.slider("Simulation Duration (hours)", 1, 168, 24)
-                speed = st.selectbox("Simulation Speed", ["1x", "2x", "5x", "10x"])
-                
-                if st.button("🚀 Start Simulation", type="primary"):
-                    st.success(f"Starting {selected_scenario} simulation for {duration} hours at {speed} speed")
+
+    def _render_scenario_editor(self, data: Dict[str, Any]) -> None:
+        """Render scenario editor component"""
+        render_scenario_editor()
     
     def _render_active_scenarios(self, data: Dict[str, Any]) -> None:
         """Render active scenarios section"""

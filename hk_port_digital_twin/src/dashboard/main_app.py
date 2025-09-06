@@ -1,4 +1,5 @@
 import streamlit as st
+from datetime import datetime
 import sys
 import os
 from pathlib import Path
@@ -8,15 +9,15 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import components
-from components.navigation import NavigationFramework
-from components.layout import LayoutManager
-from components.user_preferences import UserPreferences
-from styles.theme_manager import ThemeManager
-from pages.dashboard_page import DashboardPage
-from pages.operations_page import OperationsPage
-from pages.analytics_page import AnalyticsPage
-from pages.scenarios_page import ScenariosPage
-from pages.settings_page import SettingsPage
+from .components.navigation import NavigationFramework
+from .components.layout import LayoutManager
+from .components.user_preferences import UserPreferences
+from .styles.theme_manager import ThemeManager
+from .pages.dashboard_page import DashboardPage
+from .pages.operations_page import OperationsPage
+from .pages.analytics_page import AnalyticsPage
+from .pages.scenarios_page import ScenariosPage
+from .pages.settings_page import SettingsPage
 
 # Import data utilities
 try:
@@ -40,11 +41,11 @@ class PortDashboardApp:
         
         # Initialize pages
         self.pages = {
-            'dashboard': DashboardPage(self.layout),
-            'operations': OperationsPage(self.layout),
+            'dashboard': DashboardPage(),
+            'operations': OperationsPage(),
             'analytics': AnalyticsPage(self.layout),
             'scenarios': ScenariosPage(self.layout),
-            'settings': SettingsPage(self.layout)
+            'settings': SettingsPage()
         }
         
         self._initialize_session_state()
