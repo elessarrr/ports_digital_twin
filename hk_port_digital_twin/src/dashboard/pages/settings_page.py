@@ -6,13 +6,14 @@ import os
 
 from components.layout import LayoutManager
 from styles.theme_manager import ThemeManager
+from components.user_preferences import UserPreferences
 
 class SettingsPage:
     """Settings page for user preferences, system configuration, and theme settings"""
     
     def __init__(self, layout_manager: LayoutManager):
         self.layout = layout_manager
-        self.settings_file = "dashboard_settings.json"
+        self.user_preferences = UserPreferences()
     
     def render(self, data: Dict[str, Any]) -> None:
         """Render the settings page"""
@@ -65,91 +66,90 @@ class SettingsPage:
         
         # Load current settings
         current_settings = self._load_settings()
+        general_settings = current_settings.get('settings_general', {})
         
-        # User preferences
-        st.markdown("#### User Preferences")
+        with self.layout.create_card("User Preferences"):
         
-        cols = self.layout.create_columns('half')
-        
-        with cols[0]:
-            # Default page
-            default_page = st.selectbox(
-                "Default Landing Page",
-                options=["Dashboard", "Operations", "Analytics", "Settings"],
-                index=self._get_option_index(
-                    ["Dashboard", "Operations", "Analytics", "Settings"],
-                    current_settings.get('default_page', 'Dashboard')
-                ),
-                key="default_page",
-                help="Page to display when opening the dashboard"
-            )
+            cols = self.layout.create_columns('half')
             
-            # Auto-refresh interval
-            refresh_interval = st.selectbox(
-                "Auto-refresh Interval",
-                options=["Off", "30 seconds", "1 minute", "5 minutes", "10 minutes"],
-                index=self._get_option_index(
-                    ["Off", "30 seconds", "1 minute", "5 minutes", "10 minutes"],
-                    current_settings.get('refresh_interval', '5 minutes')
-                ),
-                key="refresh_interval",
-                help="How often to automatically refresh data"
-            )
-        
-        with cols[1]:
-            # Language
-            language = st.selectbox(
-                "Language",
-                options=["English", "中文", "Español", "Français"],
-                index=self._get_option_index(
-                    ["English", "中文", "Español", "Français"],
-                    current_settings.get('language', 'English')
-                ),
-                key="language",
-                help="Dashboard display language"
-            )
+            with cols[0]:
+                # Default page
+                default_page = st.selectbox(
+                    "Default Landing Page",
+                    options=["Dashboard", "Operations", "Analytics", "Settings"],
+                    index=self._get_option_index(
+                        ["Dashboard", "Operations", "Analytics", "Settings"],
+                        general_settings.get('default_page', 'Dashboard')
+                    ),
+                    key="default_page",
+                    help="Page to display when opening the dashboard"
+                )
+                
+                # Auto-refresh interval
+                refresh_interval = st.selectbox(
+                    "Auto-refresh Interval",
+                    options=["Off", "30 seconds", "1 minute", "5 minutes", "10 minutes"],
+                    index=self._get_option_index(
+                        ["Off", "30 seconds", "1 minute", "5 minutes", "10 minutes"],
+                        general_settings.get('refresh_interval', '5 minutes')
+                    ),
+                    key="refresh_interval",
+                    help="How often to automatically refresh data"
+                )
             
-            # Timezone
-            timezone = st.selectbox(
-                "Timezone",
-                options=["UTC", "Asia/Hong_Kong", "America/New_York", "Europe/London", "Asia/Shanghai"],
-                index=self._get_option_index(
-                    ["UTC", "Asia/Hong_Kong", "America/New_York", "Europe/London", "Asia/Shanghai"],
-                    current_settings.get('timezone', 'Asia/Hong_Kong')
-                ),
-                key="timezone",
-                help="Timezone for displaying dates and times"
-            )
+            with cols[1]:
+                # Language
+                language = st.selectbox(
+                    "Language",
+                    options=["English", "中文", "Español", "Français"],
+                    index=self._get_option_index(
+                        ["English", "中文", "Español", "Français"],
+                        general_settings.get('language', 'English')
+                    ),
+                    key="language",
+                    help="Dashboard display language"
+                )
+                
+                # Timezone
+                timezone = st.selectbox(
+                    "Timezone",
+                    options=["UTC", "Asia/Hong_Kong", "America/New_York", "Europe/London", "Asia/Shanghai"],
+                    index=self._get_option_index(
+                        ["UTC", "Asia/Hong_Kong", "America/New_York", "Europe/London", "Asia/Shanghai"],
+                        general_settings.get('timezone', 'Asia/Hong_Kong')
+                    ),
+                    key="timezone",
+                    help="Timezone for displaying dates and times"
+                )
         
         self.layout.add_spacing('md')
         
-        # Performance settings
-        st.markdown("#### Performance Settings")
+        with self.layout.create_card("Performance Settings"):
         
-        cols = self.layout.create_columns('half')
-        
-        with cols[0]:
-            # Cache duration
-            cache_duration = st.slider(
-                "Data Cache Duration (minutes)",
-                min_value=1,
-                max_value=60,
-                value=current_settings.get('cache_duration', 10),
-                key="cache_duration",
-                help="How long to cache data before refreshing"
-            )
-        
-        with cols[1]:
-            # Max data points
-            max_data_points = st.slider(
-                "Max Chart Data Points",
-                min_value=50,
-                max_value=1000,
-                value=current_settings.get('max_data_points', 200),
-                step=50,
-                key="max_data_points",
-                help="Maximum number of data points to display in charts"
-            )
+            cols = self.layout.create_columns('half')
+            
+            with cols[0]:
+                # Cache duration
+                cache_duration = st.slider(
+                    "Data Cache Duration (minutes)",
+                    min_value=1,
+                    max_value=60,
+                    value=general_settings.get('cache_duration', 10),
+                    key="cache_duration",
+                    help="How long to cache data before refreshing"
+                )
+            
+            with cols[1]:
+                # Max data points
+                max_data_points = st.slider(
+                    "Max Chart Data Points",
+                    min_value=50,
+                    max_value=1000,
+                    value=general_settings.get('max_data_points', 200),
+                    step=50,
+                    key="max_data_points",
+                    help="Maximum number of data points to display in charts"
+                )
         
         # Update session state
         self._update_session_state('general', {
@@ -168,102 +168,101 @@ class SettingsPage:
         st.markdown("### 🎨 Display Settings")
         
         current_settings = self._load_settings()
+        display_settings = current_settings.get('settings_display', {})
         
-        # Theme settings
-        st.markdown("#### Theme & Appearance")
-        
-        cols = self.layout.create_columns('half')
-        
-        with cols[0]:
-            # Theme
-            theme = st.selectbox(
-                "Theme",
-                options=["Light", "Dark", "Auto"],
-                index=self._get_option_index(
-                    ["Light", "Dark", "Auto"],
-                    current_settings.get('theme', 'Light')
-                ),
-                key="theme",
-                help="Dashboard color theme"
-            )
+        with self.layout.create_card("Theme & Appearance"):
             
-            # Color scheme
-            color_scheme = st.selectbox(
-                "Color Scheme",
-                options=["Default", "Blue", "Green", "Purple", "Orange"],
-                index=self._get_option_index(
-                    ["Default", "Blue", "Green", "Purple", "Orange"],
-                    current_settings.get('color_scheme', 'Default')
-                ),
-                key="color_scheme",
-                help="Primary color scheme for charts and UI elements"
-            )
-        
-        with cols[1]:
-            # Font size
-            font_size = st.selectbox(
-                "Font Size",
-                options=["Small", "Medium", "Large", "Extra Large"],
-                index=self._get_option_index(
-                    ["Small", "Medium", "Large", "Extra Large"],
-                    current_settings.get('font_size', 'Medium')
-                ),
-                key="font_size",
-                help="Base font size for the dashboard"
-            )
+            cols = self.layout.create_columns('half')
             
-            # Sidebar width
-            sidebar_width = st.selectbox(
-                "Sidebar Width",
-                options=["Narrow", "Medium", "Wide"],
-                index=self._get_option_index(
-                    ["Narrow", "Medium", "Wide"],
-                    current_settings.get('sidebar_width', 'Medium')
-                ),
-                key="sidebar_width",
-                help="Width of the navigation sidebar"
-            )
+            with cols[0]:
+                # Theme selection
+                theme = st.selectbox(
+                    "Theme",
+                    options=["Light", "Dark", "Auto"],
+                    index=self._get_option_index(
+                        ["Light", "Dark", "Auto"],
+                        display_settings.get('theme', 'Light')
+                    ),
+                    key="theme",
+                    help="Choose the dashboard's color theme"
+                )
+                
+                # Color scheme
+                color_scheme = st.selectbox(
+                    "Color Scheme",
+                    options=["Default", "Blue", "Green", "Purple", "Orange"],
+                    index=self._get_option_index(
+                        ["Default", "Blue", "Green", "Purple", "Orange"],
+                        display_settings.get('color_scheme', 'Default')
+                    ),
+                    key="color_scheme",
+                    help="Primary color scheme for charts and UI elements"
+                )
+            
+            with cols[1]:
+                # Font size
+                font_size = st.selectbox(
+                    "Font Size",
+                    options=["Small", "Medium", "Large", "Extra Large"],
+                    index=self._get_option_index(
+                        ["Small", "Medium", "Large", "Extra Large"],
+                        display_settings.get('font_size', 'Medium')
+                    ),
+                    key="font_size",
+                    help="Base font size for the dashboard"
+                )
+                
+                # Sidebar width
+                sidebar_width = st.selectbox(
+                    "Sidebar Width",
+                    options=["Narrow", "Medium", "Wide"],
+                    index=self._get_option_index(
+                        ["Narrow", "Medium", "Wide"],
+                        display_settings.get('sidebar_width', 'Medium')
+                    ),
+                    key="sidebar_width",
+                    help="Width of the navigation sidebar"
+                )
         
         self.layout.add_spacing('md')
         
-        # Layout settings
-        st.markdown("#### Layout Settings")
+        with self.layout.create_card("Layout Settings"):
         
-        cols = self.layout.create_columns('half')
-        
-        with cols[0]:
-            # Compact mode
-            compact_mode = st.checkbox(
-                "Compact Mode",
-                value=current_settings.get('compact_mode', False),
-                key="compact_mode",
-                help="Reduce spacing and padding for more content"
-            )
+            cols = self.layout.create_columns('half')
             
-            # Show grid lines
-            show_grid_lines = st.checkbox(
-                "Show Grid Lines in Charts",
-                value=current_settings.get('show_grid_lines', True),
-                key="show_grid_lines",
-                help="Display grid lines in charts and graphs"
-            )
-        
-        with cols[1]:
-            # Animation
-            enable_animations = st.checkbox(
-                "Enable Animations",
-                value=current_settings.get('enable_animations', True),
-                key="enable_animations",
-                help="Enable smooth transitions and animations"
-            )
+            with cols[0]:
+                # Compact mode
+                compact_mode = st.checkbox(
+                    "Compact Mode",
+                    value=display_settings.get('compact_mode', False),
+                    key="compact_mode",
+                    help="Reduce spacing and padding for more content"
+                )
+                
+                # Show grid lines
+                show_grid_lines = st.checkbox(
+                    "Show Grid Lines in Charts",
+                    value=display_settings.get('show_grid_lines', True),
+                    key="show_grid_lines",
+                    help="Display grid lines in charts and graphs"
+                )
             
-            # High contrast
-            high_contrast = st.checkbox(
-                "High Contrast Mode",
-                value=current_settings.get('high_contrast', False),
-                key="high_contrast",
-                help="Increase contrast for better accessibility"
-            )
+            with cols[1]:
+                # Animation
+                enable_animations = st.checkbox(
+                    "Enable Animations",
+                    value=display_settings.get('enable_animations', True),
+                    key="enable_animations",
+                    help="Enable smooth transitions and animations"
+                )
+                
+                # High contrast
+                high_contrast = st.checkbox(
+                    "High Contrast Mode",
+                    value=display_settings.get('high_contrast', False),
+                    key="high_contrast",
+                    help="Increase contrast for better accessibility"
+                )
         
         # Update session state
         self._update_session_state('display', {
@@ -284,66 +283,66 @@ class SettingsPage:
         st.markdown("### 🔔 Notification Settings")
         
         current_settings = self._load_settings()
+        notification_settings = current_settings.get('settings_notifications', {})
         
-        # Alert settings
-        st.markdown("#### Alert Preferences")
+        with self.layout.create_card("Alert Preferences"):
         
-        cols = self.layout.create_columns('half')
-        
-        with cols[0]:
-            # Enable notifications
-            enable_notifications = st.checkbox(
-                "Enable Notifications",
-                value=current_settings.get('enable_notifications', True),
-                key="enable_notifications",
-                help="Receive system notifications and alerts"
-            )
+            cols = self.layout.create_columns('half')
             
-            # Email notifications
-            email_notifications = st.checkbox(
-                "Email Notifications",
-                value=current_settings.get('email_notifications', False),
-                key="email_notifications",
-                help="Receive notifications via email",
-                disabled=not enable_notifications
-            )
+            with cols[0]:
+                # Enable notifications
+                enable_notifications = st.checkbox(
+                    "Enable Notifications",
+                    value=notification_settings.get('enable_notifications', True),
+                    key="enable_notifications",
+                    help="Receive system notifications and alerts"
+                )
+                
+                # Email notifications
+                email_notifications = st.checkbox(
+                    "Email Notifications",
+                    value=notification_settings.get('email_notifications', False),
+                    key="email_notifications",
+                    help="Receive notifications via email",
+                    disabled=not enable_notifications
+                )
+                
+                # Sound alerts
+                sound_alerts = st.checkbox(
+                    "Sound Alerts",
+                    value=notification_settings.get('sound_alerts', True),
+                    key="sound_alerts",
+                    help="Play sound for important alerts",
+                    disabled=not enable_notifications
+                )
             
-            # Sound alerts
-            sound_alerts = st.checkbox(
-                "Sound Alerts",
-                value=current_settings.get('sound_alerts', True),
-                key="sound_alerts",
-                help="Play sound for important alerts",
-                disabled=not enable_notifications
-            )
-        
-        with cols[1]:
-            # Alert types
-            st.markdown("**Alert Types:**")
-            
-            system_alerts = st.checkbox(
-                "System Alerts",
-                value=current_settings.get('system_alerts', True),
-                key="system_alerts",
-                help="Alerts for system status and errors",
-                disabled=not enable_notifications
-            )
-            
-            operational_alerts = st.checkbox(
-                "Operational Alerts",
-                value=current_settings.get('operational_alerts', True),
-                key="operational_alerts",
-                help="Alerts for operational events and thresholds",
-                disabled=not enable_notifications
-            )
-            
-            performance_alerts = st.checkbox(
-                "Performance Alerts",
-                value=current_settings.get('performance_alerts', False),
-                key="performance_alerts",
-                help="Alerts for performance metrics and KPIs",
-                disabled=not enable_notifications
-            )
+            with cols[1]:
+                # Alert types
+                st.markdown("**Alert Types:**")
+                
+                system_alerts = st.checkbox(
+                    "System Alerts",
+                    value=notification_settings.get('system_alerts', True),
+                    key="system_alerts",
+                    help="Alerts for system status and errors",
+                    disabled=not enable_notifications
+                )
+                
+                operational_alerts = st.checkbox(
+                    "Operational Alerts",
+                    value=notification_settings.get('operational_alerts', True),
+                    key="operational_alerts",
+                    help="Alerts for operational events and thresholds",
+                    disabled=not enable_notifications
+                )
+                
+                performance_alerts = st.checkbox(
+                    "Performance Alerts",
+                    value=notification_settings.get('performance_alerts', False),
+                    key="performance_alerts",
+                    help="Alerts for performance metrics and KPIs",
+                    disabled=not enable_notifications
+                )
         
         self.layout.add_spacing('md')
         
@@ -358,7 +357,7 @@ class SettingsPage:
                     "Berth Utilization Alert (%)",
                     min_value=50,
                     max_value=100,
-                    value=current_settings.get('berth_utilization_threshold', 85),
+                    value=notification_settings.get('berth_utilization_threshold', 85),
                     key="berth_utilization_threshold",
                     help="Alert when berth utilization exceeds this percentage"
                 )
@@ -368,7 +367,7 @@ class SettingsPage:
                     "Vessel Queue Alert",
                     min_value=1,
                     max_value=20,
-                    value=current_settings.get('vessel_queue_threshold', 5),
+                    value=notification_settings.get('vessel_queue_threshold', 5),
                     key="vessel_queue_threshold",
                     help="Alert when vessel queue exceeds this number"
                 )
@@ -378,7 +377,7 @@ class SettingsPage:
                     "Efficiency Alert (%)",
                     min_value=50,
                     max_value=100,
-                    value=current_settings.get('efficiency_threshold', 75),
+                    value=notification_settings.get('efficiency_threshold', 75),
                     key="efficiency_threshold",
                     help="Alert when efficiency drops below this percentage"
                 )
@@ -393,167 +392,74 @@ class SettingsPage:
             'system_alerts': system_alerts,
             'operational_alerts': operational_alerts,
             'performance_alerts': performance_alerts,
-            'berth_utilization_threshold': current_settings.get('berth_utilization_threshold', 85) if enable_notifications else 85,
-            'vessel_queue_threshold': current_settings.get('vessel_queue_threshold', 5) if enable_notifications else 5,
-            'efficiency_threshold': current_settings.get('efficiency_threshold', 75) if enable_notifications else 75
+            'berth_utilization_threshold': notification_settings.get('berth_utilization_threshold', 85) if enable_notifications else 85,
+            'vessel_queue_threshold': notification_settings.get('vessel_queue_threshold', 5) if enable_notifications else 5,
+            'efficiency_threshold': notification_settings.get('efficiency_threshold', 75) if enable_notifications else 75
         })
     
     def _render_data_source_settings(self) -> None:
-        """Render data source settings section"""
+        """Render data sources settings section"""
         self.layout.add_spacing('md')
         
-        st.markdown("### 📊 Data Source Settings")
+        st.markdown("### 📊 Data Sources Settings")
         
         current_settings = self._load_settings()
+        data_sources_settings = current_settings.get('settings_data_sources', {})
         
-        # Data connection settings
-        st.markdown("#### Data Connections")
+        with self.layout.create_card("Data Source Configuration"):
         
-        cols = self.layout.create_columns('half')
-        
-        with cols[0]:
-            # Primary data source
-            primary_data_source = st.selectbox(
+            # Data source selection
+            data_source = st.selectbox(
                 "Primary Data Source",
-                options=["Simulation", "Live Database", "API Endpoint", "File Upload"],
+                options=["Real-time API", "Database (Simulation)", "CSV (Static)"],
                 index=self._get_option_index(
-                    ["Simulation", "Live Database", "API Endpoint", "File Upload"],
-                    current_settings.get('primary_data_source', 'Simulation')
+                    ["Real-time API", "Database (Simulation)", "CSV (Static)"],
+                    data_sources_settings.get('primary_data_source', "Database (Simulation)")
                 ),
                 key="primary_data_source",
-                help="Primary source for dashboard data"
+                help="Select the primary source for dashboard data"
             )
             
-            # Update frequency
-            data_update_frequency = st.selectbox(
-                "Data Update Frequency",
-                options=["Real-time", "Every 30 seconds", "Every minute", "Every 5 minutes", "Manual"],
-                index=self._get_option_index(
-                    ["Real-time", "Every 30 seconds", "Every minute", "Every 5 minutes", "Manual"],
-                    current_settings.get('data_update_frequency', 'Every minute')
-                ),
-                key="data_update_frequency",
-                help="How often to fetch new data"
-            )
-        
-        with cols[1]:
-            # Data retention
-            data_retention_days = st.slider(
-                "Data Retention (days)",
-                min_value=7,
-                max_value=365,
-                value=current_settings.get('data_retention_days', 90),
-                key="data_retention_days",
-                help="How long to keep historical data"
-            )
+            self.layout.add_spacing('sm')
             
-            # Enable data validation
-            enable_data_validation = st.checkbox(
-                "Enable Data Validation",
-                value=current_settings.get('enable_data_validation', True),
-                key="enable_data_validation",
-                help="Validate incoming data for accuracy and completeness"
-            )
-        
-        self.layout.add_spacing('md')
-        
-        # API settings (if applicable)
-        if primary_data_source == "API Endpoint":
-            st.markdown("#### API Configuration")
-            
+            # API endpoint
             api_endpoint = st.text_input(
-                "API Endpoint URL",
-                value=current_settings.get('api_endpoint', ''),
+                "API Endpoint",
+                value=data_sources_settings.get('api_endpoint', "https://api.example.com/port-data"),
                 key="api_endpoint",
-                help="URL for the API endpoint"
+                help="URL for the real-time data API",
+                disabled=(data_source != "Real-time API")
             )
             
-            cols = self.layout.create_columns('half')
+            # Database connection string
+            db_connection_string = st.text_input(
+                "Database Connection String",
+                value=data_sources_settings.get('db_connection_string', "postgresql://user:password@host:port/database"),
+                key="db_connection_string",
+                help="Connection string for the simulation database",
+                disabled=(data_source != "Database (Simulation)")
+            )
             
-            with cols[0]:
-                api_key = st.text_input(
-                    "API Key",
-                    value=current_settings.get('api_key', ''),
-                    type="password",
-                    key="api_key",
-                    help="API key for authentication"
-                )
+            self.layout.add_spacing('sm')
             
-            with cols[1]:
-                api_timeout = st.slider(
-                    "API Timeout (seconds)",
-                    min_value=5,
-                    max_value=60,
-                    value=current_settings.get('api_timeout', 30),
-                    key="api_timeout",
-                    help="Timeout for API requests"
-                )
-        
-        # Database settings (if applicable)
-        elif primary_data_source == "Live Database":
-            st.markdown("#### Database Configuration")
-            
-            cols = self.layout.create_columns('half')
-            
-            with cols[0]:
-                db_host = st.text_input(
-                    "Database Host",
-                    value=current_settings.get('db_host', 'localhost'),
-                    key="db_host"
-                )
-                
-                db_port = st.number_input(
-                    "Database Port",
-                    min_value=1,
-                    max_value=65535,
-                    value=current_settings.get('db_port', 5432),
-                    key="db_port"
-                )
-            
-            with cols[1]:
-                db_name = st.text_input(
-                    "Database Name",
-                    value=current_settings.get('db_name', 'port_db'),
-                    key="db_name"
-                )
-                
-                db_username = st.text_input(
-                    "Username",
-                    value=current_settings.get('db_username', ''),
-                    key="db_username"
-                )
-            
-            db_password = st.text_input(
-                "Password",
-                value=current_settings.get('db_password', ''),
-                type="password",
-                key="db_password"
+            # Data refresh interval
+            refresh_interval = st.slider(
+                "Data Refresh Interval (seconds)",
+                min_value=10,
+                max_value=300,
+                value=data_sources_settings.get('refresh_interval', 60),
+                step=10,
+                key="refresh_interval",
+                help="How often to refresh data from the source"
             )
         
         # Update session state
-        data_settings = {
-            'primary_data_source': primary_data_source,
-            'data_update_frequency': data_update_frequency,
-            'data_retention_days': data_retention_days,
-            'enable_data_validation': enable_data_validation
-        }
-        
-        if primary_data_source == "API Endpoint":
-            data_settings.update({
-                'api_endpoint': current_settings.get('api_endpoint', ''),
-                'api_key': current_settings.get('api_key', ''),
-                'api_timeout': current_settings.get('api_timeout', 30)
-            })
-        elif primary_data_source == "Live Database":
-            data_settings.update({
-                'db_host': current_settings.get('db_host', 'localhost'),
-                'db_port': current_settings.get('db_port', 5432),
-                'db_name': current_settings.get('db_name', 'port_db'),
-                'db_username': current_settings.get('db_username', ''),
-                'db_password': current_settings.get('db_password', '')
-            })
-        
-        self._update_session_state('data_sources', data_settings)
+        self._update_session_state('data_sources', {
+            'primary_data_source': data_source,
+            'api_endpoint': api_endpoint,
+            'db_connection_string': db_connection_string,
+            'refresh_interval': refresh_interval
+        })
     
     def _render_advanced_settings(self) -> None:
         """Render advanced settings section"""
@@ -562,199 +468,218 @@ class SettingsPage:
         st.markdown("### 🔧 Advanced Settings")
         
         current_settings = self._load_settings()
+        advanced_settings = current_settings.get('settings_advanced', {})
         
-        # System settings
-        st.markdown("#### System Configuration")
-        
-        cols = self.layout.create_columns('half')
-        
-        with cols[0]:
-            # Debug mode
-            debug_mode = st.checkbox(
-                "Debug Mode",
-                value=current_settings.get('debug_mode', False),
-                key="debug_mode",
-                help="Enable debug logging and error details"
+        self.layout.add_spacing('md')
+
+        with self.layout.create_card("A/B Testing"):
+            st.markdown("Switch between different UI variants to compare performance and user experience.")
+
+            ui_variant = st.selectbox(
+                "UI Variant",
+                options=["Variant A (Control)", "Variant B (New)"],
+                index=0,
+                key="ui_variant",
+                help="Select a UI variant to display."
             )
+
+        self.layout.add_spacing('md')
+
+        self.layout.add_spacing('md')
+
+        with self.layout.create_card("Monitoring"):
+            st.markdown("Configure real-time monitoring settings.")
+
+            cols = self.layout.create_columns('half')
+
+            with cols[0]:
+                enable_monitoring = st.checkbox(
+                    "Enable Real-Time Monitoring",
+                    value=True,
+                    key="enable_monitoring",
+                    help="Enable or disable real-time data monitoring."
+                )
+
+            with cols[1]:
+                refresh_interval = st.slider(
+                    "Refresh Interval (seconds)",
+                    min_value=5,
+                    max_value=60,
+                    value=10,
+                    step=5,
+                    key="refresh_interval",
+                    help="Set the refresh interval for real-time data."
+                )
+
+        with self.layout.create_card("Logging"):
+            st.markdown("Configure logging levels and download log files.")
+
+            cols = self.layout.create_columns('half')
+
+            with cols[0]:
+                log_level = st.selectbox(
+                    "Log Level",
+                    options=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+                    index=1,
+                    key="log_level",
+                    help="Set the minimum level of logs to record."
+                )
+
+            with cols[1]:
+                st.download_button(
+                    label="Download Log File",
+                    data="", # This should be replaced with the actual log file content
+                    file_name="dashboard.log",
+                    mime="text/plain"
+                )
+
+        with self.layout.create_card("Developer Options"):
+            st.markdown("These settings are intended for developers and may impact performance.")
             
-            # Enable logging
-            enable_logging = st.checkbox(
-                "Enable Logging",
-                value=current_settings.get('enable_logging', True),
-                key="enable_logging",
-                help="Log system events and user actions"
-            )
+            cols = self.layout.create_columns('half')
             
-            # Performance monitoring
-            performance_monitoring = st.checkbox(
-                "Performance Monitoring",
-                value=current_settings.get('performance_monitoring', False),
-                key="performance_monitoring",
-                help="Monitor and log performance metrics"
-            )
-        
-        with cols[1]:
-            # Memory limit
-            memory_limit = st.slider(
-                "Memory Limit (MB)",
-                min_value=512,
-                max_value=4096,
-                value=current_settings.get('memory_limit', 1024),
-                step=256,
-                key="memory_limit",
-                help="Maximum memory usage for the dashboard"
-            )
+            with cols[0]:
+                enable_debug_mode = st.checkbox(
+                    "Enable Debug Mode",
+                    value=advanced_settings.get('enable_debug_mode', False),
+                    key="enable_debug_mode",
+                    help="Show detailed error messages and logs"
+                )
             
-            # CPU limit
-            cpu_limit = st.slider(
-                "CPU Usage Limit (%)",
-                min_value=25,
-                max_value=100,
-                value=current_settings.get('cpu_limit', 80),
-                step=5,
-                key="cpu_limit",
-                help="Maximum CPU usage percentage"
-            )
+            with cols[1]:
+                show_performance_metrics = st.checkbox(
+                    "Show Performance Metrics",
+                    value=advanced_settings.get('show_performance_metrics', False),
+                    key="show_performance_metrics",
+                    help="Display rendering times and memory usage"
+                )
+
+        self.layout.add_spacing('md')
+
+        with self.layout.create_card("Feature Flags"):
+            st.markdown("Enable or disable experimental features. Use with caution.")
+
+            cols = self.layout.create_columns('half')
+
+            with cols[0]:
+                enable_ai_forecasts = st.checkbox(
+                    "Enable Alpha Features",
+                    value=advanced_settings.get('enable_alpha_features', False),
+                    key="enable_alpha_features",
+                    help="Get access to the earliest, most unstable features."
+                )
+
+            with cols[1]:
+                enable_simulation_scenarios = st.checkbox(
+                    "Enable Beta Features",
+                    value=advanced_settings.get('enable_beta_features', True),
+                    key="enable_beta_features",
+                    help="Try out new features before they are officially released."
+                )
         
         self.layout.add_spacing('md')
         
-        # Export/Import settings
-        st.markdown("#### Settings Management")
-        
-        cols = self.layout.create_columns('third')
-        
-        with cols[0]:
-            if st.button("📤 Export Settings", use_container_width=True):
-                self._export_settings()
-        
-        with cols[1]:
-            uploaded_file = st.file_uploader(
-                "📥 Import Settings",
-                type=['json'],
-                key="import_settings"
-            )
+        with self.layout.create_card("Data Management"):
+            st.markdown("Export or import your application settings.")
             
-            if uploaded_file is not None:
-                if st.button("Import", use_container_width=True):
+            cols = self.layout.create_columns('half')
+            
+            with cols[0]:
+                self._export_settings()
+            
+            with cols[1]:
+                uploaded_file = st.file_uploader(
+                    "Import Settings File",
+                    type=['json'],
+                    key="import_settings_uploader"
+                )
+                if uploaded_file is not None:
                     self._import_settings(uploaded_file)
         
-        with cols[2]:
-            if st.button("🔄 Reset to Defaults", use_container_width=True):
-                if st.session_state.get('confirm_reset', False):
-                    self._reset_to_defaults()
-                    st.success("Settings reset to defaults!")
-                    st.session_state.confirm_reset = False
-                    st.rerun()
-                else:
-                    st.session_state.confirm_reset = True
-                    st.warning("Click again to confirm reset")
+        self.layout.add_spacing('md')
         
+        with self.layout.create_card("System Reset", border_color="#FF4B4B"):
+            
+            cols = self.layout.create_columns([1, 1, 1])
+            
+            with cols[0]:
+                if st.button("Reset All Settings", key="reset_settings"):
+                    self._reset_to_defaults()
+                    st.success("All settings have been reset to their defaults!")
+                    st.rerun()
+            
+            with cols[1]:
+                if st.button("Clear All Cached Data", key="clear_cache"):
+                    self._clear_all_cache()
+                    st.success("All cached data has been cleared!")
+            
+            with cols[2]:
+                if st.button("Factory Reset", key="factory_reset"):
+                    self._factory_reset()
+                    st.success("Application has been reset to its initial state.")
+                    st.rerun()
+
         # Update session state
         self._update_session_state('advanced', {
-            'debug_mode': debug_mode,
-            'enable_logging': enable_logging,
-            'performance_monitoring': performance_monitoring,
-            'memory_limit': memory_limit,
-            'cpu_limit': cpu_limit
+            'enable_debug_mode': enable_debug_mode,
+            'show_performance_metrics': show_performance_metrics,
+            'enable_alpha_features': enable_alpha,
+            'enable_beta_features': enable_beta,
+            'ui_variant': ui_variant,
+            'log_level': log_level,
+            'enable_monitoring': enable_monitoring,
+            'refresh_interval': refresh_interval
         })
     
     def _load_settings(self) -> Dict[str, Any]:
-        """Load settings from file or session state"""
-        # First try to load from session state
-        if 'dashboard_settings' in st.session_state:
-            return st.session_state.dashboard_settings
-        
-        # Then try to load from file
-        try:
-            if os.path.exists(self.settings_file):
-                with open(self.settings_file, 'r') as f:
-                    settings = json.load(f)
-                    st.session_state.dashboard_settings = settings
-                    return settings
-        except Exception as e:
-            st.error(f"Error loading settings: {e}")
-        
-        # Return default settings
-        default_settings = self._get_default_settings()
-        st.session_state.dashboard_settings = default_settings
-        return default_settings
-    
+        """Load settings from session state or file via UserPreferences"""
+        if 'dashboard_settings' not in st.session_state:
+            st.session_state.dashboard_settings = self.user_preferences.load_settings()
+        return st.session_state.dashboard_settings
+
     def _save_settings(self) -> None:
-        """Save current settings to file"""
+        """Save current settings using UserPreferences"""
         try:
             # Collect all settings from session state
-            all_settings = {}
-            
-            for category in ['general', 'display', 'notifications', 'data_sources', 'advanced']:
-                if f'settings_{category}' in st.session_state:
-                    all_settings.update(st.session_state[f'settings_{category}'])
-            
-            # Save to file
-            with open(self.settings_file, 'w') as f:
-                json.dump(all_settings, f, indent=2, default=str)
-            
+            all_settings = {
+                'settings_general': st.session_state.get('settings_general', {}),
+                'settings_display': st.session_state.get('settings_display', {}),
+                'settings_notifications': st.session_state.get('settings_notifications', {}),
+                'settings_data_sources': st.session_state.get('settings_data_sources', {}),
+                'settings_advanced': st.session_state.get('settings_advanced', {})
+            }
+
+            # Save using the UserPreferences object
+            self.user_preferences.save_settings(all_settings)
+
             # Update session state
             st.session_state.dashboard_settings = all_settings
-            
+
         except Exception as e:
             st.error(f"Error saving settings: {e}")
     
-    def _update_session_state(self, category: str, settings: Dict[str, Any]) -> None:
+    def _factory_reset(self) -> None:
+        """Perform a factory reset, clearing all settings and cache"""
+        self._reset_to_defaults()
+        self._clear_all_cache()
+
         """Update session state with new settings"""
-        st.session_state[f'settings_{category}'] = settings
-    
-    def _get_option_index(self, options: List[str], value: str) -> int:
-        """Get index of value in options list"""
+        if f'settings_{category}' not in st.session_state:
+            st.session_state[f'settings_{category}'] = {}
+        st.session_state[f'settings_{category}'].update(settings)
+
+    def _get_option_index(self, options: List[str], value: Optional[str]) -> int:
+        """Get the index of a value in a list of options"""
         try:
             return options.index(value)
-        except ValueError:
+        except (ValueError, TypeError):
             return 0
-    
-    def _get_default_settings(self) -> Dict[str, Any]:
-        """Get default settings"""
-        return {
-            # General
-            'default_page': 'Dashboard',
-            'refresh_interval': '5 minutes',
-            'language': 'English',
-            'timezone': 'Asia/Hong_Kong',
-            'cache_duration': 10,
-            'max_data_points': 200,
-            
-            # Display
-            'theme': 'Light',
-            'color_scheme': 'Default',
-            'font_size': 'Medium',
-            'sidebar_width': 'Medium',
-            'compact_mode': False,
-            'show_grid_lines': True,
-            'enable_animations': True,
-            'high_contrast': False,
-            
-            # Notifications
-            'enable_notifications': True,
-            'email_notifications': False,
-            'sound_alerts': True,
-            'system_alerts': True,
-            'operational_alerts': True,
-            'performance_alerts': False,
-            'berth_utilization_threshold': 85,
-            'vessel_queue_threshold': 5,
-            'efficiency_threshold': 75,
-            
-            # Data Sources
-            'primary_data_source': 'Simulation',
-            'data_update_frequency': 'Every minute',
-            'data_retention_days': 90,
-            'enable_data_validation': True,
-            
-            # Advanced
-            'debug_mode': False,
-            'enable_logging': True,
-            'performance_monitoring': False,
-            'memory_limit': 1024,
-            'cpu_limit': 80
-        }
+
+    def _clear_all_cache(self) -> None:
+        """Clear all cached data"""
+        # This would typically involve clearing st.cache_data or other caching mechanisms
+        st.cache_data.clear()
+        st.success("All cached data has been cleared!")
     
     def _export_settings(self) -> None:
         """Export current settings"""
@@ -783,8 +708,7 @@ class SettingsPage:
             # Validate settings (basic validation)
             if isinstance(settings_data, dict):
                 # Save imported settings
-                with open(self.settings_file, 'w') as f:
-                    json.dump(settings_data, f, indent=2, default=str)
+                self.user_preferences.save_settings(settings_data)
                 
                 # Update session state
                 st.session_state.dashboard_settings = settings_data
@@ -800,20 +724,16 @@ class SettingsPage:
     def _reset_to_defaults(self) -> None:
         """Reset all settings to defaults"""
         try:
-            default_settings = self._get_default_settings()
-            
-            # Save default settings
-            with open(self.settings_file, 'w') as f:
-                json.dump(default_settings, f, indent=2, default=str)
-            
-            # Clear session state
+            default_settings = self.user_preferences.get_default_settings()
+
+            # Save default settings using the UserPreferences object
+            self.user_preferences.save_settings(default_settings)
+
+            # Clear session state to force a reload from file on the next run
             for key in list(st.session_state.keys()):
                 if key.startswith('settings_') or key == 'dashboard_settings':
                     del st.session_state[key]
-            
-            # Set default settings in session state
-            st.session_state.dashboard_settings = default_settings
-            
+
         except Exception as e:
             st.error(f"Error resetting settings: {e}")
 

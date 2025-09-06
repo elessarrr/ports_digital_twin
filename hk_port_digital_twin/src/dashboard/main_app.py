@@ -10,10 +10,12 @@ sys.path.insert(0, str(project_root))
 # Import components
 from components.navigation import NavigationFramework
 from components.layout import LayoutManager
+from components.user_preferences import UserPreferences
 from styles.theme_manager import ThemeManager
 from pages.dashboard_page import DashboardPage
 from pages.operations_page import OperationsPage
 from pages.analytics_page import AnalyticsPage
+from pages.scenarios_page import ScenariosPage
 from pages.settings_page import SettingsPage
 
 # Import data utilities
@@ -32,6 +34,7 @@ class PortDashboardApp:
         self.navigation = NavigationFramework()
         self.layout = LayoutManager()
         self.theme_manager = ThemeManager()
+        self.user_preferences = UserPreferences()
         self.data_loader = DataLoader() if DataLoader else None
         self.sample_generator = SampleDataGenerator() if SampleDataGenerator else None
         
@@ -40,6 +43,7 @@ class PortDashboardApp:
             'dashboard': DashboardPage(self.layout),
             'operations': OperationsPage(self.layout),
             'analytics': AnalyticsPage(self.layout),
+            'scenarios': ScenariosPage(self.layout),
             'settings': SettingsPage(self.layout)
         }
         
@@ -51,19 +55,7 @@ class PortDashboardApp:
             st.session_state.current_page = 'dashboard'
         
         if 'dashboard_settings' not in st.session_state:
-            st.session_state.dashboard_settings = {
-                'theme': 'Light',
-                'auto_refresh': True,
-                'refresh_interval': 30,
-                'show_notifications': True,
-                'compact_view': False,
-                'show_system_status': True,
-                'data_source': 'Live',
-                'chart_animation': True,
-                'export_format': 'CSV',
-                'timezone': 'Asia/Hong_Kong',
-                'language': 'English'
-            }
+            st.session_state.dashboard_settings = self.user_preferences.load_settings()
         
         if 'data_cache' not in st.session_state:
             st.session_state.data_cache = {}
@@ -185,8 +177,8 @@ class PortDashboardApp:
                 if self._should_refresh_data():
                     self.load_data()
                 
-                # Render the page
-                self.pages[current_page].render()
+                # Render the page with data
+                self.pages[current_page].render(st.session_state.data_cache)
             else:
                 st.error(f"Page '{current_page}' not found")
                 
@@ -247,13 +239,19 @@ class PortDashboardApp:
         if len(st.session_state.notifications) > 20:
             st.session_state.notifications = st.session_state.notifications[-20:]
     
+    def _apply_theme(self):
+        """Apply the selected theme from user settings"""
+        theme_settings = st.session_state.dashboard_settings.get('display', {})
+        theme = theme_settings.get('theme', 'Light')
+        self.theme_manager.apply_theme(theme)
+
     def run(self):
         """Main application entry point"""
         # Note: Page configuration is handled by the parent streamlit_app.py
         # to avoid "set_page_config() can only be called once" error
         
         # Apply theme
-        self.theme_manager.apply_theme()
+        self._apply_theme()
         
         # Load initial data
         if not st.session_state.data_cache:

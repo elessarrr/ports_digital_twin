@@ -71,23 +71,30 @@ class StrategicInsight:
 
 from hk_port_digital_twin.src.core.port_simulation import PortSimulation
 
+from hk_port_digital_twin.src.utils.enhanced_visualization import EnhancedVisualizationSystem
+from hk_port_digital_twin.config.settings import get_enhanced_simulation_config
+
 class ExecutiveDashboard:
     """Main class for executive dashboard functionality"""
     
-    def __init__(self, port_simulation: PortSimulation):
+    def __init__(self, port_simulation: Optional[PortSimulation] = None):
         """Initialize the executive dashboard"""
         self.theme = DashboardTheme.EXECUTIVE
         self.strategic_controller = None
         self.bi_engine = None
         
         # Initialize controllers if available
-        if StrategicSimulationController:
+        if StrategicSimulationController and port_simulation:
             self.strategic_controller = StrategicSimulationController(port_simulation)
         if BusinessIntelligenceEngine:
             self.bi_engine = BusinessIntelligenceEngine()
-    
+        
+        # Initialize the new visualization system
+        sim_config = get_enhanced_simulation_config()
+        self.viz_system = EnhancedVisualizationSystem(config=sim_config)
+
     def render_executive_summary(self, metrics: Optional[ExecutiveMetrics] = None) -> None:
-        """Render executive summary with key KPIs
+        """Render executive summary with key KPIs using the enhanced visualization system.
         
         Args:
             metrics: Executive metrics to display, uses sample data if None
@@ -97,41 +104,29 @@ class ExecutiveDashboard:
         # Use sample data if no metrics provided
         if metrics is None:
             metrics = self._get_sample_executive_metrics()
+
+        # Prepare data for the new executive summary chart
+        executive_metrics_data = {
+            'kpi_summary': {
+                'Revenue': metrics.revenue_per_hour,
+                'Efficiency': metrics.efficiency_improvement,
+                'Cost Savings': metrics.cost_savings,
+                'Satisfaction': metrics.customer_satisfaction,
+                'ROI': metrics.roi_percentage
+            },
+            'efficiency_score': metrics.efficiency_improvement,
+            'scenarios': self._get_sample_scenario_data(),
+            'investment_allocation': {
+                'Technology': 50,
+                'Infrastructure': 30,
+                'Training': 20
+            }
+        }
         
-        # Create KPI cards in a grid layout
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric(
-                "Revenue/Hour",
-                f"${metrics.revenue_per_hour:,.0f}",
-                delta=f"+{metrics.efficiency_improvement:.1f}%",
-                help="Revenue generated per operational hour"
-            )
-            
-        with col2:
-            st.metric(
-                "Cost Savings",
-                f"${metrics.cost_savings:,.0f}",
-                delta=f"+{metrics.roi_percentage:.1f}%",
-                help="Total cost savings from optimization"
-            )
-            
-        with col3:
-            st.metric(
-                "Efficiency",
-                f"{metrics.efficiency_improvement:.1f}%",
-                delta=f"+{metrics.throughput_improvement:.1f}%",
-                help="Overall operational efficiency improvement"
-            )
-            
-        with col4:
-            st.metric(
-                "Capacity Utilization",
-                f"{metrics.capacity_utilization:.1f}%",
-                delta=f"-{metrics.risk_score:.1f}% risk",
-                help="Current capacity utilization rate"
-            )
+        # Create and render the chart
+        fig = self.viz_system.create_executive_summary_chart(executive_metrics_data)
+        st.plotly_chart(fig, use_container_width=True)
+
     
     def render_business_impact_chart(self, scenario_data: Optional[Dict] = None) -> None:
         """Render business impact visualization

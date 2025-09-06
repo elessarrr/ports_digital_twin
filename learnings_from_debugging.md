@@ -49,6 +49,104 @@ self.unified_framework = UnifiedSimulationController()
 
 ### Key Learnings
 
+1. **Class Name Verification**: Always verify that class names match their actual definitions in the imported modules.
+2. **Import vs Usage**: Ensure that imported classes are used with their correct names throughout the codebase.
+3. **Error Message Analysis**: The error message clearly indicated the undefined name, making it straightforward to identify and fix.
+
+## Error 4: `ModuleNotFoundError: No module named 'simpy'`
+
+### Symptom
+
+The Streamlit application displayed an error message indicating that the `simpy` module could not be found:
+
+```
+Error running dashboard: No module named 'simpy'
+```
+
+### Root Cause
+
+The error occurred because the Streamlit application was running in a Python environment where the `simpy` package was not installed. The application imports `simpy` on line 8 of the dashboard file:
+
+```python
+import simpy
+```
+
+This error typically happens when:
+1. The required dependencies are not installed in the current Python environment
+2. The application is running in a different environment than where dependencies were installed
+3. The conda environment is not properly activated
+
+### Resolution
+
+The issue was resolved by ensuring the application runs in the correct conda environment where `simpy` is installed:
+
+1. **Environment Activation**: Activated the Anaconda base environment using `source /Users/Bhavesh/opt/anaconda3/bin/activate`
+2. **Dependency Verification**: Confirmed `simpy` version 4.1.1 is properly installed in the conda environment
+3. **Requirements Check**: Verified that `simpy>=4.0.0` is listed in `requirements.txt` for future deployments
+
+### Key Learnings
+
+1. **Environment Management**: Always ensure the correct Python environment is activated before running applications with specific dependencies
+2. **Dependency Verification**: Use `python -c "import module_name"` to quickly verify if a module is available in the current environment
+3. **Requirements Documentation**: Maintain up-to-date `requirements.txt` files with proper version specifications
+4. **Environment Indicators**: Pay attention to terminal prompts that show which conda environment is active (e.g., `(base)` prefix)
+5. **Systematic Debugging**: When encountering import errors, check environment activation first before assuming code issues
+
+---
+
+## Error 4: `ModuleNotFoundError: No module named 'simpy'`
+
+### Symptom
+
+The Streamlit application displayed an error message in the browser:
+
+```
+Error running dashboard: No module named 'simpy'
+```
+
+### Root Cause
+
+The error was caused by the `simpy` module not being properly available in the Python environment where the Streamlit application was running. Although `simpy>=4.0.0` was listed in both `requirements.txt` files (root and hk_port_digital_twin subdirectory), the module was not accessible to the running application.
+
+The issue occurred because:
+1. The Streamlit application was running in a specific Python environment
+2. The `simpy` module needed to be refreshed/reinstalled in that environment
+3. Multiple files in the codebase import simpy for simulation functionality
+
+### Resolution
+
+The fix involved:
+
+1. **Identifying the scope**: Used `search_by_regex` to find all files importing simpy:
+   - `/hk_port_digital_twin/src/core/container_handler.py`
+   - `/hk_port_digital_twin/src/logistics/supply_chain_disruption.py`
+   - `/hk_port_digital_twin/src/core/berth_manager.py`
+   - `/hk_port_digital_twin/src/core/ship_manager.py`
+   - `/hk_port_digital_twin/src/dashboard/streamlit_app.py`
+   - And several other core simulation files
+
+2. **Verifying installation**: Confirmed simpy was installed in the conda environment:
+   ```bash
+   conda list simpy
+   # simpy 4.1.1 pypi_0 pypi
+   ```
+
+3. **Environment refresh**: Stopped and restarted the Streamlit application to ensure it picked up the correct Python environment and module paths.
+
+### Key Learnings
+
+1. **Environment Dependencies**: Even when modules are listed in requirements.txt, they may not be available in the current Python environment.
+2. **Module Scope Analysis**: Use regex search to identify all files that depend on a missing module to understand the full impact.
+3. **Environment Refresh**: Sometimes restarting the application is necessary for Python to pick up newly installed or refreshed modules.
+4. **Shell Quoting**: When installing packages with version specifiers (e.g., `>=4.0.0`), proper shell quoting is essential to avoid command interpretation errors.
+5. **Environment Verification**: Always verify which Python environment is being used (`which python`, `conda list`) when debugging import issues.
+
+---
+
+## Previous Error Documentation
+
+### Key Learnings from Error 3
+
 1. **Class Name Verification**: Always verify that class names match their actual definitions, especially after refactoring.
 2. **Import vs Usage**: Ensure that imported classes are used with their correct names throughout the codebase.
 3. **Error Message Analysis**: The error message clearly indicated the undefined name, making it straightforward to identify and fix.

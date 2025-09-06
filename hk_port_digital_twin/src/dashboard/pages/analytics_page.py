@@ -50,27 +50,29 @@ class AnalyticsPage:
         self.layout.add_spacing('md')
         
         # Cargo overview metrics
-        self._render_cargo_overview(data)
+        with self.layout.create_card("📦 Cargo Overview"):
+            self._render_cargo_overview(data)
         self.layout.add_spacing('lg')
         
         # Cargo breakdown charts
         cols = self.layout.create_columns('half')
         
         with cols[0]:
-            self._render_cargo_types_chart(data)
+            with self.layout.create_card("📊 Cargo Types Distribution"):
+                self._render_cargo_types_chart(data)
         
         with cols[1]:
-            self._render_transport_modes_chart(data)
+            with self.layout.create_card("🚛 Transport Modes"):
+                self._render_transport_modes_chart(data)
         
         self.layout.add_spacing('lg')
         
         # Detailed cargo statistics
-        self._render_cargo_details_table(data)
+        with self.layout.create_card("📋 Detailed Cargo Statistics"):
+            self._render_cargo_details_table(data)
     
     def _render_cargo_overview(self, data: Dict[str, Any]) -> None:
         """Render cargo overview metrics"""
-        st.markdown("### 📦 Cargo Overview")
-        
         cargo_data = data.get('cargo_statistics', {})
         
         metrics = [
@@ -104,8 +106,6 @@ class AnalyticsPage:
     
     def _render_cargo_types_chart(self, data: Dict[str, Any]) -> None:
         """Render cargo types distribution chart"""
-        st.markdown("#### 📊 Cargo Types Distribution")
-        
         cargo_types_data = data.get('cargo_types', self._get_fallback_cargo_types())
         
         # Create donut chart
@@ -120,7 +120,6 @@ class AnalyticsPage:
         ])
         
         fig.update_layout(
-            title="Cargo Distribution by Type",
             height=400,
             margin=dict(t=40, b=40, l=40, r=40)
         )
@@ -129,8 +128,6 @@ class AnalyticsPage:
     
     def _render_transport_modes_chart(self, data: Dict[str, Any]) -> None:
         """Render transport modes chart"""
-        st.markdown("#### 🚛 Transport Modes")
-        
         transport_data = data.get('transport_modes', self._get_fallback_transport_modes())
         
         if transport_data:
@@ -141,7 +138,6 @@ class AnalyticsPage:
                 df,
                 x='Mode',
                 y='Volume',
-                title="Cargo Volume by Transport Mode",
                 color='Volume',
                 color_continuous_scale='viridis'
             )
@@ -159,8 +155,6 @@ class AnalyticsPage:
     
     def _render_cargo_details_table(self, data: Dict[str, Any]) -> None:
         """Render detailed cargo statistics table"""
-        st.markdown("### 📋 Detailed Cargo Statistics")
-        
         cargo_details = data.get('cargo_details', self._get_fallback_cargo_details())
         
         if cargo_details:
@@ -209,27 +203,28 @@ class AnalyticsPage:
         self.layout.add_spacing('md')
         
         # Performance overview
-        self._render_performance_overview(data)
+        with self.layout.create_card("⚡ Performance Overview"):
+            self._render_performance_overview(data)
         self.layout.add_spacing('lg')
         
         # Performance charts
         cols = self.layout.create_columns('half')
         
         with cols[0]:
-            self._render_efficiency_metrics_chart(data)
+            with self.layout.create_card("📊 Efficiency Metrics"):
+                self._render_efficiency_metrics_chart(data)
         
         with cols[1]:
-            self._render_productivity_chart(data)
+            with self.layout.create_card("📈 Productivity Trends"):
+                self._render_productivity_chart(data)
         
         self.layout.add_spacing('lg')
         
-        # KPI dashboard
-        self._render_kpi_dashboard(data)
+        with self.layout.create_card("🎯 Key Performance Indicators"):
+            self._render_kpi_dashboard(data)
     
     def _render_performance_overview(self, data: Dict[str, Any]) -> None:
         """Render performance overview metrics"""
-        st.markdown("### ⚡ Performance Overview")
-        
         performance_data = data.get('performance_metrics', {})
         
         metrics = [
@@ -263,8 +258,6 @@ class AnalyticsPage:
     
     def _render_efficiency_metrics_chart(self, data: Dict[str, Any]) -> None:
         """Render efficiency metrics radar chart"""
-        st.markdown("#### 📊 Efficiency Metrics")
-        
         efficiency_data = data.get('efficiency_metrics', self._get_fallback_efficiency_metrics())
         
         if efficiency_data:
@@ -300,7 +293,6 @@ class AnalyticsPage:
                         range=[0, 100]
                     )
                 ),
-                title="Performance vs Target",
                 height=400,
                 margin=dict(t=40, b=40, l=40, r=40)
             )
@@ -311,8 +303,6 @@ class AnalyticsPage:
     
     def _render_productivity_chart(self, data: Dict[str, Any]) -> None:
         """Render productivity trend chart"""
-        st.markdown("#### 📈 Productivity Trends")
-        
         productivity_data = data.get('productivity_trends', self._get_fallback_productivity_trends())
         
         if productivity_data:
@@ -331,7 +321,6 @@ class AnalyticsPage:
                 ))
             
             fig.update_layout(
-                title="Productivity Trends (Last 30 Days)",
                 height=400,
                 margin=dict(t=40, b=40, l=40, r=40),
                 xaxis_title="Date",
@@ -344,8 +333,6 @@ class AnalyticsPage:
     
     def _render_kpi_dashboard(self, data: Dict[str, Any]) -> None:
         """Render KPI dashboard"""
-        st.markdown("### 🎯 Key Performance Indicators")
-        
         kpi_data = data.get('kpi_data', self._get_fallback_kpi_data())
         
         # Create KPI cards
@@ -353,48 +340,45 @@ class AnalyticsPage:
         
         for i, (kpi_name, kpi_info) in enumerate(kpi_data.items()):
             with cols[i % 3]:
-                current_value = kpi_info.get('current', 0)
-                target_value = kpi_info.get('target', 100)
-                unit = kpi_info.get('unit', '%')
-                
-                # Calculate progress
-                progress = (current_value / target_value) * 100 if target_value > 0 else 0
-                
-                st.markdown(f"#### {kpi_name}")
-                st.metric(
-                    label=f"Current ({unit})",
-                    value=f"{current_value:.1f}",
-                    delta=f"Target: {target_value:.1f}"
-                )
-                
-                # Progress bar
-                st.progress(min(progress / 100, 1.0))
-                st.markdown(f"Progress: {progress:.1f}%")
+                with self.layout.create_card(kpi_name):
+                    current_value = kpi_info.get('current', 0)
+                    target_value = kpi_info.get('target', 100)
+                    unit = kpi_info.get('unit', '%')
+                    
+                    # Calculate progress
+                    progress = (current_value / target_value) * 100 if target_value > 0 else 0
+                    
+                    st.metric(
+                        label=f"Current ({unit})",
+                        value=f"{current_value:.1f}",
+                        delta=f"Target: {target_value:.1f}"
+                    )
+                    
+                    # Progress bar
+                    st.progress(min(progress / 100, 1.0))
+                    st.markdown(f"Progress: {progress:.1f}%")
     
     def _render_trend_analysis(self, data: Dict[str, Any]) -> None:
         """Render trend analysis section"""
         self.layout.add_spacing('md')
         
-        st.markdown("### 📈 Trend Analysis")
-        
-        # Time series analysis
-        cols = self.layout.create_columns('half')
-        
-        with cols[0]:
-            self._render_throughput_trends(data)
-        
-        with cols[1]:
-            self._render_seasonal_analysis(data)
-        
-        self.layout.add_spacing('lg')
-        
-        # Comparative analysis
-        self._render_comparative_analysis(data)
+        with self.layout.create_card("📈 Trend Analysis"):
+            # Time series analysis
+            cols = self.layout.create_columns('half')
+            
+            with cols[0]:
+                self._render_throughput_trends(data)
+            
+            with cols[1]:
+                self._render_seasonal_analysis(data)
+            
+            self.layout.add_spacing('lg')
+            
+            # Comparative analysis
+            self._render_comparative_analysis(data)
     
     def _render_throughput_trends(self, data: Dict[str, Any]) -> None:
         """Render throughput trends chart"""
-        st.markdown("#### 📦 Throughput Trends")
-        
         throughput_trends = data.get('throughput_trends', self._get_fallback_throughput_trends())
         
         if throughput_trends:
@@ -422,8 +406,6 @@ class AnalyticsPage:
     
     def _render_seasonal_analysis(self, data: Dict[str, Any]) -> None:
         """Render seasonal analysis chart"""
-        st.markdown("#### 🗓️ Seasonal Analysis")
-        
         seasonal_data = data.get('seasonal_analysis', self._get_fallback_seasonal_data())
         
         if seasonal_data:
@@ -448,8 +430,6 @@ class AnalyticsPage:
     
     def _render_comparative_analysis(self, data: Dict[str, Any]) -> None:
         """Render comparative analysis"""
-        st.markdown("#### 🔍 Comparative Analysis")
-        
         comparative_data = data.get('comparative_analysis', self._get_fallback_comparative_data())
         
         if comparative_data:
@@ -480,31 +460,30 @@ class AnalyticsPage:
         """Render forecasting section"""
         self.layout.add_spacing('md')
         
-        st.markdown("### 🔮 Forecasting")
-        
-        # Forecasting controls
-        cols = st.columns(3)
-        
-        with cols[0]:
-            forecast_period = st.selectbox(
-                "Forecast Period",
-                options=['Next 7 Days', 'Next 30 Days', 'Next 90 Days'],
-                key="forecast_period"
-            )
-        
-        with cols[1]:
-            forecast_metric = st.selectbox(
-                "Metric",
-                options=['Throughput', 'Vessel Arrivals', 'Berth Utilization'],
-                key="forecast_metric"
-            )
-        
-        with cols[2]:
-            confidence_level = st.selectbox(
-                "Confidence Level",
-                options=['80%', '90%', '95%'],
-                key="confidence_level"
-            )
+        with self.layout.create_card("🔮 Forecasting"):
+            # Forecasting controls
+            cols = st.columns(3)
+            
+            with cols[0]:
+                forecast_period = st.selectbox(
+                    "Forecast Period",
+                    options=['Next 7 Days', 'Next 30 Days', 'Next 90 Days'],
+                    key="forecast_period"
+                )
+            
+            with cols[1]:
+                forecast_metric = st.selectbox(
+                    "Metric",
+                    options=['Throughput', 'Vessel Arrivals', 'Berth Utilization'],
+                    key="forecast_metric"
+                )
+            
+            with cols[2]:
+                confidence_level = st.selectbox(
+                    "Confidence Level",
+                    options=['80%', '90%', '95%'],
+                    key="confidence_level"
+                )
         
         self.layout.add_spacing('md')
         

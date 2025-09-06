@@ -49,10 +49,13 @@ class OperationsPage:
         self.layout.add_spacing('md')
         
         # Vessel summary metrics
+        self.layout.create_card("🚢 Vessel Summary")
         self._render_vessel_summary(data)
+        self.layout.close_card()
         self.layout.add_spacing('lg')
         
         # Vessel analytics charts
+        self.layout.create_card("📊 Vessel Analytics Charts")
         cols = self.layout.create_columns('half')
         
         with cols[0]:
@@ -60,16 +63,17 @@ class OperationsPage:
         
         with cols[1]:
             self._render_vessel_timeline_chart(data)
+        self.layout.close_card()
         
         self.layout.add_spacing('lg')
         
         # Vessel details table
+        self.layout.create_card("📋 Vessel Details")
         self._render_vessel_details_table(data)
+        self.layout.close_card()
     
     def _render_vessel_summary(self, data: Dict[str, Any]) -> None:
         """Render vessel summary metrics"""
-        st.markdown("### 🚢 Vessel Summary")
-        
         vessel_data = data.get('vessel_analytics', {})
         
         metrics = [
@@ -99,114 +103,114 @@ class OperationsPage:
     
     def _render_vessel_types_chart(self, data: Dict[str, Any]) -> None:
         """Render vessel types distribution chart"""
-        st.markdown("#### 📊 Vessel Types Distribution")
-        
-        vessel_types_data = data.get('vessel_types', self._get_fallback_vessel_types())
-        
-        # Create pie chart
-        fig = px.pie(
-            values=list(vessel_types_data.values()),
-            names=list(vessel_types_data.keys()),
-            title="Current Vessels by Type"
-        )
-        
-        fig.update_layout(
-            height=400,
-            margin=dict(t=40, b=40, l=40, r=40)
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
+        with self.layout.create_card("📊 Vessel Types Distribution"):
+            vessel_types_data = data.get('vessel_types', self._get_fallback_vessel_types())
+
+            # Create pie chart
+            fig = px.pie(
+                values=list(vessel_types_data.values()),
+                names=list(vessel_types_data.keys()),
+                title="Current Vessels by Type"
+            )
+
+            fig.update_layout(
+                height=400,
+                margin=dict(t=40, b=40, l=40, r=40)
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
     
     def _render_vessel_timeline_chart(self, data: Dict[str, Any]) -> None:
         """Render vessel arrival/departure timeline"""
-        st.markdown("#### ⏰ Vessel Timeline (Next 24h)")
-        
-        timeline_data = data.get('vessel_timeline', self._get_fallback_timeline())
-        
-        if timeline_data:
-            df = pd.DataFrame(timeline_data)
-            
-            # Create timeline chart
-            fig = px.scatter(
-                df,
-                x='time',
-                y='vessel_name',
-                color='event_type',
-                size='vessel_size',
-                hover_data=['berth', 'cargo_type'],
-                title="Vessel Schedule Timeline"
-            )
-            
-            fig.update_layout(
-                height=400,
-                margin=dict(t=40, b=40, l=40, r=40),
-                xaxis_title="Time",
-                yaxis_title="Vessel"
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("No timeline data available")
+        with self.layout.create_card("⏰ Vessel Timeline (Next 24h)"):
+            timeline_data = data.get('vessel_timeline', self._get_fallback_timeline())
+
+            if timeline_data:
+                df = pd.DataFrame(timeline_data)
+
+                # Create timeline chart
+                fig = px.scatter(
+                    df,
+                    x='time',
+                    y='vessel_name',
+                    color='event_type',
+                    size='vessel_size',
+                    hover_data=['berth', 'cargo_type'],
+                    title="Vessel Schedule Timeline"
+                )
+
+                fig.update_layout(
+                    height=400,
+                    margin=dict(t=40, b=40, l=40, r=40),
+                    xaxis_title="Time",
+                    yaxis_title="Vessel"
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No timeline data available")
     
     def _render_vessel_details_table(self, data: Dict[str, Any]) -> None:
         """Render detailed vessel information table"""
-        st.markdown("### 📋 Vessel Details")
-        
-        vessel_details = data.get('vessel_details', self._get_fallback_vessel_details())
-        
-        if vessel_details:
-            df = pd.DataFrame(vessel_details)
-            
-            # Add filters
-            cols = st.columns(3)
-            
-            with cols[0]:
-                status_filter = st.selectbox(
-                    "Filter by Status",
-                    options=['All'] + list(df['status'].unique()) if 'status' in df.columns else ['All'],
-                    key="vessel_status_filter"
-                )
-            
-            with cols[1]:
-                type_filter = st.selectbox(
-                    "Filter by Type",
-                    options=['All'] + list(df['type'].unique()) if 'type' in df.columns else ['All'],
-                    key="vessel_type_filter"
-                )
-            
-            with cols[2]:
-                berth_filter = st.selectbox(
-                    "Filter by Berth",
-                    options=['All'] + list(df['berth'].unique()) if 'berth' in df.columns else ['All'],
-                    key="vessel_berth_filter"
-                )
-            
-            # Apply filters
-            filtered_df = df.copy()
-            
-            if status_filter != 'All' and 'status' in df.columns:
-                filtered_df = filtered_df[filtered_df['status'] == status_filter]
-            
-            if type_filter != 'All' and 'type' in df.columns:
-                filtered_df = filtered_df[filtered_df['type'] == type_filter]
-            
-            if berth_filter != 'All' and 'berth' in df.columns:
-                filtered_df = filtered_df[filtered_df['berth'] == berth_filter]
-            
-            # Display table
-            st.dataframe(filtered_df, use_container_width=True)
-        else:
-            st.info("No vessel details available")
+        with self.layout.create_card("📋 Vessel Details"):
+            vessel_details = data.get('vessel_details', self._get_fallback_vessel_details())
+
+            if vessel_details:
+                df = pd.DataFrame(vessel_details)
+
+                # Add filters
+                cols = st.columns(3)
+
+                with cols[0]:
+                    status_filter = st.selectbox(
+                        "Filter by Status",
+                        options=['All'] + list(df['status'].unique()) if 'status' in df.columns else ['All'],
+                        key="vessel_status_filter"
+                    )
+
+                with cols[1]:
+                    type_filter = st.selectbox(
+                        "Filter by Type",
+                        options=['All'] + list(df['type'].unique()) if 'type' in df.columns else ['All'],
+                        key="vessel_type_filter"
+                    )
+
+                with cols[2]:
+                    berth_filter = st.selectbox(
+                        "Filter by Berth",
+                        options=['All'] + list(df['berth'].unique()) if 'berth' in df.columns else ['All'],
+                        key="vessel_berth_filter"
+                    )
+
+                # Apply filters
+                filtered_df = df.copy()
+
+                if status_filter != 'All' and 'status' in df.columns:
+                    filtered_df = filtered_df[filtered_df['status'] == status_filter]
+
+                if type_filter != 'All' and 'type' in df.columns:
+                    filtered_df = filtered_df[filtered_df['type'] == type_filter]
+
+                if berth_filter != 'All' and 'berth' in df.columns:
+                    filtered_df = filtered_df[filtered_df['berth'] == berth_filter]
+
+                # Display table
+                st.dataframe(filtered_df, use_container_width=True)
+            else:
+                st.info("No vessel details available")
     
     def _render_berth_management(self, data: Dict[str, Any]) -> None:
         """Render berth management section"""
         self.layout.add_spacing('md')
         
         # Berth utilization overview
+        self.layout.create_card("🏗️ Berth Utilization")
         self._render_berth_utilization(data)
+        self.layout.close_card()
         self.layout.add_spacing('lg')
         
         # Berth details
+        self.layout.create_card("📊 Berth Details")
         cols = self.layout.create_columns('half')
         
         with cols[0]:
@@ -214,11 +218,10 @@ class OperationsPage:
         
         with cols[1]:
             self._render_berth_schedule(data)
+        self.layout.close_card()
     
     def _render_berth_utilization(self, data: Dict[str, Any]) -> None:
         """Render berth utilization metrics"""
-        st.markdown("### 🏗️ Berth Utilization")
-        
         berth_data = data.get('berth_data', {})
         
         total_berths = berth_data.get('total_berths', 35)
@@ -252,37 +255,36 @@ class OperationsPage:
     
     def _render_berth_status_chart(self, data: Dict[str, Any]) -> None:
         """Render berth status visualization"""
-        st.markdown("#### 📊 Berth Status Overview")
-        
-        berth_status_data = data.get('berth_status', self._get_fallback_berth_status())
-        
-        if berth_status_data:
-            df = pd.DataFrame(berth_status_data)
-            
-            # Create status chart
-            fig = px.bar(
-                df,
-                x='berth_id',
-                y='utilization',
-                color='status',
-                title="Berth Utilization by Status",
-                color_discrete_map={
-                    'Occupied': '#ff6b6b',
-                    'Available': '#51cf66',
-                    'Maintenance': '#ffd43b'
-                }
-            )
-            
-            fig.update_layout(
-                height=400,
-                margin=dict(t=40, b=40, l=40, r=40),
-                xaxis_title="Berth ID",
-                yaxis_title="Utilization (%)"
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("No berth status data available")
+        with self.layout.create_card("📊 Berth Status Overview"):
+            berth_status_data = data.get('berth_status', self._get_fallback_berth_status())
+
+            if berth_status_data:
+                df = pd.DataFrame(berth_status_data)
+
+                # Create status chart
+                fig = px.bar(
+                    df,
+                    x='berth_id',
+                    y='utilization',
+                    color='status',
+                    title="Berth Utilization by Status",
+                    color_discrete_map={
+                        'Occupied': '#ff6b6b',
+                        'Available': '#51cf66',
+                        'Maintenance': '#ffd43b'
+                    }
+                )
+
+                fig.update_layout(
+                    height=400,
+                    margin=dict(t=40, b=40, l=40, r=40),
+                    xaxis_title="Berth ID",
+                    yaxis_title="Utilization (%)"
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No berth status data available")
     
     def _render_berth_schedule(self, data: Dict[str, Any]) -> None:
         """Render berth schedule"""
@@ -301,10 +303,13 @@ class OperationsPage:
         self.layout.add_spacing('md')
         
         # Real-time status indicators
+        self.layout.create_card("📡 Live Operations Status")
         self._render_live_status(data)
+        self.layout.close_card()
         self.layout.add_spacing('lg')
         
         # Live data feeds
+        self.layout.create_card("🛰️ Live Data Feeds")
         cols = self.layout.create_columns('half')
         
         with cols[0]:
@@ -312,11 +317,10 @@ class OperationsPage:
         
         with cols[1]:
             self._render_live_cargo_operations(data)
+        self.layout.close_card()
     
     def _render_live_status(self, data: Dict[str, Any]) -> None:
         """Render live status indicators"""
-        st.markdown("### 📡 Live Operations Status")
-        
         # Status indicators
         cols = self.layout.create_columns('quarter')
         
@@ -372,8 +376,7 @@ class OperationsPage:
         """Render port layout visualization"""
         self.layout.add_spacing('md')
         
-        st.markdown("### 🗺️ Port Layout")
-        
+        self.layout.create_card("🗺️ Port Layout")
         # Port layout visualization placeholder
         self.layout.create_info_box(
             "Interactive port layout visualization will be implemented here. This will show real-time berth status, vessel positions, and cargo areas.",
@@ -384,6 +387,7 @@ class OperationsPage:
         # Placeholder for port layout
         st.markdown("#### 🏗️ Terminal Layout")
         st.markdown("*Interactive port map coming soon...*")
+        self.layout.close_card()
     
     # Fallback data methods
     def _get_fallback_vessel_types(self) -> Dict[str, int]:

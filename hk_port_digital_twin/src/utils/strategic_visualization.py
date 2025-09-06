@@ -68,12 +68,14 @@ class StrategicVisualization:
         """
         self.config = config or VisualizationConfig()
         self.color_palette = {
-            'primary': '#1f77b4',
-            'secondary': '#ff7f0e', 
-            'success': '#2ca02c',
-            'warning': '#d62728',
-            'info': '#9467bd',
-            'neutral': '#8c564b'
+            'primary': '#007bff',
+            'secondary': '#6c757d',
+            'success': '#28a745',
+            'warning': '#ffc107',
+            'danger': '#dc3545',
+            'info': '#17a2b8',
+            'light': '#f8f9fa',
+            'dark': '#343a40'
         }
     
     def create_revenue_impact_chart(self, 

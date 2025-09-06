@@ -28,9 +28,9 @@
       ]
     },
     {
-      "step": "Full Direcotry Review Post-Fix",
+      "step": "Full Directory Review Post-Fix",
       "description": [
-        "After fixing the error, review the entire directory to identify and remedy other instances of the same error"              
+        "After fixing the error, review the entire directory to identify and remedy other instances of the same error"
       ]
     },
     {

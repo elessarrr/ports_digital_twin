@@ -88,18 +88,20 @@ class EnhancedVisualizationSystem:
         
         # Unified color palette for consistency
         self.color_palette = {
-            'primary': '#1f77b4',
-            'secondary': '#ff7f0e', 
-            'success': '#2ca02c',
-            'warning': '#d62728',
-            'info': '#9467bd',
-            'neutral': '#8c564b',
-            'berth_high': '#d62728',
-            'berth_medium': '#ff7f0e',
-            'berth_low': '#2ca02c',
-            'container': '#87ceeb',
-            'bulk': '#90ee90',
-            'mixed': '#ffffe0'
+            'primary': '#007bff',
+            'secondary': '#6c757d',
+            'success': '#28a745',
+            'warning': '#ffc107',
+            'danger': '#dc3545',
+            'info': '#17a2b8',
+            'light': '#f8f9fa',
+            'dark': '#343a40',
+            'berth_high': '#dc3545',
+            'berth_medium': '#ffc107',
+            'berth_low': '#28a745',
+            'container': '#17a2b8',
+            'bulk': '#6f42c1',
+            'mixed': '#fd7e14'
         }
     
     def create_operational_dashboard(self, 
@@ -197,29 +199,29 @@ class EnhancedVisualizationSystem:
         fig = make_subplots(
             rows=2, cols=2,
             subplot_titles=(
-                'Revenue vs Investment',
-                'Operational Efficiency',
-                'Risk vs Return',
-                'Strategic Value Score'
+                'Strategic KPI Overview',
+                'Operational Efficiency Score',
+                'Scenario Risk-Return Profile',
+                'Investment Portfolio Overview'
             ),
-            specs=[[{"secondary_y": True}, {"type": "indicator"}],
-                   [{"type": "scatter"}, {"type": "indicator"}]]
+            specs=[[{"type": "polar"}, {"type": "indicator"}],
+                   [{"type": "scatter"}, {"type": "bar"}]]
         )
         
-        # Revenue vs Investment (top-left)
-        scenarios = list(executive_metrics.get('scenarios', {}).keys())
-        revenues = [executive_metrics['scenarios'][s].get('revenue', 0) for s in scenarios]
-        investments = [executive_metrics['scenarios'][s].get('investment', 0) for s in scenarios]
+        # Strategic KPI Overview (top-left)
+        kpi_metrics = executive_metrics.get('kpi_summary', {})
+        kpi_labels = list(kpi_metrics.keys())
+        kpi_values = list(kpi_metrics.values())
         
         fig.add_trace(
-            go.Bar(x=scenarios, y=revenues, name="Revenue", marker_color=self.color_palette['primary']),
+            go.Scatterpolar(
+                r=kpi_values,
+                theta=kpi_labels,
+                fill='toself',
+                name='Strategic KPIs',
+                marker_color=self.color_palette['primary']
+            ),
             row=1, col=1
-        )
-        
-        fig.add_trace(
-            go.Scatter(x=scenarios, y=investments, mode='lines+markers', name="Investment", 
-                      line_color=self.color_palette['warning']),
-            row=1, col=1, secondary_y=True
         )
         
         # Operational Efficiency Gauge (top-right)
@@ -229,18 +231,21 @@ class EnhancedVisualizationSystem:
                 mode="gauge+number+delta",
                 value=efficiency_score,
                 domain={'x': [0, 1], 'y': [0, 1]},
-                title={'text': "Efficiency %"},
-                delta={'reference': 70},
+                title={'text': "Efficiency Score", 'font': {'size': 20}},
+                delta={'reference': 70, 'increasing': {'color': self.color_palette['success']}},
                 gauge={
-                    'axis': {'range': [None, 100]},
+                    'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "darkblue"},
                     'bar': {'color': self.color_palette['success']},
+                    'bgcolor': "white",
+                    'borderwidth': 2,
+                    'bordercolor': "gray",
                     'steps': [
-                        {'range': [0, 50], 'color': "lightgray"},
-                        {'range': [50, 80], 'color': "gray"}
+                        {'range': [0, 50], 'color': self.color_palette['danger']},
+                        {'range': [50, 80], 'color': self.color_palette['warning']}
                     ],
                     'threshold': {
                         'line': {'color': "red", 'width': 4},
-                        'thickness': 0.75,
+                        'thickness': 0.9,
                         'value': 90
                     }
                 }
@@ -249,44 +254,50 @@ class EnhancedVisualizationSystem:
         )
         
         # Risk vs Return Scatter (bottom-left)
-        risk_scores = [executive_metrics['scenarios'][s].get('risk_score', 0) for s in scenarios]
-        return_scores = [executive_metrics['scenarios'][s].get('return_score', 0) for s in scenarios]
-        
+        scenarios = executive_metrics.get('scenarios', {})
+        risk_scores = [s.get('risk_score', 0) for s in scenarios.values()]
+        return_scores = [s.get('return_score', 0) for s in scenarios.values()]
+        scenario_names = list(scenarios.keys())
+
         fig.add_trace(
             go.Scatter(
                 x=risk_scores, y=return_scores, mode='markers+text',
-                text=scenarios, textposition="top center",
-                marker=dict(size=15, color=self.color_palette['info']),
+                text=scenario_names, textposition="top center",
+                marker=dict(size=15, 
+                            color=[self.color_palette['info'], self.color_palette['secondary'], self.color_palette['primary']],
+                            symbol='diamond',
+                            line=dict(width=2, color='DarkSlateGrey')),
                 name="Risk vs Return"
             ),
             row=2, col=1
         )
         
-        # Strategic Value Score Gauge (bottom-right)
-        strategic_score = executive_metrics.get('strategic_value_score', 80)
+        # Investment Portfolio Overview (bottom-right)
+        investment_allocation = executive_metrics.get('investment_allocation', {})
+        initiatives = list(investment_allocation.keys())
+        allocations = list(investment_allocation.values())
+        
         fig.add_trace(
-            go.Indicator(
-                mode="gauge+number",
-                value=strategic_score,
-                domain={'x': [0, 1], 'y': [0, 1]},
-                title={'text': "Strategic Value"},
-                gauge={
-                    'axis': {'range': [None, 100]},
-                    'bar': {'color': self.color_palette['primary']},
-                    'steps': [
-                        {'range': [0, 60], 'color': "lightgray"},
-                        {'range': [60, 85], 'color': "gray"}
-                    ]
-                }
+            go.Bar(
+                x=initiatives,
+                y=allocations,
+                name="Investment Allocation",
+                marker_color=self.color_palette['info'],
+                text=allocations,
+                textposition='auto'
             ),
             row=2, col=2
         )
         
         fig.update_layout(
-            height=600,
-            title_text="Executive Strategic Overview",
-            showlegend=True,
-            template=self.config.theme.value
+            height=700,
+            title_text="Executive Strategic Dashboard",
+            title_font_size=28,
+            template=self.config.theme.value,
+            showlegend=False,
+            paper_bgcolor=self.color_palette['light'],
+            plot_bgcolor=self.color_palette['light'],
+            font_color=self.color_palette['dark']
         )
         
         return fig
@@ -410,11 +421,25 @@ class EnhancedVisualizationSystem:
         # Apply theme
         fig.update_layout(template=self.config.theme.value)
         
-        # Apply responsive sizing
+        # Apply responsive sizing and modern styling
         if self.config.responsive:
             fig.update_layout(
                 autosize=True,
-                margin=dict(l=20, r=20, t=40, b=20)
+                margin=dict(l=50, r=50, t=80, b=50),
+                paper_bgcolor='rgba(248, 249, 250, 0.9)',
+                plot_bgcolor='rgba(255, 255, 255, 0.9)',
+                font=dict(family="Roboto, sans-serif", size=14, color=self.color_palette['dark']),
+                title_font_size=24,
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1,
+                    bgcolor='rgba(255, 255, 255, 0.7)',
+                    bordercolor='rgba(0, 0, 0, 0.1)',
+                    borderwidth=1
+                )
             )
         
         # Apply height
@@ -427,7 +452,7 @@ class EnhancedVisualizationSystem:
         
         # Chart-specific styling
         if chart_type == 'berth_utilization':
-            fig.update_traces(marker_line_width=1, marker_line_color="white")
+            fig.update_traces(marker_line_width=1.5, marker_line_color="white")
         elif chart_type == 'ship_queue':
             fig.update_layout(yaxis=dict(autorange="reversed"))
         elif chart_type in ['revenue_impact', 'roi_timeline']:

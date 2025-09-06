@@ -28,6 +28,20 @@ warnings.filterwarnings('ignore')
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Simple in-memory cache
+_cache = {}
+
+# Cache timeout (in seconds)
+CACHE_TIMEOUT = 600  # 10 minutes
+
+def _is_cache_valid(cache_key: str) -> bool:
+    """Check if a cache entry is still valid."""
+    if cache_key not in _cache:
+        return False
+    
+    entry_time = _cache[cache_key].get('timestamp', 0)
+    return (time.time() - entry_time) < CACHE_TIMEOUT
+
 # Import our new modules
 try:
     # Weather integration temporarily disabled for removal
@@ -71,6 +85,11 @@ def load_container_throughput() -> pd.DataFrame:
     Returns:
         pd.DataFrame: Processed container throughput data with datetime index
     """
+    cache_key = "container_throughput"
+    if _is_cache_valid(cache_key):
+        logger.info("Loading container throughput data from cache.")
+        return _cache[cache_key]['data']
+
     try:
         # Load the CSV file
         df = pd.read_csv(CONTAINER_THROUGHPUT_FILE)
@@ -110,6 +129,13 @@ def load_container_throughput() -> pd.DataFrame:
         })
         
         logger.info(f"Loaded container throughput data: {len(monthly_data)} monthly records")
+        
+        # Cache the data
+        _cache[cache_key] = {
+            'data': monthly_data,
+            'timestamp': time.time()
+        }
+
         return monthly_data
         
     except Exception as e:
@@ -122,6 +148,11 @@ def load_annual_container_throughput() -> pd.DataFrame:
     Returns:
         pd.DataFrame: Annual throughput data
     """
+    cache_key = "annual_container_throughput"
+    if _is_cache_valid(cache_key):
+        logger.info("Loading annual container throughput data from cache.")
+        return _cache[cache_key]['data']
+
     try:
         df = pd.read_csv(CONTAINER_THROUGHPUT_FILE)
         
@@ -144,6 +175,13 @@ def load_annual_container_throughput() -> pd.DataFrame:
         })
         
         logger.info(f"Loaded annual container throughput data: {len(annual_data)} years")
+        
+        # Cache the data
+        _cache[cache_key] = {
+            'data': annual_data,
+            'timestamp': time.time()
+        }
+
         return annual_data
         
     except Exception as e:
@@ -160,6 +198,11 @@ def load_port_cargo_statistics(focus_tables: Optional[List[str]] = None) -> Dict
     Returns:
         Dict[str, pd.DataFrame]: Dictionary of cargo statistics by table
     """
+    cache_key = f"port_cargo_statistics_{focus_tables}"
+    if _is_cache_valid(cache_key):
+        logger.info("Loading port cargo statistics from cache.")
+        return _cache[cache_key]['data']
+
     cargo_stats = {}
     
     try:
@@ -187,6 +230,13 @@ def load_port_cargo_statistics(focus_tables: Optional[List[str]] = None) -> Dict
                 continue
         
         logger.info(f"Loaded {len(cargo_stats)} cargo statistics tables")
+        
+        # Cache the data
+        _cache[cache_key] = {
+            'data': cargo_stats,
+            'timestamp': time.time()
+        }
+
         return cargo_stats
         
     except Exception as e:
@@ -330,6 +380,11 @@ def get_enhanced_cargo_analysis() -> Dict[str, any]:
     Returns:
         Dict: Comprehensive analysis including trends, forecasts, and insights
     """
+    cache_key = "enhanced_cargo_analysis"
+    if _is_cache_valid(cache_key):
+        logger.info("Loading enhanced cargo analysis from cache.")
+        return _cache[cache_key]['data']
+
     try:
         # Load focused data
         cargo_stats = load_focused_cargo_statistics()
@@ -363,6 +418,13 @@ def get_enhanced_cargo_analysis() -> Dict[str, any]:
         }
         
         logger.info("Completed enhanced cargo analysis with forecasting")
+
+        # Cache the data
+        _cache[cache_key] = {
+            'data': analysis,
+            'timestamp': time.time()
+        }
+
         return analysis
         
     except Exception as e:
@@ -543,6 +605,11 @@ def load_arriving_ships() -> pd.DataFrame:
     Returns:
         pd.DataFrame: Processed arriving ships data with structured information
     """
+    cache_key = "arriving_ships"
+    if _is_cache_valid(cache_key):
+        logger.info("Loading arriving ships from cache.")
+        return _cache[cache_key]['data']
+
     arriving_ships_xml = Path("/Users/Bhavesh/Documents/GitHub/Ports/Ports/raw_data/Expected_arrivals.xml")
     logger.info(f"Attempting to load arriving ships from: {arriving_ships_xml}")
     
@@ -626,6 +693,13 @@ def load_arriving_ships() -> pd.DataFrame:
             df = df.sort_values('arrival_time', na_position='last')
         
         logger.info(f"Loaded arriving ships data: {len(df)} vessels")
+
+        # Cache the data
+        _cache[cache_key] = {
+            'data': df,
+            'timestamp': time.time()
+        }
+
         return df
         
     except Exception as e:
@@ -640,6 +714,11 @@ def load_vessel_arrivals() -> pd.DataFrame:
     Returns:
         pd.DataFrame: Processed vessel arrival data with structured information
     """
+    cache_key = "vessel_arrivals"
+    if _is_cache_valid(cache_key):
+        logger.info("Loading vessel arrivals from cache.")
+        return _cache[cache_key]['data']
+
     try:
         # Check if XML file exists
         if not VESSEL_ARRIVALS_XML.exists():
@@ -719,6 +798,13 @@ def load_vessel_arrivals() -> pd.DataFrame:
             df = df.sort_values('arrival_time', na_position='last')
         
         logger.info(f"Loaded vessel arrivals data: {len(df)} vessels")
+
+        # Cache the data
+        _cache[cache_key] = {
+            'data': df,
+            'timestamp': time.time()
+        }
+
         return df
         
     except Exception as e:
@@ -732,6 +818,11 @@ def load_combined_vessel_data() -> pd.DataFrame:
     Returns:
         pd.DataFrame: Combined vessel data with arriving, in-port, and departed vessels
     """
+    cache_key = "combined_vessel_data"
+    if _is_cache_valid(cache_key):
+        logger.info("Loading combined vessel data from cache.")
+        return _cache[cache_key]['data']
+
     try:
         # Load both datasets
         current_vessels = load_vessel_arrivals()
@@ -781,6 +872,12 @@ def load_combined_vessel_data() -> pd.DataFrame:
         
         logger.info(f"Combined vessel data loaded: {len(combined_df)} vessels total")
         logger.info(f"Status breakdown: {combined_df['status'].value_counts().to_dict()}")
+
+        # Cache the data
+        _cache[cache_key] = {
+            'data': combined_df,
+            'timestamp': time.time()
+        }
         
         return combined_df
         
@@ -890,6 +987,11 @@ def get_vessel_queue_analysis() -> Dict[str, any]:
     Returns:
         Dict: Analysis of current port operations including queue metrics
     """
+    cache_key = "vessel_queue_analysis"
+    if _is_cache_valid(cache_key):
+        logger.info("Loading vessel queue analysis from cache.")
+        return _cache[cache_key]['data']
+
     try:
         vessels_df = load_vessel_arrivals()
         
@@ -912,6 +1014,27 @@ def get_vessel_queue_analysis() -> Dict[str, any]:
         
         # Calculate queue metrics
         total_active = len(active_vessels)
+        
+        analysis = {
+            'berth_occupancy': berth_count,
+            'queue_length': queue_count,
+            'total_active_vessels': total_active,
+            'location_breakdown': location_analysis,
+            'ship_category_breakdown': ship_category_analysis,
+            'analysis_timestamp': datetime.now().isoformat()
+        }
+
+        # Cache the data
+        _cache[cache_key] = {
+            'data': analysis,
+            'timestamp': time.time()
+        }
+        
+        return analysis
+        
+    except Exception as e:
+        logger.error(f"Error analyzing vessel queue: {e}")
+        return {}
         berth_utilization = (berth_count / (berth_count + queue_count)) * 100 if (berth_count + queue_count) > 0 else 0
         
         # Analyze arrival patterns (last 24 hours)
@@ -957,6 +1080,11 @@ def load_all_vessel_data() -> Dict[str, pd.DataFrame]:
     Returns:
         Dict[str, pd.DataFrame]: Dictionary mapping file names to vessel DataFrames
     """
+    cache_key = "all_vessel_data"
+    if _is_cache_valid(cache_key):
+        logger.info("Loading all vessel data from cache.")
+        return _cache[cache_key]['data']
+
     vessel_data = {}
     
     for xml_file in VESSEL_XML_FILES:
@@ -976,6 +1104,12 @@ def load_all_vessel_data() -> Dict[str, pd.DataFrame]:
         except Exception as e:
             logger.error(f"Error loading vessel data from {xml_file}: {e}")
     
+    # Cache the data
+    _cache[cache_key] = {
+        'data': vessel_data,
+        'timestamp': time.time()
+    }
+
     return vessel_data
 
 def load_vessel_data_from_xml(xml_file_path: Path) -> pd.DataFrame:
@@ -987,6 +1121,11 @@ def load_vessel_data_from_xml(xml_file_path: Path) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Processed vessel data with structured information
     """
+    cache_key = f"vessel_data_{xml_file_path.name}"
+    if _is_cache_valid(cache_key):
+        logger.info(f"Loading vessel data from cache for {xml_file_path.name}.")
+        return _cache[cache_key]['data']
+
     try:
         if not xml_file_path.exists():
             logger.error(f"XML file does not exist: {xml_file_path}")
@@ -1075,16 +1214,21 @@ def load_vessel_data_from_xml(xml_file_path: Path) -> pd.DataFrame:
             vessel_data['source_file'] = xml_file_path.name
             
             vessels.append(vessel_data)
-        
-        # Create DataFrame
+
         df = pd.DataFrame(vessels)
-        
+
         # Sort by timestamp
         if not df.empty and 'timestamp' in df.columns:
             df = df.sort_values('timestamp', na_position='last')
-        
+
+        # Cache the data
+        _cache[cache_key] = {
+            'data': df,
+            'timestamp': time.time()
+        }
+
         return df
-        
+
     except Exception as e:
         logger.error(f"Error loading vessel data from {xml_file_path}: {e}")
         return pd.DataFrame()
@@ -1095,6 +1239,10 @@ def get_comprehensive_vessel_analysis() -> Dict[str, any]:
     Returns:
         Dict: Comprehensive vessel analytics including trends and patterns
     """
+    cache_key = "comprehensive_vessel_analysis"
+    if is_cache_valid(cache_key):
+        return cache.get(cache_key)
+
     try:
         all_vessel_data = load_all_vessel_data()
         
@@ -1171,6 +1319,7 @@ def get_comprehensive_vessel_analysis() -> Dict[str, any]:
         analysis['analysis_timestamp'] = datetime.now().isoformat()
         
         logger.info(f"Comprehensive vessel analysis completed: {len(combined_df)} total vessels")
+        cache.set(cache_key, analysis)
         return analysis
         
     except Exception as e:
@@ -1811,6 +1960,10 @@ def get_cargo_breakdown_analysis() -> Dict[str, any]:
     Returns:
         Dict: Comprehensive cargo analysis including efficiency metrics
     """
+    cache_key = "cargo_breakdown_analysis"
+    if is_cache_valid(cache_key):
+        return cache.get(cache_key)
+
     try:
         cargo_stats = load_port_cargo_statistics()
         
@@ -1854,6 +2007,7 @@ def get_cargo_breakdown_analysis() -> Dict[str, any]:
         analysis['efficiency_metrics'] = _calculate_efficiency_metrics(cargo_stats)
         
         logger.info("Completed comprehensive cargo breakdown analysis")
+        cache.set(cache_key, analysis)
         return analysis
         
     except Exception as e:
@@ -2049,6 +2203,10 @@ def get_throughput_trends() -> Dict[str, any]:
     Returns:
         Dict: Comprehensive analysis including trends, seasonality, and forecasts
     """
+    cache_key = "throughput_trends_analysis"
+    if is_cache_valid(cache_key):
+        return cache.get(cache_key)
+
     monthly_data = load_container_throughput()
     
     if monthly_data.empty:
@@ -2101,6 +2259,7 @@ def get_throughput_trends() -> Dict[str, any]:
         }
         
         logger.info("Generated comprehensive throughput trend analysis")
+        cache.set(cache_key, comprehensive_trends)
         return comprehensive_trends
         
     except Exception as e:
@@ -2359,6 +2518,10 @@ def validate_data_quality() -> Dict[str, any]:
     Returns:
         Dict: Comprehensive data quality metrics and validation results
     """
+    cache_key = "data_quality_validation"
+    if is_cache_valid(cache_key):
+        return cache.get(cache_key)
+
     validation_results = {
         'container_throughput': {},
         'cargo_statistics': {},
@@ -2408,6 +2571,7 @@ def validate_data_quality() -> Dict[str, any]:
         validation_results['overall_status'] = _determine_overall_status(validation_results)
         
         logger.info(f"Enhanced data validation completed: {validation_results['overall_status']}")
+        cache.set(cache_key, validation_results)
         return validation_results
         
     except Exception as e:
@@ -2836,6 +3000,10 @@ def load_berth_configurations() -> List[Dict]:
     Returns:
         List[Dict]: List of berth configuration dictionaries
     """
+    cached_data = data_cache.get("berth_configurations")
+    if cached_data is not None:
+        return cached_data
+
     try:
         # Define the path to the berth data CSV file
         berth_csv_path = (Path(__file__).parent.parent.parent / ".." / "data" / "berth_data" / "berths.csv").resolve()
@@ -2844,6 +3012,7 @@ def load_berth_configurations() -> List[Dict]:
             logger.warning(f"Berth CSV file not found at {berth_csv_path}, falling back to settings")
             # Fallback to hardcoded configuration from settings
             from ..config.settings import BERTH_CONFIGS
+            data_cache.set("berth_configurations", BERTH_CONFIGS)
             return BERTH_CONFIGS
         
         # Load berth data from CSV
@@ -2862,6 +3031,7 @@ def load_berth_configurations() -> List[Dict]:
             berth_configs.append(berth_config)
         
         logger.info(f"Loaded {len(berth_configs)} berth configurations from CSV")
+        data_cache.set("berth_configurations", berth_configs)
         return berth_configs
         
     except Exception as e:
@@ -2870,6 +3040,7 @@ def load_berth_configurations() -> List[Dict]:
         try:
             from ..config.settings import BERTH_CONFIGS
             logger.info(f"Using fallback berth configurations from settings: {len(BERTH_CONFIGS)} berths")
+            data_cache.set("berth_configurations", BERTH_CONFIGS)
             return BERTH_CONFIGS
         except ImportError:
             logger.error("Could not import fallback berth configurations")
@@ -2886,6 +3057,10 @@ def extract_historical_simulation_parameters() -> Dict[str, any]:
     Returns:
         Dict containing enhanced simulation parameters based on historical data
     """
+    cached_data = data_cache.get("historical_simulation_parameters")
+    if cached_data is not None:
+        return cached_data
+
     try:
         logger.info("Extracting simulation parameters from historical data...")
         
@@ -2934,10 +3109,9 @@ def extract_historical_simulation_parameters() -> Dict[str, any]:
             if 'seaborne_teus' in latest_cargo.columns and 'total_teus' in latest_cargo.columns:
                 seaborne_ratio = latest_cargo['seaborne_teus'].mean() / latest_cargo['total_teus'].mean()
                 # Adjust container ship percentage based on seaborne ratio
-                ship_type_distribution['container'] = min(0.85, max(0.65, seaborne_ratio))
-                ship_type_distribution['bulk'] = 0.25 - (ship_type_distribution['container'] - 0.75) * 0.5
-                ship_type_distribution['mixed'] = 1.0 - ship_type_distribution['container'] - ship_type_distribution['bulk']
-        
+                ship_type_distribution['container'] = seaborne_ratio * 0.8  # Assuming 80% of seaborne TEUs are from container ships
+                ship_type_distribution['bulk'] = 1 - ship_type_distribution['container']
+
         # Calculate processing efficiency based on historical trends
         time_series_analysis = trends.get('time_series_analysis', {})
         linear_trend = time_series_analysis.get('linear_trend', {})
@@ -2984,6 +3158,7 @@ def extract_historical_simulation_parameters() -> Dict[str, any]:
         logger.info(f"Estimated ship arrival rate: {enhanced_params['ship_arrival_rate']:.2f} ships/hour")
         logger.info(f"Peak season multiplier: {enhanced_params['seasonal_patterns']['peak_multiplier']:.2f}")
         
+        data_cache.set("historical_simulation_parameters", enhanced_params)
         return enhanced_params
         
     except Exception as e:
