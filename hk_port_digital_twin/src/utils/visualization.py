@@ -21,58 +21,8 @@ def create_port_layout_chart(berths_data: pd.DataFrame) -> go.Figure:
     Returns:
         Plotly figure showing port layout
     """
-    # Create a scatter plot representing berths
-    fig = go.Figure()
-    
-    # Define colors for different berth types
-    color_map = {
-        'container': 'blue',
-        'bulk': 'green', 
-        'mixed': 'orange'
-    }
-    
-    # Create positions for berths (arrange in a line along the port)
-    x_positions = list(range(len(berths_data)))
-    y_positions = [0] * len(berths_data)
-    
-    for idx, berth in berths_data.iterrows():
-        color = color_map.get(berth['berth_type'], 'gray')
-        symbol = 'square' if berth.get('is_occupied', False) else 'circle'
-        
-        fig.add_trace(go.Scatter(
-            x=[x_positions[idx]],
-            y=[y_positions[idx]],
-            mode='markers+text',
-            marker=dict(
-                size=20 + berth['crane_count'] * 5,  # Size based on crane count
-                color=color,
-                symbol=symbol,
-                line=dict(width=2, color='black')
-            ),
-            text=[berth['name']],
-            textposition='top center',
-            name=f"Berth {berth['berth_id']}",
-            hovertemplate=(
-                f"<b>{berth['name']}</b><br>"
-                f"Type: {berth['berth_type']}<br>"
-                f"Capacity: {berth['max_capacity_teu']:,} TEU<br>"
-                f"Cranes: {berth['crane_count']}<br>"
-                f"Status: {'Occupied' if berth.get('is_occupied', False) else 'Available'}"
-                "<extra></extra>"
-            )
-        ))
-    
-    fig.update_layout(
-        title="Hong Kong Port - Berth Layout",
-        xaxis_title="Berth Position",
-        yaxis_title="",
-        showlegend=False,
-        height=300,
-        yaxis=dict(showticklabels=False, showgrid=False, zeroline=False),
-        xaxis=dict(showgrid=True, zeroline=False)
-    )
-    
-    return fig
+    # Return an empty figure to hide the chart
+    return go.Figure()
 
 
 def create_ship_queue_chart(queue_data: List[Dict]) -> go.Figure:

@@ -542,16 +542,7 @@ def main():
                 
                 st.metric("Utilization Rate", "75%")
         
-        # Port Layout
-        st.subheader("Port Layout")
-        if create_port_layout_chart is not None and 'berths' in data and data['berths'] is not None:
-            fig_layout = create_port_layout_chart(data['berths'])
-            st.plotly_chart(fig_layout, use_container_width=True, key="port_layout_chart")
-        else:
-            if 'berths' not in data or data['berths'] is None:
-                st.warning("Berth data not available. Please check data loading.")
-            else:
-                st.info("Port layout visualization not available. Please ensure visualization module is properly installed.")
+ 
     
     with tab2:
         # Vessel Analytics tab (same for both consolidated and original modes)
