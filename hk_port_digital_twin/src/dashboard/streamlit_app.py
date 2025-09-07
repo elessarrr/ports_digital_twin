@@ -511,36 +511,38 @@ def main():
         # Metrics section
         st.subheader("📊 Key Metrics")
         
-        col1, col2 = st.columns([1, 1])
-        
+        vessel_analysis = data.get('vessel_queue_analysis', {})
+        col1, col2, col3, col4 = st.columns(4)
+
         with col1:
             # Enhanced metrics with real vessel data
-                vessel_analysis = data.get('vessel_queue_analysis', {})
-                
-                if vessel_analysis:
-                    active_vessels = vessel_analysis.get('current_status', {}).get('active_vessels', 0)
-                    st.metric("Live Vessels", active_vessels)
-                else:
-                    # Safe access to queue data with fallback
-                    queue_length = len(data.get('queue', [])) if 'queue' in data and data['queue'] is not None else 0
-                    st.metric("Active Ships", queue_length)
-                
-                # Safe access to berths data with fallback
-                berths_df = data.get('berths', pd.DataFrame())
-                if not berths_df.empty and 'status' in berths_df.columns:
-                    available_berths = len(berths_df[berths_df['status'] == 'available'])
-                else:
-                    available_berths = 0
-                st.metric("Available Berths", available_berths)
-                
-                # Show recent arrivals if available
-                if vessel_analysis and 'recent_activity' in vessel_analysis:
-                    arrivals_24h = vessel_analysis['recent_activity'].get('arrivals_last_24h', 0)
-                    st.metric("24h Arrivals", arrivals_24h)
-                else:
-                    st.metric("Avg Waiting Time", "2.5 hrs")
-                
-                st.metric("Utilization Rate", "75%")
+            if vessel_analysis:
+                active_vessels = vessel_analysis.get('current_status', {}).get('active_vessels', 0)
+                st.metric("Live Vessels", active_vessels)
+            else:
+                # Safe access to queue data with fallback
+                queue_length = len(data.get('queue', [])) if 'queue' in data and data['queue'] is not None else 0
+                st.metric("Active Ships", queue_length)
+
+        with col2:
+            # Safe access to berths data with fallback
+            berths_df = data.get('berths', pd.DataFrame())
+            if not berths_df.empty and 'status' in berths_df.columns:
+                available_berths = len(berths_df[berths_df['status'] == 'available'])
+            else:
+                available_berths = 0
+            st.metric("Available Berths", available_berths)
+
+        with col3:
+            # Show recent arrivals if available
+            if vessel_analysis and 'recent_activity' in vessel_analysis:
+                arrivals_24h = vessel_analysis['recent_activity'].get('arrivals_last_24h', 0)
+                st.metric("24h Arrivals", arrivals_24h)
+            else:
+                st.metric("Avg Waiting Time", "2.5 hrs")
+
+        with col4:
+            st.metric("Utilization Rate", "75%")
         
  
     
