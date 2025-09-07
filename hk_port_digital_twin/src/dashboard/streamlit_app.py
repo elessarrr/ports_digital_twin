@@ -311,65 +311,13 @@ def initialize_session_state():
     # Removed expand_sections_by_default and remember_section_states - no longer needed after removing section navigation
     if 'scenarios_sections_expanded' not in st.session_state:
         st.session_state.scenarios_sections_expanded = False
-
-
-def create_sidebar():
-    """Create sidebar with simulation controls"""
-    st.sidebar.title("🚢 Port Control Panel")
-    
-    # Scenario Management
-    st.sidebar.subheader("📋 Scenario Management")
     
     # Initialize scenario manager if not in session state
     if 'scenario_manager' not in st.session_state:
         st.session_state.scenario_manager = ScenarioManager()
-    
-    scenario_manager = st.session_state.scenario_manager
-    
-    # Scenario selection
-    available_scenarios = list_available_scenarios()
-    current_scenario = scenario_manager.get_current_scenario()
-    
-    selected_scenario = st.sidebar.selectbox(
-        "Select Scenario",
-        available_scenarios,
-        index=available_scenarios.index(current_scenario) if current_scenario in available_scenarios else 0,
-        help="Choose operational scenario based on expected conditions"
-    )
-    
-    # Update scenario if changed
-    if selected_scenario != current_scenario:
-        scenario_manager.set_scenario(selected_scenario)
-        st.session_state.scenario = selected_scenario  # Update session state
-        st.sidebar.success(f"Scenario changed to: {selected_scenario}")
-        st.rerun()
-    
-    # Auto-detection toggle
-    auto_detect = st.sidebar.checkbox(
-        "Auto-detect scenario",
-        value=scenario_manager.auto_detection_enabled,
-        help="Automatically select scenario based on current date and historical patterns"
-    )
-    
-    if auto_detect != scenario_manager.auto_detection_enabled:
-        if auto_detect:
-            scenario_manager.enable_auto_detection()
-        else:
-            scenario_manager.disable_auto_detection()
-    
-    # Display scenario info
-    scenario_info = scenario_manager.get_scenario_info()
-    if scenario_info:
-        with st.sidebar.expander("📊 Scenario Details", expanded=False):
-            st.write(f"**Description:** {scenario_info.get('description', 'N/A')}")
-            st.write(f"**Ship Arrival Rate:** {scenario_info.get('ship_arrival_multiplier', 1.0):.1f}x")
-            st.write(f"**Container Volume:** {scenario_info.get('container_volume_multiplier', 1.0):.1f}x")
-            st.write(f"**Processing Efficiency:** {scenario_info.get('processing_efficiency_factor', 1.0):.1f}x")
-    
-    # Historical Data Integration section removed as per demo refinement plan
-    
-    # Simulation Settings section removed as per demo refinement plan
-    # This includes duration slider, arrival rate controls, start/stop buttons, and status display
+
+
+
 
 
 def load_data(scenario: str):
@@ -393,14 +341,13 @@ def main():
         page_title="Hong Kong Port Digital Twin",
         page_icon="🚢",
         layout="wide",
-        initial_sidebar_state="expanded"
+        initial_sidebar_state="collapsed"
     )
 
     # Initialize session state
     initialize_session_state()
 
-    # --- Sidebar ---
-    create_sidebar()
+
     
     # --- Main Content ---
     
