@@ -1023,6 +1023,7 @@ def main():
                 </div>
                 ''', unsafe_allow_html=True)
                 import plotly.graph_objects as go
+                import numpy as np
                 
                 hours = list(range(24))
                 arrivals = [max(0, int(len(vessel_data) * (0.3 + 0.7 * abs(np.sin(h/4))))) for h in hours]
@@ -1124,60 +1125,60 @@ def main():
             st.info("💡 Try switching to a different scenario or refreshing the page.")
             return
         
-        # Data Export Section
-        st.subheader("📥 Data Export")
-        export_col1, export_col2, export_col3, export_col4 = st.columns(4)
-        
-        with export_col1:
-            # Export berth data
-            berth_csv = data['berths'].to_csv(index=False)
-            st.download_button(
-                label="📊 Export Berth Data",
-                data=berth_csv,
-                file_name=f"berth_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                mime="text/csv"
-            )
-        
-        with export_col2:
-            # Export queue data
-            queue_csv = data['queue'].to_csv(index=False)
-            st.download_button(
-                label="🚢 Export Queue Data",
-                data=queue_csv,
-                file_name=f"queue_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                mime="text/csv"
-            )
-        
-        with export_col3:
-            # Export timeline data
-            timeline_csv = data['timeline'].to_csv(index=False)
-            st.download_button(
-                label="📈 Export Timeline Data",
-                data=timeline_csv,
-                file_name=f"timeline_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                mime="text/csv"
-            )
-        
-        with export_col4:
-            # Export all data as JSON
-            import json
-            export_data = {
-                'berths': data['berths'].to_dict('records'),
-                'queue': data['queue'].to_dict('records'),
-                'timeline': data['timeline'].to_dict('records'),
-                'waiting': data['waiting'].to_dict('records'),
-                'kpis': data['kpis'].to_dict('records'),
-                'export_timestamp': datetime.now().isoformat()
-            }
-            json_data = json.dumps(export_data, indent=2, default=str)
-            st.download_button(
-                label="📋 Export All (JSON)",
-                data=json_data,
-                file_name=f"port_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                mime="application/json"
-            )
-        
-        st.markdown("---")
+        # Data Export Section - COMMENTED OUT
+        # st.subheader("📥 Data Export")
+        # export_col1, export_col2, export_col3, export_col4 = st.columns(4)
+        # 
+        # with export_col1:
+        #     # Export berth data
+        #     berth_csv = data['berths'].to_csv(index=False)
+        #     st.download_button(
+        #         label="📊 Export Berth Data",
+        #         data=berth_csv,
+        #         file_name=f"berth_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+        #         mime="text/csv"
+        #     )
+        # 
+        # with export_col2:
+        #     # Export queue data
+        #     queue_csv = data['queue'].to_csv(index=False)
+        #     st.download_button(
+        #         label="🚢 Export Queue Data",
+        #         data=queue_csv,
+        #         file_name=f"queue_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+        #         mime="text/csv"
+        #     )
+        # 
+        # with export_col3:
+        #     # Export timeline data
+        #     timeline_csv = data['timeline'].to_csv(index=False)
+        #     st.download_button(
+        #         label="📈 Export Timeline Data",
+        #         data=timeline_csv,
+        #         file_name=f"timeline_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+        #         mime="text/csv"
+        #     )
+        # 
+        # with export_col4:
+        #     # Export all data as JSON
+        #     import json
+        #     export_data = {
+        #         'berths': data['berths'].to_dict('records'),
+        #         'queue': data['queue'].to_dict('records'),
+        #         'timeline': data['timeline'].to_dict('records'),
+        #         'waiting': data['waiting'].to_dict('records'),
+        #         'kpis': data['kpis'].to_dict('records'),
+        #         'export_timestamp': datetime.now().isoformat()
+        #     }
+        #     json_data = json.dumps(export_data, indent=2, default=str)
+        #     st.download_button(
+        #         label="📋 Export All (JSON)",
+        #         data=json_data,
+        #         file_name=f"port_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+        #         mime="application/json"
+        #     )
+        # 
+        # st.markdown("---")
         
         col1, col2 = st.columns(2)
         
