@@ -381,19 +381,19 @@ def main():
     use_consolidated = st.session_state.get('use_consolidated_scenarios', True)
     
     if use_consolidated:
-        # New consolidated structure with Settings as tab7 (Ships & Berths removed, Unified Simulations hidden)
-        tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+        # New consolidated structure with Settings as tab6 (Ships & Berths and Analytics removed)
+        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
             "📊 Overview", "🚢 Vessel Analytics", "📦 Cargo Statistics", "🛳️ Live Vessels", 
-            "📈 Analytics", "🎯 Scenarios", "⚙️ Settings"
+            "🎯 Scenarios", "⚙️ Settings"
         ])
     else:
-        # Original structure with Settings as tab7 (Ships & Berths tab removed)
-        tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
+        # Original structure with Settings as tab6 (Ships & Berths and Analytics tabs removed)
+        tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
             "📊 Overview", "🚢 Vessel Analytics", "📦 Cargo Statistics", "🛳️ Live Vessels",
-            "📈 Analytics", "🎯 Scenarios", "⚙️ Settings",
+            "🎯 Scenarios", "⚙️ Settings",
             "📊 Performance Analytics", "📦 Cargo Analysis"
         ])
-        # Note: Ships & Berths tab removed due to redundancy with Scenarios tab
+        # Note: Ships & Berths and Analytics tabs removed - Analytics moved to Vessel Analytics tab
     
     with tab1:
         st.subheader("Port Overview")
@@ -577,6 +577,37 @@ def main():
                 'analysis_timestamp': datetime.now().isoformat()
             }
             render_vessel_analytics_dashboard(sample_vessel_analysis)
+        
+        # Analytics Section - moved from Analytics tab
+        st.markdown("---")
+        st.subheader("📈 Port Analytics")
+        st.markdown("Throughput and waiting time analysis for port operations")
+        
+        # Check if data is properly loaded for analytics
+        if data and 'berths' in data:
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.subheader("Throughput Timeline")
+                if create_throughput_timeline is not None:
+                    fig_timeline = create_throughput_timeline(data['timeline'])
+                    st.plotly_chart(fig_timeline, use_container_width=True, key="vessel_analytics_throughput_timeline_chart")
+                else:
+                    st.warning("Throughput timeline visualization not available. Please check visualization module import.")
+                    st.dataframe(data['timeline'], use_container_width=True)
+            
+            with col2:
+                st.subheader("Waiting Time Distribution")
+                # Convert DataFrame to list for visualization
+                waiting_times_list = data['waiting']['waiting_time'].tolist()
+                if create_waiting_time_distribution is not None:
+                    fig_waiting = create_waiting_time_distribution(waiting_times_list)
+                    st.plotly_chart(fig_waiting, use_container_width=True, key="vessel_analytics_waiting_time_chart")
+                else:
+                    st.warning("Waiting time distribution visualization not available. Please check visualization module import.")
+                    st.dataframe(data['waiting'], use_container_width=True)
+        else:
+            st.info("Analytics data not available. Please ensure scenario data is properly loaded.")
 
     
     with tab3:
@@ -1117,91 +1148,7 @@ def main():
             })
             st.dataframe(sample_data, use_container_width=True)
 
-    with tab5:
-        st.subheader("Analytics")
-        
-        # Check if data is properly loaded
-        if not data or 'berths' not in data:
-            st.error("❌ Data loading failed. Please check the scenario selection and try again.")
-            st.info("💡 Try switching to a different scenario or refreshing the page.")
-            return
-        
-        # Data Export Section - COMMENTED OUT
-        # st.subheader("📥 Data Export")
-        # export_col1, export_col2, export_col3, export_col4 = st.columns(4)
-        # 
-        # with export_col1:
-        #     # Export berth data
-        #     berth_csv = data['berths'].to_csv(index=False)
-        #     st.download_button(
-        #         label="📊 Export Berth Data",
-        #         data=berth_csv,
-        #         file_name=f"berth_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-        #         mime="text/csv"
-        #     )
-        # 
-        # with export_col2:
-        #     # Export queue data
-        #     queue_csv = data['queue'].to_csv(index=False)
-        #     st.download_button(
-        #         label="🚢 Export Queue Data",
-        #         data=queue_csv,
-        #         file_name=f"queue_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-        #         mime="text/csv"
-        #     )
-        # 
-        # with export_col3:
-        #     # Export timeline data
-        #     timeline_csv = data['timeline'].to_csv(index=False)
-        #     st.download_button(
-        #         label="📈 Export Timeline Data",
-        #         data=timeline_csv,
-        #         file_name=f"timeline_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-        #         mime="text/csv"
-        #     )
-        # 
-        # with export_col4:
-        #     # Export all data as JSON
-        #     import json
-        #     export_data = {
-        #         'berths': data['berths'].to_dict('records'),
-        #         'queue': data['queue'].to_dict('records'),
-        #         'timeline': data['timeline'].to_dict('records'),
-        #         'waiting': data['waiting'].to_dict('records'),
-        #         'kpis': data['kpis'].to_dict('records'),
-        #         'export_timestamp': datetime.now().isoformat()
-        #     }
-        #     json_data = json.dumps(export_data, indent=2, default=str)
-        #     st.download_button(
-        #         label="📋 Export All (JSON)",
-        #         data=json_data,
-        #         file_name=f"port_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-        #         mime="application/json"
-        #     )
-        # 
-        # st.markdown("---")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("Throughput Timeline")
-            if create_throughput_timeline is not None:
-                fig_timeline = create_throughput_timeline(data['timeline'])
-                st.plotly_chart(fig_timeline, use_container_width=True, key="main_throughput_timeline_chart")
-            else:
-                st.warning("Throughput timeline visualization not available. Please check visualization module import.")
-                st.dataframe(data['timeline'], use_container_width=True)
-        
-        with col2:
-            st.subheader("Waiting Time Distribution")
-            # Convert DataFrame to list for visualization
-            waiting_times_list = data['waiting']['waiting_time'].tolist()
-            if create_waiting_time_distribution is not None:
-                fig_waiting = create_waiting_time_distribution(waiting_times_list)
-                st.plotly_chart(fig_waiting, use_container_width=True, key="main_waiting_time_chart")
-            else:
-                st.warning("Waiting time distribution visualization not available. Please check visualization module import.")
-                st.dataframe(data['waiting'], use_container_width=True)
+    # Analytics tab removed - content moved to bottom of Vessel Analytics tab (tab2)
     
     # COMMENTED OUT: Ships & Berths tab - functionality moved to Scenarios tab
     # with tab6:
@@ -1330,7 +1277,7 @@ def main():
     #         with ops_col3:
     #             st.metric("Efficiency Rate", "87.5%")
     
-    with tab6:
+    with tab5:
         if use_consolidated:
             # Initialize and render the consolidated scenarios tab
             consolidated_tab = ConsolidatedScenariosTab()
@@ -1404,7 +1351,7 @@ def main():
     #     st.session_state.unified_simulations_tab.render()
     
     # Settings tab - now tab7 (was tab8, originally tab9)
-    with tab7:
+    with tab6:
         st.subheader("⚙️ Settings")
         st.markdown("Configure simulation parameters and system settings")
         
@@ -1507,12 +1454,12 @@ def main():
     
     # Additional tabs for original structure
     if not use_consolidated:
-        with tab8:
+        with tab7:
             st.subheader("📊 Performance Analytics")
             st.markdown("Detailed performance metrics and analytics")
             st.info("Performance analytics content would be displayed here.")
         
-        with tab9:
+        with tab8:
             st.subheader("📦 Cargo Analysis")
             st.markdown("Advanced cargo flow and logistics analysis")
             st.info("Cargo analysis content would be displayed here.")

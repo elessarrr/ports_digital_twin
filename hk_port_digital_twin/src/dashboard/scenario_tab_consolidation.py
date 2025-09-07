@@ -42,7 +42,7 @@ except ImportError:
     
     def get_default_section_states():
         return {
-            'overview': True,
+            'overview': False,
             'operations': False,
             'analytics': False,
             'cargo': False,
@@ -199,7 +199,7 @@ class ConsolidatedScenariosTab:
         
         # Get current scenario for visual indicators
         current_scenario = self._get_current_scenario()
-        scenario_badge = self._get_scenario_badge(current_scenario)
+        scenario_badge = self._get_scenario_badge(current_scenario, section_key)
         
         # Create section header with scenario indicator
         section_title = f"{section_info.get('icon', '')} {section_info.get('title', section_key.title())} {scenario_badge}"
@@ -303,7 +303,7 @@ class ConsolidatedScenariosTab:
             # Display current scenario with visual indicator
             current_scenario = self._get_current_scenario()
             scenario_color = self._get_scenario_color(current_scenario)
-            scenario_badge = self._get_scenario_badge(current_scenario)
+            scenario_badge = self._get_scenario_badge(current_scenario, 'overview')
             
             # Primary scenario selection
             primary_scenario = st.selectbox(
@@ -333,7 +333,7 @@ class ConsolidatedScenariosTab:
                 for comp_scenario in comparison_scenarios:
                     comp_scenario_name = self._map_scenario_key_to_name(comp_scenario)
                     comp_color = self._get_scenario_color(comp_scenario_name)
-                    comp_badge = self._get_scenario_badge(comp_scenario_name)
+                    comp_badge = self._get_scenario_badge(comp_scenario_name, 'overview')
                     comp_border = self._get_scenario_border_color(comp_scenario_name)
                     
                     st.markdown(
@@ -1695,12 +1695,13 @@ class ConsolidatedScenariosTab:
         else:
             return '#28a745'  # Green for normal operations
     
-    def _get_scenario_badge(self, scenario: str) -> str:
+    def _get_scenario_badge(self, scenario: str, section_key: str = None) -> str:
         """
         Get an emoji badge for a scenario based on its type.
         
         Args:
             scenario: Scenario name
+            section_key: The section key to determine if badge should be shown
             
         Returns:
             Emoji badge representing the scenario
@@ -1716,7 +1717,11 @@ class ConsolidatedScenariosTab:
         elif 'typhoon' in scenario_lower or 'storm' in scenario_lower:
             return '🌪️'  # Tornado for weather disruptions
         else:
-            return '✅'  # Check mark for normal operations
+            # Don't show green tick for Overview section to keep it in sync with other sections
+            if section_key == 'overview':
+                return ''  # No symbol for Overview section
+            else:
+                return '✅'  # Check mark for normal operations in other sections
 
     def _render_analytics_section(self, scenario_data: Optional[Dict[str, Any]] = None) -> None:
         """Render cargo analysis.
