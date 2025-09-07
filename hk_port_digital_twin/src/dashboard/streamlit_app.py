@@ -47,6 +47,22 @@ from hk_port_digital_twin.src.dashboard.vessel_charts import render_vessel_analy
 from hk_port_digital_twin.src.dashboard.executive_dashboard import ExecutiveDashboard
 from hk_port_digital_twin.src.utils.strategic_visualization import StrategicVisualization, render_strategic_controls
 from hk_port_digital_twin.src.core.strategic_simulation_controller import StrategicSimulationController
+
+# Function to load and apply custom CSS
+def load_css(file_name):
+    with open(file_name) as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+# Page configuration
+st.set_page_config(
+    page_title="Hong Kong Port Digital Twin",
+    page_icon="🚢",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# Load custom CSS
+load_css("hk_port_digital_twin/src/dashboard/style.css")
 # from hk_port_digital_twin.src.dashboard.unified_simulations_tab import UnifiedSimulationsTab  # Commented out - tab hidden
 
 try:
@@ -336,14 +352,6 @@ def load_data(scenario: str):
 
 def main():
     """Main dashboard application"""
-    # Page configuration
-    st.set_page_config(
-        page_title="Hong Kong Port Digital Twin",
-        page_icon="🚢",
-        layout="wide",
-        initial_sidebar_state="collapsed"
-    )
-
     # Initialize session state
     initialize_session_state()
 
@@ -527,14 +535,17 @@ def main():
                     recent_activity = vessel_analysis.get('recent_activity', {})
                     if recent_activity:
                         st.write(f"**Recent Activity:** {recent_activity.get('vessels_last_24h', 0)} vessels in last 24 hours")
+                    
+                    # Display timestamp if available
+                    from hk_port_digital_twin.src.dashboard.vessel_charts import _extract_latest_timestamp
+                    latest_timestamp = _extract_latest_timestamp(vessel_analysis)
+                    if latest_timestamp:
+                        st.caption(f"📅 Last updated at: {latest_timestamp}")
+                    else:
+                        st.caption("📅 Last updated at: Not available")
+
                 
-                # Display timestamp if available
-                from hk_port_digital_twin.src.dashboard.vessel_charts import _extract_latest_timestamp
-                latest_timestamp = _extract_latest_timestamp(vessel_analysis)
-                if latest_timestamp:
-                    st.caption(f"📅 Last updated at: {latest_timestamp}")
-                else:
-                    st.caption("📅 Last updated at: Not available")
+
                 
                 # Render the vessel analytics dashboard with comprehensive analysis data
                 render_vessel_analytics_dashboard(vessel_analysis)
@@ -601,19 +612,41 @@ def main():
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             tables_processed = cargo_analysis.get('data_summary', {}).get('tables_processed', 0)
-            st.metric("Tables Processed", tables_processed)
+            st.markdown(f'''
+            <div class="card">
+                <div class="card-title">Tables Processed</div>
+                <div class="card-text">{tables_processed}</div>
+            </div>
+            ''', unsafe_allow_html=True)
         with col2:
-            st.metric("Analysis Status", "✅ Complete" if cargo_analysis else "❌ Failed")
+            status = "✅ Complete" if cargo_analysis else "❌ Failed"
+            st.markdown(f'''
+            <div class="card">
+                <div class="card-title">Analysis Status</div>
+                <div class="card-text">{status}</div>
+            </div>
+            ''', unsafe_allow_html=True)
         with col3:
             analysis_sections = len([k for k in cargo_analysis.keys() if k.endswith('_analysis')])
-            st.metric("Analysis Sections", analysis_sections)
+            st.markdown(f'''
+            <div class="card">
+                <div class="card-title">Analysis Sections</div>
+                <div class="card-text">{analysis_sections}</div>
+            </div>
+            ''', unsafe_allow_html=True)
         with col4:
             timestamp = cargo_analysis.get('data_summary', {}).get('analysis_timestamp', datetime.now().isoformat())
-            st.metric("Analysis Date", timestamp[:10] if timestamp else datetime.now().strftime("%Y-%m-%d"))
+            date = timestamp[:10] if timestamp else datetime.now().strftime("%Y-%m-%d")
+            st.markdown(f'''
+            <div class="card">
+                <div class="card-title">Analysis Date</div>
+                <div class="card-text">{date}</div>
+            </div>
+            ''', unsafe_allow_html=True)
 
         # Create tabs for different analysis sections
-        cargo_tab1, cargo_tab2, cargo_tab3, cargo_tab4, cargo_tab5, cargo_tab6 = st.tabs([
-            "📊 Shipment Types", "🚢 Transport Modes", "📈 Time Series", "🔮 Forecasting", "📦 Cargo Types", "📍 Locations"
+        cargo_tab1, cargo_tab2, cargo_tab3 = st.tabs([
+            "📊 Shipment Types", "🚢 Transport Modes", "📈 Time Series"
         ])
 
         with cargo_tab1:
@@ -861,127 +894,7 @@ def main():
                 chart_col1, chart_col2, chart_col3 = st.columns([0.1, 0.8, 0.1])
                 with chart_col2:
                     st.plotly_chart(fig, use_container_width=True, key="time_series_chart")
-            else:
-                st.info("No time series data available")
-                st.warning("Please ensure the Port Cargo Statistics CSV files are available in the raw_data directory.")
 
-        with cargo_tab4:
-            st.subheader("Forecasting")
-            
-            # Get forecasting data from cargo analysis
-            forecasting_data = cargo_analysis.get('forecasting_analysis', {})
-            
-            if forecasting_data:
-                st.write("**Forecast Summary**")
-                
-                # Display forecast metrics
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    forecast_period = forecasting_data.get('forecast_period', 'N/A')
-                    st.metric("Forecast Period", forecast_period)
-                
-                with col2:
-                    model_accuracy = forecasting_data.get('model_accuracy', 0)
-                    st.metric("Model Accuracy", f"{model_accuracy:.1%}" if model_accuracy else "N/A")
-                
-                with col3:
-                    trend_direction = forecasting_data.get('trend_direction', 'stable')
-                    st.metric("Trend Direction", trend_direction.title())
-                
-                # Display forecast charts if available
-                forecast_charts = forecasting_data.get('charts', {})
-                if forecast_charts:
-                    for chart_name, chart_data in forecast_charts.items():
-                        st.write(f"**{chart_name.replace('_', ' ').title()}**")
-                        if isinstance(chart_data, pd.DataFrame):
-                            st.line_chart(chart_data)
-                        else:
-                            st.info(f"Chart data for {chart_name} not available")
-            else:
-                st.info("No forecasting analysis available")
-                st.warning("Please ensure the cargo analysis module is properly configured.")
-
-        with cargo_tab5:
-            st.subheader("Cargo Types")
-            
-            # Get cargo type data from analysis
-            cargo_types_data = cargo_analysis.get('cargo_types_analysis', {})
-            
-            if cargo_types_data:
-                # Display cargo type breakdown
-                breakdown = cargo_types_data.get('breakdown', {})
-                if breakdown:
-                    st.write("**Cargo Type Distribution**")
-                    
-                    # Create DataFrame for display
-                    cargo_df = pd.DataFrame(list(breakdown.items()), 
-                                          columns=['Cargo Type', 'Volume (000 tonnes)'])
-                    
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.dataframe(cargo_df, use_container_width=True)
-                    
-                    with col2:
-                        # Create pie chart
-                        import plotly.express as px
-                        fig = px.pie(cargo_df, values='Volume (000 tonnes)', names='Cargo Type',
-                                   title="Cargo Type Distribution")
-                        st.plotly_chart(fig, use_container_width=True)
-                
-                # Display trends if available
-                trends = cargo_types_data.get('trends', {})
-                if trends:
-                    st.write("**Cargo Type Trends**")
-                    for cargo_type, trend_data in trends.items():
-                        if isinstance(trend_data, pd.DataFrame):
-                            st.write(f"**{cargo_type.title()}**")
-                            st.line_chart(trend_data)
-            else:
-                st.info("No cargo types analysis available")
-                st.warning("Please ensure the cargo analysis module is properly configured.")
-
-        with cargo_tab6:
-            st.subheader("Locations")
-            
-            # Get location data from analysis
-            locations_data = cargo_analysis.get('locations_analysis', {})
-            
-            if locations_data:
-                # Display location breakdown
-                breakdown = locations_data.get('breakdown', {})
-                if breakdown:
-                    st.write("**Handling Location Distribution**")
-                    
-                    # Create DataFrame for display
-                    location_df = pd.DataFrame(list(breakdown.items()), 
-                                             columns=['Location', 'Volume (000 tonnes)'])
-                    
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.dataframe(location_df, use_container_width=True)
-                    
-                    with col2:
-                        # Create bar chart
-                        import plotly.express as px
-                        fig = px.bar(location_df, x='Location', y='Volume (000 tonnes)',
-                                   title="Volume by Handling Location")
-                        fig.update_xaxes(tickangle=45)
-                        st.plotly_chart(fig, use_container_width=True)
-                
-                # Display location trends if available
-                trends = locations_data.get('trends', {})
-                if trends:
-                    st.write("**Location Trends**")
-                    for location, trend_data in trends.items():
-                        if isinstance(trend_data, pd.DataFrame):
-                            st.write(f"**{location}**")
-                            st.line_chart(trend_data)
-            else:
-                st.info("No locations analysis available")
-                st.warning("Please ensure the cargo analysis module is properly configured.")
     
     with tab4:
         st.subheader("🚢 Live Vessel Arrivals")
@@ -1076,20 +989,39 @@ def main():
             
             with col1:
                 arrivals_6h = max(0, len(vessel_data) // 4)
-                st.metric("Arrivals (6h)", arrivals_6h)
-            
+                st.markdown(f"""
+                <div class="card">
+                    <div class="card-title">Arrivals (6h)</div>
+                    <div class="card-text">{arrivals_6h}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
             with col2:
                 arrivals_12h = max(0, len(vessel_data) // 3)
-                st.metric("Arrivals (12h)", arrivals_12h)
-            
+                st.markdown(f"""
+                <div class="card">
+                    <div class="card-title">Arrivals (12h)</div>
+                    <div class="card-text">{arrivals_12h}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
             with col3:
                 arrivals_24h = max(0, len(vessel_data) // 2)
-                st.metric("Arrivals (24h)", arrivals_24h)
+                st.markdown(f"""
+                <div class="card">
+                    <div class="card-title">Arrivals (24h)</div>
+                    <div class="card-text">{arrivals_24h}</div>
+                </div>
+                """, unsafe_allow_html=True)
             
             with col4:
-                st.write("**Activity Trend**")
-                # Create a simple trend chart
-                import numpy as np
+                departures_24h = max(0, len(vessel_data) // 5)
+                st.markdown(f'''
+                <div class="card">
+                    <div class="card-title">Departures (24h)</div>
+                    <div class="card-text">{departures_24h}</div>
+                </div>
+                ''', unsafe_allow_html=True)
                 import plotly.graph_objects as go
                 
                 hours = list(range(24))
