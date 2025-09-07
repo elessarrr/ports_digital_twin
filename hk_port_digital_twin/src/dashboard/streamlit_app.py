@@ -503,29 +503,30 @@ def main():
             vessel_analysis = get_comprehensive_vessel_analysis()
             
             if vessel_analysis and vessel_analysis.get('data_summary', {}).get('total_vessels', 0) > 0:
-                # Display data summary
                 data_summary = vessel_analysis.get('data_summary', {})
-                st.write(f"**Data Summary:** {data_summary.get('total_vessels', 0)} vessels loaded from {data_summary.get('files_processed', 0)} files")
-                
-                # Show data sources
-                data_sources = data_summary.get('data_sources', [])
-                if data_sources:
-                    st.write(f"**Data Sources:** {', '.join([src.replace('.xml', '') for src in data_sources])}")
-                
-                # Location breakdown
-                location_breakdown = vessel_analysis.get('location_type_breakdown', {})
-                if location_breakdown:
-                    st.write(f"**Locations:** {len(location_breakdown)} unique location types")
-                
-                # Ship category breakdown
-                category_breakdown = vessel_analysis.get('ship_category_breakdown', {})
-                if category_breakdown:
-                    st.write(f"**Ship Categories:** {len(category_breakdown)} different types")
-                
-                # Recent activity
-                recent_activity = vessel_analysis.get('recent_activity', {})
-                if recent_activity:
-                    st.write(f"**Recent Activity:** {recent_activity.get('vessels_last_24h', 0)} vessels in last 24 hours")
+                # Create a collapsible section for data summary
+                with st.expander("ℹ️ About the data used here", expanded=False):
+                    st.write(f"**Data Summary:** {data_summary.get('total_vessels', 0)} vessels loaded from {data_summary.get('files_processed', 0)} files")
+                    
+                    # Show data sources
+                    data_sources = data_summary.get('data_sources', [])
+                    if data_sources:
+                        st.write(f"**Data Sources:** {', '.join([src.replace('.xml', '') for src in data_sources])}")
+                    
+                    # Location breakdown
+                    location_breakdown = vessel_analysis.get('location_type_breakdown', {})
+                    if location_breakdown:
+                        st.write(f"**Locations:** {len(location_breakdown)} unique location types")
+                    
+                    # Ship category breakdown
+                    category_breakdown = vessel_analysis.get('ship_category_breakdown', {})
+                    if category_breakdown:
+                        st.write(f"**Ship Categories:** {len(category_breakdown)} different types")
+                    
+                    # Recent activity
+                    recent_activity = vessel_analysis.get('recent_activity', {})
+                    if recent_activity:
+                        st.write(f"**Recent Activity:** {recent_activity.get('vessels_last_24h', 0)} vessels in last 24 hours")
                 
                 # Display timestamp if available
                 from hk_port_digital_twin.src.dashboard.vessel_charts import _extract_latest_timestamp
