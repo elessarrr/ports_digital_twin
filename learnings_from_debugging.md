@@ -49,8 +49,58 @@ self.unified_framework = UnifiedSimulationController()
 
 ### Key Learnings
 
-1. **Class Name Verification**: Always verify that class names match their actual definitions, especially after refactoring.
-2. **Import vs Usage**: Ensure that imported classes are used with their correct names throughout the codebase.
+1. **Class Name Verification**: Always verify that class names match exactly between import statements and instantiation calls.
+2. **Import Statement Review**: When encountering `NameError` for classes, check both the import statement and the actual class name in the source file.
+3. **IDE Auto-completion**: Use IDE features to verify class names and avoid typos in class references.
+
+---
+
+## Error 4: `AttributeError: 'ConsolidatedScenariosTab' object has no attribute 'section_states'`
+
+### Symptom
+
+The Streamlit application crashed when trying to use the expand/collapse toggle button with the following error:
+
+```
+AttributeError: 'ConsolidatedScenariosTab' object has no attribute 'section_states'
+Traceback:
+File "/Users/Bhavesh/opt/anaconda3/lib/python3.8/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 88, in exec_func_with_error_handling
+    result = func()
+File "/Users/Bhavesh/opt/anaconda3/lib/python3.8/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 579, in code_to_exec
+    exec(code, module.__dict__)
+File "/Users/Bhavesh/Documents/GitHub/ports_digital_twin/hk_port_digital_twin/src/dashboard/streamlit_app.py", line 1470, in <module>
+    main()
+File "/Users/Bhavesh/Documents/GitHub/ports_digital_twin/hk_port_digital_twin/src/dashboard/streamlit_app.py", line 1287, in main
+    consolidated_tab.render_consolidated_tab(scenario_data)
+File "/Users/Bhavesh/Documents/GitHub/ports_digital_twin/hk_port_digital_twin/src/dashboard/scenario_tab_consolidation.py", line 113, in render_consolidated_tab
+    all_expanded = all(self.section_states.get(key, False) for key in self.section_states.keys())
+```
+
+### Root Cause
+
+The error occurred because the `ConsolidatedScenariosTab` class was referencing `self.section_states` in the toggle button logic, but this attribute was never defined in the class. The section states were actually stored in Streamlit's session state as `st.session_state.consolidated_sections_state`, but there was no property or method to access them via `self.section_states`.
+
+### Resolution
+
+The fix involved adding a property to the `ConsolidatedScenariosTab` class that provides access to the section states from the session state.
+
+**Added Code:**
+
+```python
+@property
+def section_states(self):
+    """Access section states from session state."""
+    return st.session_state.get('consolidated_sections_state', self.default_states)
+```
+
+### Key Learnings
+
+1. **Session State Access Patterns**: When working with Streamlit session state, ensure that class properties provide proper access to session state variables rather than assuming they exist as instance attributes.
+2. **Property Decorators for State Management**: Use `@property` decorators to create clean interfaces for accessing session state data from within class methods.
+3. **Fallback Values**: Always provide fallback values when accessing session state to prevent KeyError exceptions during initialization.
+4. **State Initialization Order**: Ensure that session state variables are properly initialized before they are accessed by class properties or methods.
+
+---
 3. **Error Message Analysis**: The error message clearly indicated the undefined name, making it straightforward to identify and fix.
 
 ---

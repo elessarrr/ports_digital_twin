@@ -90,6 +90,11 @@ class ConsolidatedScenariosTab:
         self.preferences = get_dashboard_preferences()
         self.default_states = get_default_section_states()
         
+    @property
+    def section_states(self):
+        """Access section states from session state."""
+        return st.session_state.get('consolidated_sections_state', self.default_states)
+        
     def render_consolidated_tab(self, scenario_data: Optional[Dict[str, Any]] = None) -> None:
         """Render the complete consolidated scenarios tab.
         
@@ -99,7 +104,7 @@ class ConsolidatedScenariosTab:
         self._initialize_session_state()
         
         # Header with controls
-        col1, col2, col3 = st.columns([3, 1, 1])
+        col1, col2 = st.columns([3, 1])
         
         with col1:
             st.header("🎯 Scenarios Dashboard")
@@ -108,22 +113,31 @@ class ConsolidatedScenariosTab:
         
         with col2:
             if self.preferences.get('enable_expand_collapse_all', True):
-                if st.button("📖 Expand All", key="expand_all"):
-                    self._expand_all_sections()
-        
-        with col3:
-            if self.preferences.get('enable_expand_collapse_all', True):
-                if st.button("📕 Collapse All", key="collapse_all"):
-                    self._collapse_all_sections()
+                # Single toggle button for expand/collapse all
+                # Check if all sections are currently expanded
+                all_expanded = all(self.section_states.get(key, False) for key in self.section_states.keys())
+                
+                if all_expanded:
+                    button_text = "📕 Collapse All"
+                    button_key = "collapse_all_toggle"
+                else:
+                    button_text = "📖 Expand All"
+                    button_key = "expand_all_toggle"
+                
+                if st.button(button_text, key=button_key):
+                    if all_expanded:
+                        self._collapse_all_sections()
+                    else:
+                        self._expand_all_sections()
         
 
-        
-        # Render validation section
-        self._render_validation_section()
         
         # Render all sections
         for section_key, section_info in self.sections.items():
             self._render_section(section_key, section_info, scenario_data)
+        
+        # Render validation section at the bottom
+        self._render_validation_section()
     
     def _initialize_session_state(self) -> None:
         """Initialize session state variables for the consolidated tab."""
@@ -1491,7 +1505,7 @@ class ConsolidatedScenariosTab:
         Render the validation section for scenario parameter consistency.
         """
         # Create a collapsible validation section
-        with st.expander("🔍 Scenario Parameter Validation", expanded=False):
+        with st.expander("ℹ️ Scenario Parameter Validation", expanded=False):
             st.markdown("*Check scenario parameter consistency and range ordering*")
             
             col1, col2 = st.columns([1, 3])
