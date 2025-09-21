@@ -16,7 +16,7 @@ import os
 from datetime import datetime
 
 # Add the src directory to the Python path
-sys.path.append(os.path.join(os.path.dirname(__file__), 'hk_port_digital_twin', 'src'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from utils.vessel_data_fetcher import VesselDataFetcher
 

@@ -1,3 +1,11 @@
 install_cron.sh
 setup_cron.md
 keep_app_alive.sh
+planning/presentation_script.md
+planning/presentation_script_only.md
+.gitignore
+planning/presentation_21Sep/presentation_assets.css
+planning/presentation_21Sep/README_presentation.md
+planning/presentation_21Sep/presentation.html
+planning/presentation_21Sep/speaker_notes.md
+planning/presentation_script_v2.md
