@@ -998,47 +998,85 @@ def main():
             pass
         
         try:
-            # Load comprehensive vessel analysis data (includes timestamps from all XML files)
-            vessel_analysis = get_comprehensive_vessel_analysis()
+            # Load vessel data using the same robust source as Operational tab
+            all_vessel_data = load_all_vessel_data_with_backups(include_backups=True, max_backup_files=30)
             
-            if vessel_analysis and vessel_analysis.get('data_summary', {}).get('total_vessels', 0) > 0:
-                data_summary = vessel_analysis.get('data_summary', {})
+            if all_vessel_data:
+                # Combine all vessel data (same approach as Operational tab)
+                combined_df = pd.concat(all_vessel_data.values(), ignore_index=True)
+                combined_df = combined_df.drop_duplicates(subset=['call_sign', 'timestamp'], keep='first')
+                
+                # Data summary section
+                data_summary = {
+                    'total_vessels': len(combined_df),
+                    'files_processed': len(all_vessel_data),
+                    'data_sources': list(all_vessel_data.keys())
+                }
+                
                 # Create a collapsible section for data summary
                 with st.expander("ℹ️ About the data used here", expanded=False):
                     st.write(f"**Data Summary:** {data_summary.get('total_vessels', 0)} vessels loaded from {data_summary.get('files_processed', 0)} files")
+                    st.write(f"**Historical Data:** Including {data_summary.get('files_processed', 0) - 4} backup files for comprehensive analysis")
                     
                     # Show data sources
                     data_sources = data_summary.get('data_sources', [])
                     if data_sources:
-                        st.write(f"**Data Sources:** {', '.join([src.replace('.xml', '') for src in data_sources])}")
+                        current_files = [src for src in data_sources if not any(date_part in src for date_part in ['_202', '_201'])]
+                        backup_files = [src for src in data_sources if any(date_part in src for date_part in ['_202', '_201'])]
+                        
+                        if current_files:
+                            st.write(f"**Current Data Sources:** {', '.join([src.replace('.xml', '') for src in current_files])}")
+                        if backup_files:
+                            st.write(f"**Historical Data Sources:** {len(backup_files)} backup files")
                     
                     # Location breakdown
-                    location_breakdown = vessel_analysis.get('location_type_breakdown', {})
-                    if location_breakdown:
+                    if 'location_type' in combined_df.columns:
+                        location_breakdown = combined_df['location_type'].value_counts().to_dict()
                         st.write(f"**Locations:** {len(location_breakdown)} unique location types")
                     
                     # Ship category breakdown
-                    category_breakdown = vessel_analysis.get('ship_category_breakdown', {})
-                    if category_breakdown:
+                    if 'ship_category' in combined_df.columns:
+                        category_breakdown = combined_df['ship_category'].value_counts().to_dict()
                         st.write(f"**Ship Categories:** {len(category_breakdown)} different types")
                     
-                    # Recent activity
-                    recent_activity = vessel_analysis.get('recent_activity', {})
-                    if recent_activity:
-                        st.write(f"**Recent Activity:** {recent_activity.get('vessels_last_24h', 0)} vessels in last 24 hours")
+                    # Recent activity (last 24 hours)
+                    if 'timestamp' in combined_df.columns:
+                        now = datetime.now()
+                        recent_vessels = combined_df[
+                            (combined_df['timestamp'].notna()) & 
+                            (combined_df['timestamp'] >= now - pd.Timedelta(hours=24))
+                        ]
+                        st.write(f"**Recent Activity:** {len(recent_vessels)} vessels in last 24 hours")
                     
-                    # Display timestamp if available
-                    from hk_port_digital_twin.src.dashboard.vessel_charts import _extract_latest_timestamp
-                    latest_timestamp = _extract_latest_timestamp(vessel_analysis)
-                    if latest_timestamp:
-                        st.caption(f"📅 Last updated at: {latest_timestamp}")
+                    # Display latest timestamp
+                    if 'timestamp' in combined_df.columns and combined_df['timestamp'].notna().any():
+                        latest_timestamp = combined_df['timestamp'].max()
+                        st.caption(f"📅 Last updated at: {latest_timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
                     else:
                         st.caption("📅 Last updated at: Not available")
 
+                # Convert to analysis format for compatibility with existing charts
+                vessel_analysis = {
+                    'data_summary': data_summary,
+                    'location_type_breakdown': combined_df['location_type'].value_counts().to_dict() if 'location_type' in combined_df.columns else {},
+                    'ship_category_breakdown': combined_df['ship_category'].value_counts().to_dict() if 'ship_category' in combined_df.columns else {},
+                    'status_breakdown': combined_df['status'].value_counts().to_dict() if 'status' in combined_df.columns else {},
+                    'file_breakdown': {},
+                    'analysis_timestamp': datetime.now().isoformat()
+                }
                 
-
+                # Add file breakdown for each data source
+                for file_name, df in all_vessel_data.items():
+                    if not df.empty:
+                        vessel_analysis['file_breakdown'][file_name] = {
+                            'vessel_count': len(df),
+                            'status_breakdown': df['status'].value_counts().to_dict() if 'status' in df.columns else {},
+                            'ship_categories': df['ship_category'].value_counts().to_dict() if 'ship_category' in df.columns else {},
+                            'latest_timestamp': df['timestamp'].max().isoformat() if 'timestamp' in df.columns and df['timestamp'].notna().any() else None,
+                            'earliest_timestamp': df['timestamp'].min().isoformat() if 'timestamp' in df.columns and df['timestamp'].notna().any() else None
+                        }
                 
-                # Render the vessel analytics dashboard with comprehensive analysis data
+                # Render the vessel analytics dashboard with unified data
                 render_vessel_analytics_dashboard(vessel_analysis)
                 
             else:
