@@ -1,5 +1,49 @@
 # Learnings from Debugging and Development
 
+## Error 9: StreamlitDuplicateElementsError - Duplicate Button Elements
+
+### Symptom
+- **Error**: `StreamlitDuplicateElementsError: There are multiple button elements with the same auto-generated ID. When this element is created, it is assigned an internal ID based on the element type and provided parameters. Multiple elements with the same type and parameters will cause this error.`
+- **Context**: Error occurred on the Vessel Insights tab when two "🔄 Refresh Data" buttons were present without unique keys.
+- **Location**: Lines 946 and 1178 in `src/dashboard/streamlit_app.py`
+
+### Root Cause
+- **Identical Button Parameters**: Two `st.button("🔄 Refresh Data", help="Download latest vessel data from Hong Kong Marine Department")` calls in the same tab (tab3) had identical text and parameters.
+- **Missing Unique Keys**: Streamlit generates internal IDs based on element type and parameters. Without explicit `key` parameters, both buttons received the same auto-generated ID.
+- **Tab Consolidation Impact**: This issue emerged after consolidating the Strategic tab content into other tabs, which moved the "Live Vessel Arrivals" section (with its refresh button) into the same tab as the existing "Vessel Analytics Dashboard" refresh button.
+
+### Resolution
+Applied unique `key` parameters to differentiate the buttons:
+
+1. **First Button (Vessel Analytics Dashboard)**: Added `key="refresh_vessel_analytics"`
+   ```python
+   if st.button("🔄 Refresh Data", help="Download latest vessel data from Hong Kong Marine Department", key="refresh_vessel_analytics"):
+   ```
+
+2. **Second Button (Live Vessel Arrivals)**: Added `key="refresh_live_arrivals"`
+   ```python
+   if st.button("🔄 Refresh Data", help="Download latest vessel data from Hong Kong Marine Department", key="refresh_live_arrivals"):
+   ```
+
+### Debugging Process Followed
+1. **Error Diagnosis**: Identified the specific buttons causing the conflict through regex search
+2. **Error Correction**: Added unique keys to resolve the immediate issue
+3. **Full File Review**: Checked entire file for syntax errors and other potential duplicates
+4. **Full Directory Review**: Verified no other active files had similar conflicts
+5. **Dependency Analysis**: Confirmed no external dependencies were affected by the key changes
+6. **Testing**: Verified fix through application preview
+
+### Prevention Strategies
+- **Always use unique keys**: For any Streamlit elements that might be duplicated, especially buttons, inputs, and widgets
+- **Consistent naming convention**: Use descriptive keys that indicate the element's purpose and location
+- **Code review focus**: Pay special attention to element uniqueness during tab consolidation or content reorganization
+
+### Key Learnings
+- Streamlit's auto-generated IDs are based on element type and parameters, not location in code
+- Tab consolidation can introduce unexpected element conflicts
+- Unique keys are essential for maintaining element identity across complex layouts
+- The error-fixing process should be systematic and documented for future reference
+
 ## Error 8: Streamlit Cloud Path Duplication in `exec()` Context
 
 ### Symptom
