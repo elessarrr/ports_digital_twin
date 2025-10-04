@@ -40,7 +40,7 @@ class VesselDataFetcher:
         # Configuration from environment variables
         self.base_url = os.getenv('HK_VESSEL_DATA_BASE_URL', 'https://data.gov.hk/en-data/dataset/hk-md-mardep-vessel-arrivals-and-departures')
         # Set data directory to the raw_data folder as requested
-        self.data_directory = Path('/Users/Bhavesh/Documents/GitHub/Ports/Ports/raw_data')
+        self.data_directory = Path('/Users/Bhavesh/Documents/GitHub/ports_digital_twin/raw_data')
         self.fetch_interval = int(os.getenv('VESSEL_DATA_FETCH_INTERVAL', '20'))
         self.pipeline_enabled = os.getenv('VESSEL_DATA_PIPELINE_ENABLED', 'true').lower() == 'true'
         

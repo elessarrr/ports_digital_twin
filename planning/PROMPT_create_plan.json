@@ -13,6 +13,7 @@
       "description": [
         "Ensure no existing functionality is broken.",
         "Design changes so they can be easily rolled back if needed.",
+        "leverage existing infrastructure or code; try to NOT build something new, if you can repropose existing code",
         "Avoid unnecessary changes to other working parts of the product."
       ]
     },

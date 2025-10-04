@@ -258,16 +258,17 @@ def _extract_latest_timestamp(vessel_analysis: Dict[str, Any]) -> str:
 
 def render_arriving_ships_list() -> None:
     """
-    Renders a list of ships currently arriving at the port.
+    Renders a list of all vessels with status filtering options.
     
-    This function displays detailed information about vessels that are arriving,
-    including vessel name, ship type, agent, location, and arrival time.
+    This function displays detailed information about all vessels (arriving, departing, 
+    in-port, and departed), including vessel name, ship type, agent, location, 
+    arrival time, and status. Users can filter by vessel status.
     
     Returns:
         None (renders list directly to Streamlit)
     """
     try:
-        # Load combined vessel data to get arriving ships
+        # Load combined vessel data to get all vessels
         from utils.data_loader import load_combined_vessel_data
         vessel_data = load_combined_vessel_data()
         
@@ -275,29 +276,80 @@ def render_arriving_ships_list() -> None:
             st.info("No vessel data available")
             return
         
-        # Filter for vessels that are currently arriving
-        arriving_ships = vessel_data[vessel_data['status'] == 'arriving'].copy()
+        # Create status filter
+        all_statuses = sorted(vessel_data['status'].unique())
+        status_options = ['All'] + all_statuses
         
-        if arriving_ships.empty:
-            st.info("No ships currently arriving")
+        # Create columns for filter and metrics
+        filter_col, metric_col1, metric_col2, metric_col3, metric_col4 = st.columns([2, 1, 1, 1, 1])
+        
+        with filter_col:
+            selected_status = st.selectbox(
+                "Filter by Status:",
+                options=status_options,
+                index=0,  # Default to "All"
+                key="vessel_status_filter"
+            )
+        
+
+        
+        # Calculate metrics for each status
+        status_counts = vessel_data['status'].value_counts()
+        
+        with metric_col1:
+            arriving_count = status_counts.get('arriving', 0)
+            st.metric("Arriving", arriving_count)
+        
+        with metric_col2:
+            in_port_count = status_counts.get('in_port', 0)
+            st.metric("In Port", in_port_count)
+        
+        with metric_col3:
+            departing_count = status_counts.get('departing', 0)
+            st.metric("Departing", departing_count)
+        
+        with metric_col4:
+            departed_count = status_counts.get('departed', 0)
+            st.metric("Departed", departed_count)
+        
+        # Filter vessels based on selected status
+        if selected_status == 'All':
+            filtered_vessels = vessel_data.copy()
+        else:
+            filtered_vessels = vessel_data[vessel_data['status'] == selected_status].copy()
+        
+        if filtered_vessels.empty:
+            st.info(f"No ships with status '{selected_status}'")
             return
         
         # Sort by arrival time (most recent first)
-        arriving_ships = arriving_ships.sort_values('arrival_time', ascending=False, na_position='last')
+        filtered_vessels = filtered_vessels.sort_values('arrival_time', ascending=False, na_position='last')
         
         # Display the count
-        st.write(f"**{len(arriving_ships)} ships currently arriving:**")
+        status_text = selected_status if selected_status != 'All' else 'total'
+        st.write(f"**{len(filtered_vessels)} {status_text} ships:**")
         
         # Prepare data for display
-        display_data = arriving_ships[[
-            'vessel_name', 'ship_type', 'agent_name', 'current_location', 'arrival_time'
-        ]].copy()
+        display_columns = ['vessel_name', 'ship_type', 'agent_name', 'current_location', 'arrival_time', 'status']
+        available_columns = [col for col in display_columns if col in filtered_vessels.columns]
+        
+        display_data = filtered_vessels[available_columns].copy()
         
         # Format arrival time for better display
-        display_data['arrival_time'] = display_data['arrival_time'].dt.strftime('%Y-%m-%d %H:%M')
+        if 'arrival_time' in display_data.columns:
+            display_data['arrival_time'] = display_data['arrival_time'].dt.strftime('%Y-%m-%d %H:%M')
         
         # Rename columns for better display
-        display_data.columns = ['Vessel Name', 'Ship Type', 'Agent', 'Current Location', 'Arrival Time']
+        column_mapping = {
+            'vessel_name': 'Vessel Name',
+            'ship_type': 'Ship Type', 
+            'agent_name': 'Agent',
+            'current_location': 'Current Location',
+            'arrival_time': 'Arrival Time',
+            'status': 'Status'
+        }
+        
+        display_data.columns = [column_mapping.get(col, col) for col in display_data.columns]
         
         # Display as a table
         st.dataframe(
@@ -307,7 +359,7 @@ def render_arriving_ships_list() -> None:
         )
         
     except Exception as e:
-        st.error(f"Error loading arriving ships data: {str(e)}")
+        st.error(f"Error loading vessel data: {str(e)}")
 
 
 def render_vessel_analytics_dashboard(vessel_analysis) -> None:
@@ -425,8 +477,8 @@ def render_vessel_analytics_dashboard(vessel_analysis) -> None:
             # Add some spacing
             st.write("")
             
-            # Full width for the arriving ships list
-            st.write("**Ships Currently Arriving**")
+            # Full width for the vessel list with filtering
+            st.write("**Vessel Details**")
             render_arriving_ships_list()
             
     except Exception as e:

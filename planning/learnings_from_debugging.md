@@ -263,6 +263,13 @@ return {
 - **Learnings/Takeaway:** In Streamlit, when updating session state in a callback or part of the script that doesn't automatically trigger a full re-render of all components, it's crucial to manually call `st.rerun()` to enforce a consistent state across the entire application. This is especially important for complex dashboards with interdependent components.
 - **Date fixed:** 2025-01-28
 
+## Vessel Data Fetching Path Configuration Error
+
+- **Caused by:** The vessel data dashboard was showing 0 ships despite having XML data files because the `VesselDataFetcher` class had a hardcoded incorrect path (`/Users/Bhavesh/Documents/GitHub/Ports/Ports/raw_data`) that didn't match the actual project structure. This caused the manual refresh script to download files to the wrong location, leaving the dashboard with 39-day-old data.
+- **How fixed:** Corrected the `self.data_directory` path in `vessel_data_fetcher.py` from the hardcoded incorrect path to `/Users/Bhavesh/Documents/GitHub/ports_digital_twin/raw_data` to match the actual project directory structure. Re-ran the manual refresh script to download current data to the correct location.
+- **Learnings/Takeaway:** Always use relative paths or configuration-based paths instead of hardcoded absolute paths in data processing scripts. Hardcoded paths break when projects are moved or when working across different environments. Verify that data fetching scripts are writing to the same directories that data loading scripts are reading from. Test the complete data pipeline end-to-end to catch path mismatches early.
+- **Date fixed:** 2025-01-17
+
     'queue': pd.DataFrame(queue_data),  # Wrong! Using berth data for queue
     ...
 }
@@ -576,3 +583,15 @@ This change ensures that `st.session_state.scenario` is always available, preven
 ## 4. Verification
 
 The fix was verified by running the application again. The `AttributeError` no longer occurs, and the application now loads with the default 'normal' scenario as expected. The dashboard now correctly displays the data for the selected scenario, and the user can switch between scenarios without any issues.
+
+## NameError: 'show_all_columns' is not defined
+
+- **Caused by:** Variable name mismatch between the defined checkbox variable (`show_all`) and the referenced variable (`show_all_columns`) in the operational tab. This occurred during refactoring when the "Show All Columns" checkbox was moved from the filter section to the data selection section, but the variable reference wasn't updated consistently.
+- **How fixed:** Changed the variable reference on line 1273 from `show_all_columns` to `show_all` to match the actual checkbox definition on line 1055. Verified no other instances of the incorrect variable name existed in the project.
+- **Learnings/Takeaway:** Always search for all variable references before renaming during refactoring. Use consistent variable names throughout the codebase. Test immediately after moving UI components to catch scope and reference issues early. Consider using IDE features like "Find and Replace All" to ensure consistency.
+- **Date fixed:** 2025-01-27 15:30
+
+**Additional Insight:**
+- This type of error is common during UI refactoring when components are moved between sections
+- Variable scope issues can be prevented by maintaining a clear naming convention and using search tools to verify all references
+- The error was caught quickly through systematic debugging: error location → variable search → scope analysis → fix → verification
