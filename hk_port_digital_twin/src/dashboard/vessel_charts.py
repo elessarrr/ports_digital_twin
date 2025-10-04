@@ -335,9 +335,9 @@ def render_arriving_ships_list() -> None:
         
         display_data = filtered_vessels[available_columns].copy()
         
-        # Format arrival time for better display
+        # Ensure arrival_time is datetime for proper sorting (don't convert to string)
         if 'arrival_time' in display_data.columns:
-            display_data['arrival_time'] = display_data['arrival_time'].dt.strftime('%Y-%m-%d %H:%M')
+            display_data['arrival_time'] = pd.to_datetime(display_data['arrival_time'])
         
         # Rename columns for better display
         column_mapping = {
@@ -351,11 +351,21 @@ def render_arriving_ships_list() -> None:
         
         display_data.columns = [column_mapping.get(col, col) for col in display_data.columns]
         
+        # Configure datetime column formatting
+        column_config = {}
+        if 'Arrival Time' in display_data.columns:
+            column_config['Arrival Time'] = st.column_config.DatetimeColumn(
+                'Arrival Time',
+                format="YYYY-MM-DD HH:mm",
+                help="Click column header to sort by arrival time"
+            )
+        
         # Display as a table
         st.dataframe(
             display_data,
             use_container_width=True,
-            hide_index=True
+            hide_index=True,
+            column_config=column_config
         )
         
     except Exception as e:

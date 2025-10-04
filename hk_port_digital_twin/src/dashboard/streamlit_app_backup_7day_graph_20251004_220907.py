@@ -1037,14 +1037,14 @@ def main():
         with col1:
             # Time range filter with enhanced options
             time_range_options = [
-                'Last 7 days ', 
+                'Last 7 days (Current: ~102 vessels)', 
                 'Last 30 days', 
                 'Last 90 days',
                 'Last 180 days',
                 'Last 1 year',
                 'Last 2 years',
                 'Last 3 years',
-                '🗂️ All historical data'
+                '🗂️ All historical data (466 backup files)'
             ]
             selected_time_range = st.selectbox("Time Range", time_range_options, index=0)
             
@@ -1232,135 +1232,6 @@ def main():
             
 
             
-            # 7-Day Vessel Activity Trend Graph
-            st.subheader("📈 7-Day Vessel Activity Trend")
-            
-            def create_7day_vessel_activity_chart(vessel_data):
-                """
-                Create a 7-day vessel activity trend chart showing daily counts of arriving, departed, and in_port vessels.
-                
-                Args:
-                    vessel_data (pd.DataFrame): Vessel data with status and timestamp columns
-                    
-                Returns:
-                    plotly.graph_objects.Figure: Interactive line chart
-                """
-                try:
-                    import plotly.graph_objects as go
-                    from datetime import datetime, timedelta
-                    
-                    # Get the last 7 days
-                    end_date = datetime.now().date()
-                    start_date = end_date - timedelta(days=6)  # 7 days total including today
-                    
-                    # Create date range for the last 7 days
-                    date_range = [start_date + timedelta(days=i) for i in range(7)]
-                    
-                    # Initialize daily counts
-                    daily_counts = {
-                        'dates': date_range,
-                        'arriving': [0] * 7,
-                        'departed': [0] * 7,
-                        'in_port': [0] * 7
-                    }
-                    
-                    if not vessel_data.empty and 'status' in vessel_data.columns:
-                        # Find the best timestamp column to use
-                        timestamp_col = None
-                        for col in ['arrival_time', 'departure_time', 'timestamp']:
-                            if col in vessel_data.columns:
-                                timestamp_col = col
-                                break
-                        
-                        if timestamp_col:
-                            # Convert timestamp column to datetime if not already
-                            vessel_data_copy = vessel_data.copy()
-                            try:
-                                vessel_data_copy[timestamp_col] = pd.to_datetime(vessel_data_copy[timestamp_col])
-                                vessel_data_copy['date'] = vessel_data_copy[timestamp_col].dt.date
-                                
-                                # Count vessels by status for each day
-                                for i, date in enumerate(date_range):
-                                    day_data = vessel_data_copy[vessel_data_copy['date'] == date]
-                                    
-                                    daily_counts['arriving'][i] = len(day_data[day_data['status'] == 'arriving'])
-                                    daily_counts['departed'][i] = len(day_data[day_data['status'] == 'departed'])
-                                    daily_counts['in_port'][i] = len(day_data[day_data['status'] == 'in_port'])
-                                    
-                            except Exception as e:
-                                st.warning(f"Could not process timestamp data: {str(e)}")
-                    
-                    # Create the plotly figure
-                    fig = go.Figure()
-                    
-                    # Add lines for each vessel status
-                    fig.add_trace(go.Scatter(
-                        x=daily_counts['dates'],
-                        y=daily_counts['arriving'],
-                        mode='lines+markers',
-                        name='Arriving',
-                        line=dict(color='#1f77b4', width=3),
-                        marker=dict(size=8)
-                    ))
-                    
-                    fig.add_trace(go.Scatter(
-                        x=daily_counts['dates'],
-                        y=daily_counts['departed'],
-                        mode='lines+markers',
-                        name='Departed',
-                        line=dict(color='#ff7f0e', width=3),
-                        marker=dict(size=8)
-                    ))
-                    
-                    fig.add_trace(go.Scatter(
-                        x=daily_counts['dates'],
-                        y=daily_counts['in_port'],
-                        mode='lines+markers',
-                        name='In Port',
-                        line=dict(color='#2ca02c', width=3),
-                        marker=dict(size=8)
-                    ))
-                    
-                    # Update layout
-                    fig.update_layout(
-                        title="Daily Vessel Activity - Last 7 Days",
-                        xaxis_title="Date",
-                        yaxis_title="Number of Vessels",
-                        height=400,
-                        hovermode='x unified',
-                        legend=dict(
-                            orientation="h",
-                            yanchor="bottom",
-                            y=1.02,
-                            xanchor="right",
-                            x=1
-                        ),
-                        margin=dict(l=50, r=50, t=80, b=50)
-                    )
-                    
-                    # Format x-axis to show dates nicely
-                    fig.update_xaxes(
-                        tickformat='%m/%d',
-                        tickmode='array',
-                        tickvals=daily_counts['dates']
-                    )
-                    
-                    return fig
-                    
-                except Exception as e:
-                    st.error(f"Error creating 7-day activity chart: {str(e)}")
-                    return None
-            
-            # Display the 7-day activity chart
-            try:
-                activity_chart = create_7day_vessel_activity_chart(vessel_data)
-                if activity_chart:
-                    st.plotly_chart(activity_chart, use_container_width=True, key="7day_vessel_activity")
-                else:
-                    st.info("7-day vessel activity chart is temporarily unavailable.")
-            except Exception as e:
-                st.error(f"Error displaying 7-day activity chart: {str(e)}")
-            
             # Detailed vessel table
             st.subheader("📋 Arriving and Departing Vessels - Details")
             
@@ -1412,34 +1283,21 @@ def main():
                         display_columns.append(col)
                 
                 if display_columns:
-                    # Create a copy for display
+                    # Create a copy for display formatting
                     display_data = filtered_data[display_columns].copy()
                     
-                    # Ensure datetime columns are properly formatted for sorting
+                    # Format datetime columns for better display
                     datetime_columns = ['arrival_time', 'departure_time', 'timestamp']
-                    column_config = {}
-                    
                     for col in datetime_columns:
                         if col in display_data.columns:
-                            # Convert to datetime if not already (preserve datetime objects for sorting)
+                            # Convert to datetime if not already and format
                             try:
-                                display_data[col] = pd.to_datetime(display_data[col])
-                                # Configure column to display formatted datetime
-                                column_config[col] = st.column_config.DatetimeColumn(
-                                    col.replace('_', ' ').title(),
-                                    format="YYYY-MM-DD HH:mm",
-                                    help=f"Click column header to sort by {col.replace('_', ' ')}"
-                                )
+                                display_data[col] = pd.to_datetime(display_data[col]).dt.strftime('%Y-%m-%d %H:%M')
                             except:
                                 # If conversion fails, keep original values
                                 pass
                     
-                    # Display dataframe with proper datetime sorting and formatting
-                    st.dataframe(
-                        display_data, 
-                        use_container_width=True,
-                        column_config=column_config
-                    )
+                    st.dataframe(display_data, use_container_width=True)
                 else:
                     st.dataframe(filtered_data, use_container_width=True)
             else:

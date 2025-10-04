@@ -13956,3 +13956,206 @@
 2025-10-04 22:06:38,280 - vessel_data_pipeline - INFO - Updated metadata for Expected_departures.xml
 2025-10-04 22:06:38,280 - vessel_data_pipeline - INFO - Successfully downloaded and validated Expected_departures.xml
 2025-10-04 22:06:40,281 - vessel_data_pipeline - INFO - Fetch operation completed. Results: {'Arrived_in_last_36_hours.xml': True, 'Departed_in_last_36_hours.xml': True, 'Expected_arrivals.xml': True, 'Expected_departures.xml': True}
+2025-10-04 22:07:06,703 - vessel_data_pipeline - INFO - VesselDataFetcher initialized. Pipeline enabled: True
+2025-10-04 22:07:06,704 - vessel_data_pipeline - INFO - Starting vessel data fetch operation
+2025-10-04 22:07:06,704 - vessel_data_pipeline - INFO - Discovering XML files from Hong Kong Marine Department portal
+2025-10-04 22:07:06,768 - vessel_data_pipeline - INFO - Verified access to Arrived_in_last_36_hours.xml
+2025-10-04 22:07:06,808 - vessel_data_pipeline - INFO - Verified access to Departed_in_last_36_hours.xml
+2025-10-04 22:07:06,871 - vessel_data_pipeline - INFO - Verified access to Expected_arrivals.xml
+2025-10-04 22:07:06,929 - vessel_data_pipeline - INFO - Verified access to Expected_departures.xml
+2025-10-04 22:07:06,930 - vessel_data_pipeline - INFO - Discovered 4 XML files for download
+2025-10-04 22:07:06,930 - vessel_data_pipeline - INFO - Downloading Arrived_in_last_36_hours.xml (attempt 1/3)
+2025-10-04 22:07:07,001 - vessel_data_pipeline - INFO - File temp_Arrived_in_last_36_hours.xml passed validation checks
+2025-10-04 22:07:07,020 - vessel_data_pipeline - INFO - Created backup: Arrived_in_last_36_hours_20251004_220707.xml
+2025-10-04 22:07:07,030 - vessel_data_pipeline - INFO - Updated metadata for Arrived_in_last_36_hours.xml
+2025-10-04 22:07:07,030 - vessel_data_pipeline - INFO - Successfully downloaded and validated Arrived_in_last_36_hours.xml
+2025-10-04 22:07:09,036 - vessel_data_pipeline - INFO - Downloading Departed_in_last_36_hours.xml (attempt 1/3)
+2025-10-04 22:07:09,127 - vessel_data_pipeline - INFO - File temp_Departed_in_last_36_hours.xml passed validation checks
+2025-10-04 22:07:09,127 - vessel_data_pipeline - INFO - Created backup: Departed_in_last_36_hours_20251004_220709.xml
+2025-10-04 22:07:09,127 - vessel_data_pipeline - INFO - Updated metadata for Departed_in_last_36_hours.xml
+2025-10-04 22:07:09,128 - vessel_data_pipeline - INFO - Successfully downloaded and validated Departed_in_last_36_hours.xml
+2025-10-04 22:07:11,130 - vessel_data_pipeline - INFO - Downloading Expected_arrivals.xml (attempt 1/3)
+2025-10-04 22:07:11,212 - vessel_data_pipeline - INFO - File temp_Expected_arrivals.xml passed validation checks
+2025-10-04 22:07:11,213 - vessel_data_pipeline - INFO - Created backup: Expected_arrivals_20251004_220711.xml
+2025-10-04 22:07:11,213 - vessel_data_pipeline - INFO - Updated metadata for Expected_arrivals.xml
+2025-10-04 22:07:11,213 - vessel_data_pipeline - INFO - Successfully downloaded and validated Expected_arrivals.xml
+2025-10-04 22:07:13,218 - vessel_data_pipeline - INFO - Downloading Expected_departures.xml (attempt 1/3)
+2025-10-04 22:07:13,263 - vessel_data_pipeline - INFO - File temp_Expected_departures.xml passed validation checks
+2025-10-04 22:07:13,264 - vessel_data_pipeline - INFO - Created backup: Expected_departures_20251004_220713.xml
+2025-10-04 22:07:13,264 - vessel_data_pipeline - INFO - Updated metadata for Expected_departures.xml
+2025-10-04 22:07:13,264 - vessel_data_pipeline - INFO - Successfully downloaded and validated Expected_departures.xml
+2025-10-04 22:07:15,268 - vessel_data_pipeline - INFO - Fetch operation completed. Results: {'Arrived_in_last_36_hours.xml': True, 'Departed_in_last_36_hours.xml': True, 'Expected_arrivals.xml': True, 'Expected_departures.xml': True}
+2025-10-04 22:09:59,268 - vessel_data_pipeline - INFO - VesselDataFetcher initialized. Pipeline enabled: True
+2025-10-04 22:09:59,268 - vessel_data_pipeline - INFO - Starting vessel data fetch operation
+2025-10-04 22:09:59,269 - vessel_data_pipeline - INFO - Discovering XML files from Hong Kong Marine Department portal
+2025-10-04 22:09:59,516 - vessel_data_pipeline - INFO - Verified access to Arrived_in_last_36_hours.xml
+2025-10-04 22:09:59,814 - vessel_data_pipeline - INFO - Verified access to Departed_in_last_36_hours.xml
+2025-10-04 22:10:00,053 - vessel_data_pipeline - INFO - Verified access to Expected_arrivals.xml
+2025-10-04 22:10:00,358 - vessel_data_pipeline - INFO - Verified access to Expected_departures.xml
+2025-10-04 22:10:00,358 - vessel_data_pipeline - INFO - Discovered 4 XML files for download
+2025-10-04 22:10:00,358 - vessel_data_pipeline - INFO - Downloading Arrived_in_last_36_hours.xml (attempt 1/3)
+2025-10-04 22:10:00,419 - vessel_data_pipeline - INFO - File temp_Arrived_in_last_36_hours.xml passed validation checks
+2025-10-04 22:10:00,420 - vessel_data_pipeline - INFO - Created backup: Arrived_in_last_36_hours_20251004_221000.xml
+2025-10-04 22:10:00,420 - vessel_data_pipeline - INFO - Updated metadata for Arrived_in_last_36_hours.xml
+2025-10-04 22:10:00,421 - vessel_data_pipeline - INFO - Successfully downloaded and validated Arrived_in_last_36_hours.xml
+2025-10-04 22:10:02,422 - vessel_data_pipeline - INFO - Downloading Departed_in_last_36_hours.xml (attempt 1/3)
+2025-10-04 22:10:02,494 - vessel_data_pipeline - INFO - File temp_Departed_in_last_36_hours.xml passed validation checks
+2025-10-04 22:10:02,495 - vessel_data_pipeline - INFO - Created backup: Departed_in_last_36_hours_20251004_221002.xml
+2025-10-04 22:10:02,495 - vessel_data_pipeline - INFO - Updated metadata for Departed_in_last_36_hours.xml
+2025-10-04 22:10:02,495 - vessel_data_pipeline - INFO - Successfully downloaded and validated Departed_in_last_36_hours.xml
+2025-10-04 22:10:04,500 - vessel_data_pipeline - INFO - Downloading Expected_arrivals.xml (attempt 1/3)
+2025-10-04 22:10:04,566 - vessel_data_pipeline - INFO - File temp_Expected_arrivals.xml passed validation checks
+2025-10-04 22:10:04,566 - vessel_data_pipeline - INFO - Created backup: Expected_arrivals_20251004_221004.xml
+2025-10-04 22:10:04,567 - vessel_data_pipeline - INFO - Updated metadata for Expected_arrivals.xml
+2025-10-04 22:10:04,567 - vessel_data_pipeline - INFO - Successfully downloaded and validated Expected_arrivals.xml
+2025-10-04 22:10:06,568 - vessel_data_pipeline - INFO - Downloading Expected_departures.xml (attempt 1/3)
+2025-10-04 22:10:06,621 - vessel_data_pipeline - INFO - File temp_Expected_departures.xml passed validation checks
+2025-10-04 22:10:06,622 - vessel_data_pipeline - INFO - Created backup: Expected_departures_20251004_221006.xml
+2025-10-04 22:10:06,622 - vessel_data_pipeline - INFO - Updated metadata for Expected_departures.xml
+2025-10-04 22:10:06,622 - vessel_data_pipeline - INFO - Successfully downloaded and validated Expected_departures.xml
+2025-10-04 22:10:08,623 - vessel_data_pipeline - INFO - Fetch operation completed. Results: {'Arrived_in_last_36_hours.xml': True, 'Departed_in_last_36_hours.xml': True, 'Expected_arrivals.xml': True, 'Expected_departures.xml': True}
+2025-10-04 22:11:08,305 - vessel_data_pipeline - INFO - VesselDataFetcher initialized. Pipeline enabled: True
+2025-10-04 22:11:08,306 - vessel_data_pipeline - INFO - Starting vessel data fetch operation
+2025-10-04 22:11:08,306 - vessel_data_pipeline - INFO - Discovering XML files from Hong Kong Marine Department portal
+2025-10-04 22:11:08,418 - vessel_data_pipeline - INFO - Verified access to Arrived_in_last_36_hours.xml
+2025-10-04 22:11:08,457 - vessel_data_pipeline - INFO - Verified access to Departed_in_last_36_hours.xml
+2025-10-04 22:11:08,497 - vessel_data_pipeline - INFO - Verified access to Expected_arrivals.xml
+2025-10-04 22:11:08,558 - vessel_data_pipeline - INFO - Verified access to Expected_departures.xml
+2025-10-04 22:11:08,558 - vessel_data_pipeline - INFO - Discovered 4 XML files for download
+2025-10-04 22:11:08,559 - vessel_data_pipeline - INFO - Downloading Arrived_in_last_36_hours.xml (attempt 1/3)
+2025-10-04 22:11:08,622 - vessel_data_pipeline - INFO - File temp_Arrived_in_last_36_hours.xml passed validation checks
+2025-10-04 22:11:08,623 - vessel_data_pipeline - INFO - Created backup: Arrived_in_last_36_hours_20251004_221108.xml
+2025-10-04 22:11:08,624 - vessel_data_pipeline - INFO - Updated metadata for Arrived_in_last_36_hours.xml
+2025-10-04 22:11:08,624 - vessel_data_pipeline - INFO - Successfully downloaded and validated Arrived_in_last_36_hours.xml
+2025-10-04 22:11:10,629 - vessel_data_pipeline - INFO - Downloading Departed_in_last_36_hours.xml (attempt 1/3)
+2025-10-04 22:11:10,802 - vessel_data_pipeline - INFO - File temp_Departed_in_last_36_hours.xml passed validation checks
+2025-10-04 22:11:10,802 - vessel_data_pipeline - INFO - Created backup: Departed_in_last_36_hours_20251004_221110.xml
+2025-10-04 22:11:10,803 - vessel_data_pipeline - INFO - Updated metadata for Departed_in_last_36_hours.xml
+2025-10-04 22:11:10,803 - vessel_data_pipeline - INFO - Successfully downloaded and validated Departed_in_last_36_hours.xml
+2025-10-04 22:11:12,808 - vessel_data_pipeline - INFO - Downloading Expected_arrivals.xml (attempt 1/3)
+2025-10-04 22:11:12,864 - vessel_data_pipeline - INFO - File temp_Expected_arrivals.xml passed validation checks
+2025-10-04 22:11:12,865 - vessel_data_pipeline - INFO - Created backup: Expected_arrivals_20251004_221112.xml
+2025-10-04 22:11:12,865 - vessel_data_pipeline - INFO - Updated metadata for Expected_arrivals.xml
+2025-10-04 22:11:12,865 - vessel_data_pipeline - INFO - Successfully downloaded and validated Expected_arrivals.xml
+2025-10-04 22:11:14,870 - vessel_data_pipeline - INFO - Downloading Expected_departures.xml (attempt 1/3)
+2025-10-04 22:11:14,960 - vessel_data_pipeline - INFO - File temp_Expected_departures.xml passed validation checks
+2025-10-04 22:11:14,961 - vessel_data_pipeline - INFO - Created backup: Expected_departures_20251004_221114.xml
+2025-10-04 22:11:14,961 - vessel_data_pipeline - INFO - Updated metadata for Expected_departures.xml
+2025-10-04 22:11:14,961 - vessel_data_pipeline - INFO - Successfully downloaded and validated Expected_departures.xml
+2025-10-04 22:11:16,965 - vessel_data_pipeline - INFO - Fetch operation completed. Results: {'Arrived_in_last_36_hours.xml': True, 'Departed_in_last_36_hours.xml': True, 'Expected_arrivals.xml': True, 'Expected_departures.xml': True}
+2025-10-04 22:16:30,729 - vessel_data_pipeline - INFO - VesselDataFetcher initialized. Pipeline enabled: True
+2025-10-04 22:16:30,730 - vessel_data_pipeline - INFO - Starting vessel data fetch operation
+2025-10-04 22:16:30,730 - vessel_data_pipeline - INFO - Discovering XML files from Hong Kong Marine Department portal
+2025-10-04 22:16:30,847 - vessel_data_pipeline - INFO - Verified access to Arrived_in_last_36_hours.xml
+2025-10-04 22:16:30,916 - vessel_data_pipeline - INFO - Verified access to Departed_in_last_36_hours.xml
+2025-10-04 22:16:30,957 - vessel_data_pipeline - INFO - Verified access to Expected_arrivals.xml
+2025-10-04 22:16:30,997 - vessel_data_pipeline - INFO - Verified access to Expected_departures.xml
+2025-10-04 22:16:30,997 - vessel_data_pipeline - INFO - Discovered 4 XML files for download
+2025-10-04 22:16:30,997 - vessel_data_pipeline - INFO - Downloading Arrived_in_last_36_hours.xml (attempt 1/3)
+2025-10-04 22:16:31,093 - vessel_data_pipeline - INFO - File temp_Arrived_in_last_36_hours.xml passed validation checks
+2025-10-04 22:16:31,093 - vessel_data_pipeline - INFO - Created backup: Arrived_in_last_36_hours_20251004_221631.xml
+2025-10-04 22:16:31,094 - vessel_data_pipeline - INFO - Updated metadata for Arrived_in_last_36_hours.xml
+2025-10-04 22:16:31,094 - vessel_data_pipeline - INFO - Successfully downloaded and validated Arrived_in_last_36_hours.xml
+2025-10-04 22:16:33,099 - vessel_data_pipeline - INFO - Downloading Departed_in_last_36_hours.xml (attempt 1/3)
+2025-10-04 22:16:33,158 - vessel_data_pipeline - INFO - File temp_Departed_in_last_36_hours.xml passed validation checks
+2025-10-04 22:16:33,158 - vessel_data_pipeline - INFO - Created backup: Departed_in_last_36_hours_20251004_221633.xml
+2025-10-04 22:16:33,158 - vessel_data_pipeline - INFO - Updated metadata for Departed_in_last_36_hours.xml
+2025-10-04 22:16:33,158 - vessel_data_pipeline - INFO - Successfully downloaded and validated Departed_in_last_36_hours.xml
+2025-10-04 22:16:33,766 - vessel_data_pipeline - INFO - VesselDataFetcher initialized. Pipeline enabled: True
+2025-10-04 22:16:33,768 - vessel_data_pipeline - INFO - Starting vessel data fetch operation
+2025-10-04 22:16:33,768 - vessel_data_pipeline - INFO - Discovering XML files from Hong Kong Marine Department portal
+2025-10-04 22:16:33,889 - vessel_data_pipeline - INFO - Verified access to Arrived_in_last_36_hours.xml
+2025-10-04 22:16:33,933 - vessel_data_pipeline - INFO - Verified access to Departed_in_last_36_hours.xml
+2025-10-04 22:16:34,175 - vessel_data_pipeline - INFO - Verified access to Expected_arrivals.xml
+2025-10-04 22:16:34,212 - vessel_data_pipeline - INFO - Verified access to Expected_departures.xml
+2025-10-04 22:16:34,212 - vessel_data_pipeline - INFO - Discovered 4 XML files for download
+2025-10-04 22:16:34,213 - vessel_data_pipeline - INFO - Downloading Arrived_in_last_36_hours.xml (attempt 1/3)
+2025-10-04 22:16:34,264 - vessel_data_pipeline - INFO - File temp_Arrived_in_last_36_hours.xml passed validation checks
+2025-10-04 22:16:34,264 - vessel_data_pipeline - INFO - Created backup: Arrived_in_last_36_hours_20251004_221634.xml
+2025-10-04 22:16:34,265 - vessel_data_pipeline - INFO - Updated metadata for Arrived_in_last_36_hours.xml
+2025-10-04 22:16:34,265 - vessel_data_pipeline - INFO - Successfully downloaded and validated Arrived_in_last_36_hours.xml
+2025-10-04 22:16:35,164 - vessel_data_pipeline - INFO - Downloading Expected_arrivals.xml (attempt 1/3)
+2025-10-04 22:16:35,240 - vessel_data_pipeline - INFO - File temp_Expected_arrivals.xml passed validation checks
+2025-10-04 22:16:35,240 - vessel_data_pipeline - INFO - Created backup: Expected_arrivals_20251004_221635.xml
+2025-10-04 22:16:35,241 - vessel_data_pipeline - INFO - Updated metadata for Expected_arrivals.xml
+2025-10-04 22:16:35,241 - vessel_data_pipeline - INFO - Successfully downloaded and validated Expected_arrivals.xml
+2025-10-04 22:16:36,266 - vessel_data_pipeline - INFO - Downloading Departed_in_last_36_hours.xml (attempt 1/3)
+2025-10-04 22:16:36,329 - vessel_data_pipeline - INFO - File temp_Departed_in_last_36_hours.xml passed validation checks
+2025-10-04 22:16:36,329 - vessel_data_pipeline - INFO - Created backup: Departed_in_last_36_hours_20251004_221636.xml
+2025-10-04 22:16:36,329 - vessel_data_pipeline - INFO - Updated metadata for Departed_in_last_36_hours.xml
+2025-10-04 22:16:36,329 - vessel_data_pipeline - INFO - Successfully downloaded and validated Departed_in_last_36_hours.xml
+2025-10-04 22:16:37,246 - vessel_data_pipeline - INFO - Downloading Expected_departures.xml (attempt 1/3)
+2025-10-04 22:16:37,300 - vessel_data_pipeline - INFO - File temp_Expected_departures.xml passed validation checks
+2025-10-04 22:16:37,301 - vessel_data_pipeline - INFO - Created backup: Expected_departures_20251004_221637.xml
+2025-10-04 22:16:37,301 - vessel_data_pipeline - INFO - Updated metadata for Expected_departures.xml
+2025-10-04 22:16:37,301 - vessel_data_pipeline - INFO - Successfully downloaded and validated Expected_departures.xml
+2025-10-04 22:16:38,334 - vessel_data_pipeline - INFO - Downloading Expected_arrivals.xml (attempt 1/3)
+2025-10-04 22:16:38,394 - vessel_data_pipeline - INFO - File temp_Expected_arrivals.xml passed validation checks
+2025-10-04 22:16:38,394 - vessel_data_pipeline - INFO - Created backup: Expected_arrivals_20251004_221638.xml
+2025-10-04 22:16:38,394 - vessel_data_pipeline - INFO - Updated metadata for Expected_arrivals.xml
+2025-10-04 22:16:38,394 - vessel_data_pipeline - INFO - Successfully downloaded and validated Expected_arrivals.xml
+2025-10-04 22:16:39,306 - vessel_data_pipeline - INFO - Fetch operation completed. Results: {'Arrived_in_last_36_hours.xml': True, 'Departed_in_last_36_hours.xml': True, 'Expected_arrivals.xml': True, 'Expected_departures.xml': True}
+2025-10-04 22:16:40,401 - vessel_data_pipeline - INFO - Downloading Expected_departures.xml (attempt 1/3)
+2025-10-04 22:16:40,475 - vessel_data_pipeline - INFO - File temp_Expected_departures.xml passed validation checks
+2025-10-04 22:16:40,477 - vessel_data_pipeline - INFO - Created backup: Expected_departures_20251004_221640.xml
+2025-10-04 22:16:40,478 - vessel_data_pipeline - INFO - Updated metadata for Expected_departures.xml
+2025-10-04 22:16:40,478 - vessel_data_pipeline - INFO - Successfully downloaded and validated Expected_departures.xml
+2025-10-04 22:16:42,483 - vessel_data_pipeline - INFO - Fetch operation completed. Results: {'Arrived_in_last_36_hours.xml': True, 'Departed_in_last_36_hours.xml': True, 'Expected_arrivals.xml': True, 'Expected_departures.xml': True}
+2025-10-04 22:17:54,032 - vessel_data_pipeline - INFO - VesselDataFetcher initialized. Pipeline enabled: True
+2025-10-04 22:17:54,033 - vessel_data_pipeline - INFO - Starting vessel data fetch operation
+2025-10-04 22:17:54,033 - vessel_data_pipeline - INFO - Discovering XML files from Hong Kong Marine Department portal
+2025-10-04 22:17:54,228 - vessel_data_pipeline - INFO - Verified access to Arrived_in_last_36_hours.xml
+2025-10-04 22:17:54,297 - vessel_data_pipeline - INFO - Verified access to Departed_in_last_36_hours.xml
+2025-10-04 22:17:54,336 - vessel_data_pipeline - INFO - Verified access to Expected_arrivals.xml
+2025-10-04 22:17:54,402 - vessel_data_pipeline - INFO - Verified access to Expected_departures.xml
+2025-10-04 22:17:54,402 - vessel_data_pipeline - INFO - Discovered 4 XML files for download
+2025-10-04 22:17:54,402 - vessel_data_pipeline - INFO - Downloading Arrived_in_last_36_hours.xml (attempt 1/3)
+2025-10-04 22:17:54,467 - vessel_data_pipeline - INFO - File temp_Arrived_in_last_36_hours.xml passed validation checks
+2025-10-04 22:17:54,470 - vessel_data_pipeline - INFO - Created backup: Arrived_in_last_36_hours_20251004_221754.xml
+2025-10-04 22:17:54,471 - vessel_data_pipeline - INFO - Updated metadata for Arrived_in_last_36_hours.xml
+2025-10-04 22:17:54,471 - vessel_data_pipeline - INFO - Successfully downloaded and validated Arrived_in_last_36_hours.xml
+2025-10-04 22:17:56,474 - vessel_data_pipeline - INFO - Downloading Departed_in_last_36_hours.xml (attempt 1/3)
+2025-10-04 22:17:56,546 - vessel_data_pipeline - INFO - File temp_Departed_in_last_36_hours.xml passed validation checks
+2025-10-04 22:17:56,547 - vessel_data_pipeline - INFO - Created backup: Departed_in_last_36_hours_20251004_221756.xml
+2025-10-04 22:17:56,547 - vessel_data_pipeline - INFO - Updated metadata for Departed_in_last_36_hours.xml
+2025-10-04 22:17:56,547 - vessel_data_pipeline - INFO - Successfully downloaded and validated Departed_in_last_36_hours.xml
+2025-10-04 22:17:58,552 - vessel_data_pipeline - INFO - Downloading Expected_arrivals.xml (attempt 1/3)
+2025-10-04 22:17:58,607 - vessel_data_pipeline - INFO - File temp_Expected_arrivals.xml passed validation checks
+2025-10-04 22:17:58,608 - vessel_data_pipeline - INFO - Created backup: Expected_arrivals_20251004_221758.xml
+2025-10-04 22:17:58,608 - vessel_data_pipeline - INFO - Updated metadata for Expected_arrivals.xml
+2025-10-04 22:17:58,608 - vessel_data_pipeline - INFO - Successfully downloaded and validated Expected_arrivals.xml
+2025-10-04 22:18:00,613 - vessel_data_pipeline - INFO - Downloading Expected_departures.xml (attempt 1/3)
+2025-10-04 22:18:00,696 - vessel_data_pipeline - INFO - File temp_Expected_departures.xml passed validation checks
+2025-10-04 22:18:00,696 - vessel_data_pipeline - INFO - Created backup: Expected_departures_20251004_221800.xml
+2025-10-04 22:18:00,696 - vessel_data_pipeline - INFO - Updated metadata for Expected_departures.xml
+2025-10-04 22:18:00,696 - vessel_data_pipeline - INFO - Successfully downloaded and validated Expected_departures.xml
+2025-10-04 22:18:02,701 - vessel_data_pipeline - INFO - Fetch operation completed. Results: {'Arrived_in_last_36_hours.xml': True, 'Departed_in_last_36_hours.xml': True, 'Expected_arrivals.xml': True, 'Expected_departures.xml': True}
+2025-10-04 22:19:20,782 - vessel_data_pipeline - INFO - VesselDataFetcher initialized. Pipeline enabled: True
+2025-10-04 22:19:20,783 - vessel_data_pipeline - INFO - Starting vessel data fetch operation
+2025-10-04 22:19:20,783 - vessel_data_pipeline - INFO - Discovering XML files from Hong Kong Marine Department portal
+2025-10-04 22:19:20,885 - vessel_data_pipeline - INFO - Verified access to Arrived_in_last_36_hours.xml
+2025-10-04 22:19:20,925 - vessel_data_pipeline - INFO - Verified access to Departed_in_last_36_hours.xml
+2025-10-04 22:19:20,999 - vessel_data_pipeline - INFO - Verified access to Expected_arrivals.xml
+2025-10-04 22:19:21,051 - vessel_data_pipeline - INFO - Verified access to Expected_departures.xml
+2025-10-04 22:19:21,052 - vessel_data_pipeline - INFO - Discovered 4 XML files for download
+2025-10-04 22:19:21,052 - vessel_data_pipeline - INFO - Downloading Arrived_in_last_36_hours.xml (attempt 1/3)
+2025-10-04 22:19:21,113 - vessel_data_pipeline - INFO - File temp_Arrived_in_last_36_hours.xml passed validation checks
+2025-10-04 22:19:21,116 - vessel_data_pipeline - INFO - Created backup: Arrived_in_last_36_hours_20251004_221921.xml
+2025-10-04 22:19:21,117 - vessel_data_pipeline - INFO - Updated metadata for Arrived_in_last_36_hours.xml
+2025-10-04 22:19:21,117 - vessel_data_pipeline - INFO - Successfully downloaded and validated Arrived_in_last_36_hours.xml
+2025-10-04 22:19:23,118 - vessel_data_pipeline - INFO - Downloading Departed_in_last_36_hours.xml (attempt 1/3)
+2025-10-04 22:19:23,210 - vessel_data_pipeline - INFO - File temp_Departed_in_last_36_hours.xml passed validation checks
+2025-10-04 22:19:23,211 - vessel_data_pipeline - INFO - Created backup: Departed_in_last_36_hours_20251004_221923.xml
+2025-10-04 22:19:23,211 - vessel_data_pipeline - INFO - Updated metadata for Departed_in_last_36_hours.xml
+2025-10-04 22:19:23,211 - vessel_data_pipeline - INFO - Successfully downloaded and validated Departed_in_last_36_hours.xml
+2025-10-04 22:19:25,216 - vessel_data_pipeline - INFO - Downloading Expected_arrivals.xml (attempt 1/3)
+2025-10-04 22:19:25,273 - vessel_data_pipeline - INFO - File temp_Expected_arrivals.xml passed validation checks
+2025-10-04 22:19:25,273 - vessel_data_pipeline - INFO - Created backup: Expected_arrivals_20251004_221925.xml
+2025-10-04 22:19:25,273 - vessel_data_pipeline - INFO - Updated metadata for Expected_arrivals.xml
+2025-10-04 22:19:25,274 - vessel_data_pipeline - INFO - Successfully downloaded and validated Expected_arrivals.xml
+2025-10-04 22:19:27,279 - vessel_data_pipeline - INFO - Downloading Expected_departures.xml (attempt 1/3)
+2025-10-04 22:19:27,394 - vessel_data_pipeline - INFO - File temp_Expected_departures.xml passed validation checks
+2025-10-04 22:19:27,395 - vessel_data_pipeline - INFO - Created backup: Expected_departures_20251004_221927.xml
+2025-10-04 22:19:27,395 - vessel_data_pipeline - INFO - Updated metadata for Expected_departures.xml
+2025-10-04 22:19:27,395 - vessel_data_pipeline - INFO - Successfully downloaded and validated Expected_departures.xml
+2025-10-04 22:19:29,397 - vessel_data_pipeline - INFO - Fetch operation completed. Results: {'Arrived_in_last_36_hours.xml': True, 'Departed_in_last_36_hours.xml': True, 'Expected_arrivals.xml': True, 'Expected_departures.xml': True}
