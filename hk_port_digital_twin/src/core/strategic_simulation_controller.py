@@ -1,4 +1,4 @@
-# Comments for context:
+# Comments for context: Added 'in port' and 'departed' lines to the 'Vessel Activity' graphs on the 'Vessel Insights (strategic)' tab
 # This module extends the existing SimulationController to provide strategic simulation
 # capabilities for business intelligence and executive decision-making. It adds
 # business-focused metrics, ROI calculations, and scenario comparison features

@@ -120,46 +120,194 @@ def render_ship_category_distribution(vessel_analysis: Dict[str, Any]) -> None:
 
 def render_arrival_activity_trend(vessel_analysis: Dict[str, Any]) -> None:
     """
-    Renders a line chart showing the trend of vessel arrival activity over time.
+    Renders a multi-line chart showing the trend of vessel activity over time for all vessel statuses.
     
-    This chart displays the number of vessel arrivals over recent time periods,
-    helping users identify patterns and trends in port activity.
+    This chart displays the number of vessels by status (arriving, in_port, departed) over recent time periods,
+    helping users identify patterns and trends in port activity across all vessel statuses.
     
     Args:
-        vessel_analysis: Dictionary containing vessel analysis data with 'activity_trend' key
+        vessel_analysis: Dictionary containing vessel analysis data with vessel status information
     
     Returns:
         None (renders chart directly to Streamlit)
     """
     try:
+        # Import required modules for data processing
+        from hk_port_digital_twin.src.utils.data_loader import load_all_vessel_data_with_backups
+        from datetime import datetime, timedelta
+        
+        # Load comprehensive vessel data to get status information
+        all_vessel_data = load_all_vessel_data_with_backups(include_backups=True, max_backup_files=7)
+        
+        if not all_vessel_data:
+            st.warning("No vessel data available for activity trend analysis")
+            return
+        
+        # Combine all vessel data
+        combined_df = pd.concat(all_vessel_data.values(), ignore_index=True)
+        
+        # Remove duplicates based on call_sign and timestamp
+        combined_df = combined_df.drop_duplicates(subset=['call_sign', 'timestamp'], keep='first')
+        
+        # Ensure we have the required columns
+        if 'status' not in combined_df.columns:
+            st.warning("No vessel status information available for trend analysis")
+            return
+        
+        # Determine the time column to use
+        time_column = None
+        if 'arrival_time' in combined_df.columns and combined_df['arrival_time'].notna().any():
+            time_column = 'arrival_time'
+        elif 'timestamp' in combined_df.columns and combined_df['timestamp'].notna().any():
+            time_column = 'timestamp'
+        
+        if not time_column:
+            st.warning("No valid timestamp data available for trend analysis")
+            return
+        
+        # Generate activity trend data for all vessel statuses (last 7 days)
+        now = datetime.now()
+        activity_trend_data = []
+        
+        # Define the vessel statuses we want to track
+        target_statuses = ['arriving', 'in_port', 'departed']
+        
+        for days_back in range(6, -1, -1):  # 7 days ago to today
+            day_start = now - timedelta(days=days_back)
+            day_end = day_start + timedelta(days=1)
+            
+            # Filter vessels for this day
+            day_vessels = combined_df[
+                (combined_df[time_column].notna()) & 
+                (combined_df[time_column] >= day_start) & 
+                (combined_df[time_column] < day_end)
+            ]
+            
+            # Count vessels by status for this day
+            day_data = {'Date': day_start.strftime('%Y-%m-%d')}
+            
+            for status in target_statuses:
+                status_count = len(day_vessels[day_vessels['status'] == status])
+                # Use proper labels for display
+                if status == 'arriving':
+                    day_data['Arriving'] = status_count
+                elif status == 'in_port':
+                    day_data['In Port'] = status_count
+                elif status == 'departed':
+                    day_data['Departed'] = status_count
+            
+            activity_trend_data.append(day_data)
+        
+        # Convert to DataFrame
+        activity_df = pd.DataFrame(activity_trend_data)
+        
+        if activity_df.empty:
+            st.warning("No vessel activity data to display")
+            return
+        
+        # Ensure Date column is properly formatted
+        activity_df['Date'] = pd.to_datetime(activity_df['Date'], errors='coerce')
+        activity_df = activity_df.dropna(subset=['Date']).sort_values('Date')
+        
+        if activity_df.empty:
+            st.warning("No valid activity data to display")
+            return
+        
+        # Log data status for debugging
+        total_vessels = activity_df[['Arriving', 'In Port', 'Departed']].sum().sum()
+        st.info(f"📊 Data Status: Found {len(activity_df)} days of data with {int(total_vessels)} total vessel activities")
+        
+        # Melt the DataFrame to create a format suitable for multi-line plotting
+        activity_melted = activity_df.melt(
+            id_vars=['Date'], 
+            value_vars=['Arriving', 'In Port', 'Departed'],
+            var_name='Vessel Status', 
+            value_name='Count'
+        )
+        
+        # Create multi-line chart using Plotly Express
+        fig = px.line(
+            activity_melted,
+            x='Date',
+            y='Count',
+            color='Vessel Status',
+            title='Vessel Activity Trend by Status',
+            markers=True
+        )
+        
+        # Update layout for better appearance
+        fig.update_layout(
+            height=400,
+            margin=dict(t=50, b=50, l=50, r=50),
+            xaxis_title='Date',
+            yaxis_title='Number of Vessels',
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            )
+        )
+        
+        # Update line colors for better distinction
+        color_map = {
+            'Arriving': '#1f77b4',    # Blue
+            'In Port': '#2ca02c',     # Green  
+            'Departed': '#ff7f0e'     # Orange
+        }
+        
+        for trace in fig.data:
+            if trace.name in color_map:
+                trace.line.color = color_map[trace.name]
+        
+        # Display the chart
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Display summary statistics
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            total_arriving = activity_df['Arriving'].sum()
+            st.metric("Total Arriving (7 days)", int(total_arriving))
+        
+        with col2:
+            total_in_port = activity_df['In Port'].sum()
+            st.metric("Total In Port (7 days)", int(total_in_port))
+        
+        with col3:
+            total_departed = activity_df['Departed'].sum()
+            st.metric("Total Departed (7 days)", int(total_departed))
+        
+    except Exception as e:
+        st.error(f"Error rendering vessel activity trend: {str(e)}")
+        # Fallback to original arrival-only chart if there's an error
+        st.info("Falling back to arrival-only trend chart...")
+        render_arrival_activity_trend_fallback(vessel_analysis)
+
+
+def render_arrival_activity_trend_fallback(vessel_analysis: Dict[str, Any]) -> None:
+    """
+    Fallback function that renders the original arrival-only activity trend chart.
+    
+    This is used when the enhanced multi-status chart fails for any reason.
+    """
+    try:
         # Extract activity trend data
         activity_data = vessel_analysis.get('activity_trend', [])
         
-        # Log data status for debugging
-        st.info(f"📊 Data Status: Found {len(activity_data) if hasattr(activity_data, '__len__') else 0} activity trend data points")
-        
         if not activity_data:
             st.warning("No vessel activity trend data available")
-            st.info("💡 This could happen if: 1) No vessels have timestamps within the last 7 days, 2) Timestamp format issues, or 3) Data loading problems")
-            
-            # Show available keys for debugging
-            available_keys = list(vessel_analysis.keys()) if isinstance(vessel_analysis, dict) else []
-            st.write(f"Available data keys: {available_keys}")
             return
         
-        # Data successfully loaded
-        
         # Convert to DataFrame for Plotly
-        # Handle both list of dicts and dict formats
         if isinstance(activity_data, list):
-            # List of dictionaries format: [{'time': datetime, 'arrivals': count}, ...]
             activity_df = pd.DataFrame([
                 {'Date': item.get('time'), 'Arrivals': item.get('arrivals', 0)}
                 for item in activity_data
                 if item.get('time') is not None
             ])
         elif isinstance(activity_data, dict):
-            # Dictionary format: {date: count, ...}
             activity_df = pd.DataFrame([
                 {'Date': date, 'Arrivals': count}
                 for date, count in activity_data.items()
@@ -185,7 +333,7 @@ def render_arrival_activity_trend(vessel_analysis: Dict[str, Any]) -> None:
             activity_df,
             x='Date',
             y='Arrivals',
-            title='Arrival Activity Trend',
+            title='Arrival Activity Trend (Fallback)',
             markers=True
         )
         
@@ -201,7 +349,7 @@ def render_arrival_activity_trend(vessel_analysis: Dict[str, Any]) -> None:
         st.plotly_chart(fig, use_container_width=True)
         
     except Exception as e:
-        st.error(f"Error rendering arrival activity trend: {str(e)}")
+        st.error(f"Error rendering fallback arrival activity trend: {str(e)}")
 
 def _extract_latest_timestamp(vessel_analysis: Dict[str, Any]) -> str:
     """

@@ -31,7 +31,7 @@ project_root = find_project_root()
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from hk_port_digital_twin.src.utils.data_loader import RealTimeDataConfig, get_real_time_manager, load_container_throughput, load_vessel_arrivals, load_berth_configurations, initialize_vessel_data_pipeline, load_all_vessel_data, get_comprehensive_vessel_analysis, load_combined_vessel_data, load_all_vessel_data_with_backups
+from hk_port_digital_twin.src.utils.data_loader import RealTimeDataConfig, get_real_time_manager, load_container_throughput, load_vessel_arrivals, load_berth_configurations, initialize_vessel_data_pipeline, load_all_vessel_data, get_comprehensive_vessel_analysis, load_combined_vessel_data
 from hk_port_digital_twin.config.settings import SIMULATION_CONFIG, get_enhanced_simulation_config
 from hk_port_digital_twin.src.core.port_simulation import PortSimulation
 from hk_port_digital_twin.src.core.simulation_controller import SimulationController
@@ -73,67 +73,6 @@ except ImportError:
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(threadName)s - %(message)s')
-
-
-def filter_vessel_data_by_time_range(vessel_data: pd.DataFrame, time_range: str) -> pd.DataFrame:
-    """Filter vessel data based on the selected time range.
-    
-    Args:
-        vessel_data: DataFrame containing vessel data
-        time_range: Time range string (e.g., 'Last 7 days', 'Last 1 year')
-        
-    Returns:
-        Filtered DataFrame containing only vessels within the specified time range
-    """
-    if vessel_data.empty:
-        return vessel_data
-    
-    # Determine the time column to use for filtering
-    time_column = None
-    if 'arrival_time' in vessel_data.columns:
-        time_column = 'arrival_time'
-    elif 'timestamp' in vessel_data.columns:
-        time_column = 'timestamp'
-    elif 'departure_time' in vessel_data.columns:
-        time_column = 'departure_time'
-    
-    if time_column is None:
-        # No time column found, return original data
-        return vessel_data
-    
-    # Ensure the time column is in datetime format
-    vessel_data[time_column] = pd.to_datetime(vessel_data[time_column], errors='coerce')
-    
-    # Calculate the cutoff date based on the time range
-    now = datetime.now()
-    
-    if time_range == 'Last 7 days':
-        cutoff_date = now - timedelta(days=7)
-    elif time_range == 'Last 30 days':
-        cutoff_date = now - timedelta(days=30)
-    elif time_range == 'Last 90 days':
-        cutoff_date = now - timedelta(days=90)
-    elif time_range == 'Last 180 days':
-        cutoff_date = now - timedelta(days=180)
-    elif time_range == 'Last 1 year':
-        cutoff_date = now - timedelta(days=365)
-    elif time_range == 'Last 2 years':
-        cutoff_date = now - timedelta(days=365*2)
-    elif time_range == 'Last 3 years':
-        cutoff_date = now - timedelta(days=365*3)
-    else:
-        # Unknown time range, return original data
-        return vessel_data
-    
-    # Filter the data
-    filtered_data = vessel_data[
-        (vessel_data[time_column].notna()) & 
-        (vessel_data[time_column] >= cutoff_date)
-    ].copy()
-    
-    logging.info(f"Filtered vessel data: {len(vessel_data)} -> {len(filtered_data)} vessels for {time_range}")
-    
-    return filtered_data
 
 
 def load_sample_data(scenario='normal', use_real_throughput_data=True):
@@ -393,27 +332,6 @@ def initialize_session_state():
     # Initialize scenario manager if not in session state
     if 'scenario_manager' not in st.session_state:
         st.session_state.scenario_manager = ScenarioManager()
-    
-    # Initialize vessel data scheduler for automated background fetching
-    if 'vessel_data_scheduler' not in st.session_state:
-        try:
-            from hk_port_digital_twin.src.utils.vessel_data_scheduler import VesselDataScheduler
-            from hk_port_digital_twin.src.utils.vessel_data_fetcher import VesselDataFetcher
-            
-            # Create a callback function for the scheduler
-            def fetch_vessel_data():
-                fetcher = VesselDataFetcher()
-                return fetcher.fetch_xml_files()
-            
-            # Initialize and start the scheduler
-            scheduler = VesselDataScheduler(fetch_vessel_data)
-            scheduler.start(run_immediately=False)  # Don't run immediately on startup to avoid blocking
-            st.session_state.vessel_data_scheduler = scheduler
-            
-            logging.info("Vessel data scheduler initialized and started successfully")
-        except Exception as e:
-            logging.warning(f"Could not initialize vessel data scheduler: {e}")
-            st.session_state.vessel_data_scheduler = None
 
 
 
@@ -465,16 +383,14 @@ def main():
     
     if use_consolidated:
         # New consolidated structure with Settings as tab6 (Ships & Berths and Analytics removed)
-        # Original order: ["📊 Overview", "📊 Vessel Insights (Strategic)", "📦 Cargo Statistics", "🛳️ Vessel Insights (Operational)", "🎯 Scenarios", "⚙️ Settings"]
         tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-            "📊 Overview", "📦 Cargo Statistics", "📊 Vessel Insights (Strategic)", "🛳️ Vessel Insights (Operational)", 
+            "📊 Overview", "🚢 Vessel Analytics", "📦 Cargo Statistics", "🛳️ Live Vessels", 
             "🎯 Scenarios", "⚙️ Settings"
         ])
     else:
         # Original structure with Settings as tab6 (Ships & Berths and Analytics tabs removed)
-        # Original order: ["📊 Overview", "📊 Vessel Insights (Strategic)", "📦 Cargo Statistics", "🛳️ Vessel Insights (Operational)", "🎯 Scenarios", "⚙️ Settings", "📊 Performance Analytics", "📦 Cargo Analysis"]
         tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
-            "📊 Overview", "📦 Cargo Statistics", "📊 Vessel Insights (Strategic)", "🛳️ Vessel Insights (Operational)",
+            "📊 Overview", "🚢 Vessel Analytics", "📦 Cargo Statistics", "🛳️ Live Vessels",
             "🎯 Scenarios", "⚙️ Settings",
             "📊 Performance Analytics", "📦 Cargo Analysis"
         ])
@@ -588,6 +504,114 @@ def main():
  
     
     with tab2:
+        # Vessel Analytics tab (same for both consolidated and original modes)
+        st.subheader("🚢 Vessel Analytics Dashboard")
+        st.markdown("Real-time analysis of vessel distribution and activity patterns")
+        
+        try:
+            # Load comprehensive vessel analysis data (includes timestamps from all XML files)
+            vessel_analysis = get_comprehensive_vessel_analysis()
+            
+            if vessel_analysis and vessel_analysis.get('data_summary', {}).get('total_vessels', 0) > 0:
+                data_summary = vessel_analysis.get('data_summary', {})
+                # Create a collapsible section for data summary
+                with st.expander("ℹ️ About the data used here", expanded=False):
+                    st.write(f"**Data Summary:** {data_summary.get('total_vessels', 0)} vessels loaded from {data_summary.get('files_processed', 0)} files")
+                    
+                    # Show data sources
+                    data_sources = data_summary.get('data_sources', [])
+                    if data_sources:
+                        st.write(f"**Data Sources:** {', '.join([src.replace('.xml', '') for src in data_sources])}")
+                    
+                    # Location breakdown
+                    location_breakdown = vessel_analysis.get('location_type_breakdown', {})
+                    if location_breakdown:
+                        st.write(f"**Locations:** {len(location_breakdown)} unique location types")
+                    
+                    # Ship category breakdown
+                    category_breakdown = vessel_analysis.get('ship_category_breakdown', {})
+                    if category_breakdown:
+                        st.write(f"**Ship Categories:** {len(category_breakdown)} different types")
+                    
+                    # Recent activity
+                    recent_activity = vessel_analysis.get('recent_activity', {})
+                    if recent_activity:
+                        st.write(f"**Recent Activity:** {recent_activity.get('vessels_last_24h', 0)} vessels in last 24 hours")
+                    
+                    # Display timestamp if available
+                    from hk_port_digital_twin.src.dashboard.vessel_charts import _extract_latest_timestamp
+                    latest_timestamp = _extract_latest_timestamp(vessel_analysis)
+                    if latest_timestamp:
+                        st.caption(f"📅 Last updated at: {latest_timestamp}")
+                    else:
+                        st.caption("📅 Last updated at: Not available")
+
+                
+
+                
+                # Render the vessel analytics dashboard with comprehensive analysis data
+                render_vessel_analytics_dashboard(vessel_analysis)
+                
+            else:
+                st.warning("No vessel data available for analytics.")
+                st.info("Please ensure vessel data files are properly loaded from the raw_data directory.")
+                
+        except Exception as e:
+            st.error(f"Error loading vessel analytics: {str(e)}")
+            st.info("Using sample data for demonstration purposes.")
+            
+            # Fallback to sample data with proper structure
+            sample_vessel_analysis = {
+                'data_summary': {
+                    'total_vessels': 3,
+                    'files_processed': 1,
+                    'data_sources': ['sample_data']
+                },
+                'location_type_breakdown': {'berth': 2, 'anchorage': 1},
+                'ship_category_breakdown': {'container': 2, 'bulk_carrier': 1},
+                'file_breakdown': {
+                    'sample_data': {
+                        'earliest_timestamp': (datetime.now() - timedelta(hours=8)).isoformat(),
+                        'latest_timestamp': (datetime.now() - timedelta(hours=2)).isoformat()
+                    }
+                },
+                'analysis_timestamp': datetime.now().isoformat()
+            }
+            render_vessel_analytics_dashboard(sample_vessel_analysis)
+        
+        # Analytics Section - moved from Analytics tab
+        st.markdown("---")
+        st.subheader("📈 Port Analytics")
+        st.markdown("Throughput and waiting time analysis for port operations")
+        
+        # Check if data is properly loaded for analytics
+        if data and 'berths' in data:
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.subheader("Throughput Timeline")
+                if create_throughput_timeline is not None:
+                    fig_timeline = create_throughput_timeline(data['timeline'])
+                    st.plotly_chart(fig_timeline, use_container_width=True, key="vessel_analytics_throughput_timeline_chart")
+                else:
+                    st.warning("Throughput timeline visualization not available. Please check visualization module import.")
+                    st.dataframe(data['timeline'], use_container_width=True)
+            
+            with col2:
+                st.subheader("Waiting Time Distribution")
+                # Convert DataFrame to list for visualization
+                waiting_times_list = data['waiting']['waiting_time'].tolist()
+                if create_waiting_time_distribution is not None:
+                    fig_waiting = create_waiting_time_distribution(waiting_times_list)
+                    st.plotly_chart(fig_waiting, use_container_width=True, key="vessel_analytics_waiting_time_chart")
+                else:
+                    st.warning("Waiting time distribution visualization not available. Please check visualization module import.")
+                    st.dataframe(data['waiting'], use_container_width=True)
+        else:
+            st.info("Analytics data not available. Please ensure scenario data is properly loaded.")
+
+    
+    with tab3:
         st.subheader("📦 Port Cargo Statistics")
         st.markdown("Comprehensive analysis of Hong Kong port cargo throughput data with time series analysis and forecasting")
         
@@ -905,326 +929,19 @@ def main():
                     st.plotly_chart(fig, use_container_width=True, key="time_series_chart")
 
     
-    with tab3:
-        # Vessel Analytics tab (same for both consolidated and original modes)
-        st.subheader("🚢 Vessel Analytics Dashboard")
-        st.markdown("Real-time analysis of vessel distribution and activity patterns")
-        
-        # Add refresh data button and status
-        col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
-        with col1:
-            if st.button("🔄 Refresh Data", help="Download latest vessel data from Hong Kong Marine Department"):
-                with st.spinner("Refreshing vessel data..."):
-                    try:
-                        # Import and use the vessel data fetcher
-                        from hk_port_digital_twin.src.utils.vessel_data_fetcher import VesselDataFetcher
-                        
-                        fetcher = VesselDataFetcher()
-                        results = fetcher.fetch_xml_files()
-                        
-                        if results:
-                            success_count = sum(1 for success in results.values() if success)
-                            total_count = len(results)
-                            
-                            if success_count == total_count:
-                                st.success(f"✅ Successfully refreshed all {total_count} vessel data files!")
-                            elif success_count > 0:
-                                st.warning(f"⚠️ Refreshed {success_count} of {total_count} files. Some files may have failed.")
-                            else:
-                                st.error("❌ Failed to refresh vessel data. Please check the logs.")
-                        else:
-                            st.error("❌ No data files were processed. Please check the configuration.")
-                            
-                        # Force a rerun to reload the data
-                        st.rerun()
-                        
-                    except Exception as e:
-                        st.error(f"❌ Error refreshing data: {str(e)}")
-        
-        with col2:
-            # Show data freshness indicator
-            try:
-                from hk_port_digital_twin.src.utils.vessel_data_fetcher import VesselDataFetcher
-                fetcher = VesselDataFetcher()
-                
-                # Check the last update time of the most recent file
-                latest_update = None
-                for file_name in fetcher.expected_files:
-                    file_update = fetcher.get_last_update_time(file_name)
-                    if file_update and (latest_update is None or file_update > latest_update):
-                        latest_update = file_update
-                
-                if latest_update:
-                    time_diff = datetime.now() - latest_update
-                    hours_old = time_diff.total_seconds() / 3600
-                    
-                    if hours_old < 1:
-                        st.success(f"🟢 Data is fresh ({int(time_diff.total_seconds() / 60)} min old)")
-                    elif hours_old < 6:
-                        st.info(f"🟡 Data is {int(hours_old)} hours old")
-                    else:
-                        st.warning(f"🟠 Data is {int(hours_old)} hours old")
-                else:
-                    st.warning("🔍 Data age unknown")
-                    
-            except Exception as e:
-                st.caption(f"Status check unavailable: {str(e)}")
-        
-        with col3:
-            # Show scheduler status
-            try:
-                scheduler = st.session_state.get('vessel_data_scheduler')
-                if scheduler:
-                    status = scheduler.get_scheduler_status()
-                    if status['running']:
-                        next_run = status.get('next_execution_time')
-                        if next_run:
-                            next_run_dt = datetime.fromisoformat(next_run.replace('Z', '+00:00'))
-                            time_until = next_run_dt - datetime.now()
-                            minutes_until = int(time_until.total_seconds() / 60)
-                            
-                            if minutes_until > 0:
-                                st.info(f"🤖 Auto-refresh in {minutes_until} min")
-                            else:
-                                st.info("🤖 Auto-refresh running...")
-                        else:
-                            st.info("🤖 Auto-refresh active")
-                    else:
-                        st.warning("🤖 Auto-refresh disabled")
-                else:
-                    st.warning("🤖 Scheduler unavailable")
-            except Exception as e:
-                st.caption(f"Scheduler status unavailable: {str(e)}")
-        
-        try:
-            # Load comprehensive vessel analysis data (includes timestamps from all XML files)
-            vessel_analysis = get_comprehensive_vessel_analysis()
-            
-            if vessel_analysis and vessel_analysis.get('data_summary', {}).get('total_vessels', 0) > 0:
-                data_summary = vessel_analysis.get('data_summary', {})
-                # Create a collapsible section for data summary
-                with st.expander("ℹ️ About the data used here", expanded=False):
-                    st.write(f"**Data Summary:** {data_summary.get('total_vessels', 0)} vessels loaded from {data_summary.get('files_processed', 0)} files")
-                    
-                    # Show data sources
-                    data_sources = data_summary.get('data_sources', [])
-                    if data_sources:
-                        st.write(f"**Data Sources:** {', '.join([src.replace('.xml', '') for src in data_sources])}")
-                    
-                    # Location breakdown
-                    location_breakdown = vessel_analysis.get('location_type_breakdown', {})
-                    if location_breakdown:
-                        st.write(f"**Locations:** {len(location_breakdown)} unique location types")
-                    
-                    # Ship category breakdown
-                    category_breakdown = vessel_analysis.get('ship_category_breakdown', {})
-                    if category_breakdown:
-                        st.write(f"**Ship Categories:** {len(category_breakdown)} different types")
-                    
-                    # Recent activity
-                    recent_activity = vessel_analysis.get('recent_activity', {})
-                    if recent_activity:
-                        st.write(f"**Recent Activity:** {recent_activity.get('vessels_last_24h', 0)} vessels in last 24 hours")
-                    
-                    # Display timestamp if available
-                    from hk_port_digital_twin.src.dashboard.vessel_charts import _extract_latest_timestamp
-                    latest_timestamp = _extract_latest_timestamp(vessel_analysis)
-                    if latest_timestamp:
-                        st.caption(f"📅 Last updated at: {latest_timestamp}")
-                    else:
-                        st.caption("📅 Last updated at: Not available")
-
-                
-
-                
-                # Render the vessel analytics dashboard with comprehensive analysis data
-                render_vessel_analytics_dashboard(vessel_analysis)
-                
-            else:
-                st.warning("No vessel data available for analytics.")
-                st.info("Please ensure vessel data files are properly loaded from the raw_data directory.")
-                
-        except Exception as e:
-            st.error(f"Error loading vessel analytics: {str(e)}")
-            st.info("Using sample data for demonstration purposes.")
-            
-            # Fallback to sample data with proper structure
-            sample_vessel_analysis = {
-                'data_summary': {
-                    'total_vessels': 3,
-                    'files_processed': 1,
-                    'data_sources': ['sample_data']
-                },
-                'location_type_breakdown': {'berth': 2, 'anchorage': 1},
-                'ship_category_breakdown': {'container': 2, 'bulk_carrier': 1},
-                'file_breakdown': {
-                    'sample_data': {
-                        'earliest_timestamp': (datetime.now() - timedelta(hours=8)).isoformat(),
-                        'latest_timestamp': (datetime.now() - timedelta(hours=2)).isoformat()
-                    }
-                },
-                'analysis_timestamp': datetime.now().isoformat()
-            }
-            render_vessel_analytics_dashboard(sample_vessel_analysis)
-        
-        # Analytics Section - moved from Analytics tab
-        st.markdown("---")
-        st.subheader("📈 Port Analytics")
-        st.markdown("Throughput and waiting time analysis for port operations")
-        
-        # Check if data is properly loaded for analytics
-        if data and 'berths' in data:
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.subheader("Throughput Timeline")
-                if create_throughput_timeline is not None:
-                    fig_timeline = create_throughput_timeline(data['timeline'])
-                    st.plotly_chart(fig_timeline, use_container_width=True, key="vessel_analytics_throughput_timeline_chart")
-                else:
-                    st.warning("Throughput timeline visualization not available. Please check visualization module import.")
-                    st.dataframe(data['timeline'], use_container_width=True)
-            
-            with col2:
-                st.subheader("Waiting Time Distribution")
-                # Convert DataFrame to list for visualization
-                waiting_times_list = data['waiting']['waiting_time'].tolist()
-                if create_waiting_time_distribution is not None:
-                    fig_waiting = create_waiting_time_distribution(waiting_times_list)
-                    st.plotly_chart(fig_waiting, use_container_width=True, key="vessel_analytics_waiting_time_chart")
-                else:
-                    st.warning("Waiting time distribution visualization not available. Please check visualization module import.")
-                    st.dataframe(data['waiting'], use_container_width=True)
-        else:
-            st.info("Analytics data not available. Please ensure scenario data is properly loaded.")
-
-    
     with tab4:
         st.subheader("🚢 Live Vessel Arrivals")
         st.markdown("Real-time vessel arrival data and analytics for Hong Kong port")
         
-        # Time range selection (moved to top to determine data loading strategy)
-        st.subheader("📊 Data Selection")
-        
-        # Add info about historical data availability
-        st.info("💡 **Historical Data Available**: 466 backup files ready to load. Select 'All historical data' to access comprehensive vessel history!")
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            # Time range filter with enhanced options
-            time_range_options = [
-                'Last 7 days (Current: ~102 vessels)', 
-                'Last 30 days', 
-                'Last 90 days',
-                'Last 180 days',
-                'Last 1 year',
-                'Last 2 years',
-                'Last 3 years',
-                '🗂️ All historical data (466 backup files)'
-            ]
-            selected_time_range = st.selectbox("Time Range", time_range_options, index=0)
-            
-            # Convert back to original format for processing
-            if selected_time_range.startswith('Last 7 days'):
-                selected_time_range = 'Last 7 days'
-            elif selected_time_range.startswith('Last 30 days'):
-                selected_time_range = 'Last 30 days'
-            elif selected_time_range.startswith('Last 90 days'):
-                selected_time_range = 'Last 90 days'
-            elif selected_time_range.startswith('Last 180 days'):
-                selected_time_range = 'Last 180 days'
-            elif selected_time_range.startswith('Last 1 year'):
-                selected_time_range = 'Last 1 year'
-            elif selected_time_range.startswith('Last 2 years'):
-                selected_time_range = 'Last 2 years'
-            elif selected_time_range.startswith('Last 3 years'):
-                selected_time_range = 'Last 3 years'
-            elif selected_time_range.startswith('🗂️ All historical data'):
-                selected_time_range = 'All historical data'
-        
-        with col2:
-            show_all = st.checkbox("Show All Columns", value=False)
-        
-        with col3:
-            st.write("")  # Placeholder for future controls
-        
-        # Load vessel data based on time range selection
+        # Load combined vessel data (both arriving and arrived vessels)
         try:
-            if selected_time_range == 'All historical data':
-                # Enhanced loading feedback
-                with st.spinner("🔄 Loading comprehensive historical data..."):
-                    st.warning("⏳ **Loading 466 backup files** - This may take 30-60 seconds. Please wait...")
-                    progress_bar = st.progress(0)
-                    status_text = st.empty()
-                    
-                    status_text.text("📂 Initializing backup file loading...")
-                    progress_bar.progress(10)
-                    
-                    # Load all historical data including backups (no file limit for comprehensive data)
-                    all_vessel_data = load_all_vessel_data_with_backups(include_backups=True, max_backup_files=None)
-                    
-                    progress_bar.progress(90)
-                    status_text.text("🔄 Processing and deduplicating vessel records...")
-                    
-                    progress_bar.progress(100)
-                    status_text.text("✅ Historical data loading complete!")
-                
-                # Combine all data sources into a single DataFrame
-                vessel_dataframes = []
-                for source_name, df in all_vessel_data.items():
-                    if not df.empty:
-                        df['data_source'] = source_name
-                        vessel_dataframes.append(df)
-                
-                if vessel_dataframes:
-                    vessel_data = pd.concat(vessel_dataframes, ignore_index=True)
-                    # Remove duplicates based on call_sign and arrival_time if available
-                    duplicate_columns = ['call_sign']
-                    if 'arrival_time' in vessel_data.columns:
-                        duplicate_columns.append('arrival_time')
-                    elif 'timestamp' in vessel_data.columns:
-                        duplicate_columns.append('timestamp')
-                    vessel_data = vessel_data.drop_duplicates(subset=duplicate_columns, keep='first')
-                else:
-                    vessel_data = pd.DataFrame()
-            else:
-                # Load current vessel data and apply time filtering
-                if selected_time_range in ['Last 7 days', 'Last 30 days', 'Last 90 days', 'Last 180 days', 'Last 1 year', 'Last 2 years', 'Last 3 years']:
-                    # Load all historical data first, then filter by time range
-                    all_vessel_data = load_all_vessel_data_with_backups(include_backups=True, max_backup_files=None)
-                    
-                    # Combine all data sources into a single DataFrame
-                    vessel_dataframes = []
-                    for source_name, df in all_vessel_data.items():
-                        if not df.empty:
-                            df['data_source'] = source_name
-                            vessel_dataframes.append(df)
-                    
-                    if vessel_dataframes:
-                        vessel_data = pd.concat(vessel_dataframes, ignore_index=True)
-                        # Remove duplicates based on call_sign and arrival_time if available
-                        duplicate_columns = ['call_sign']
-                        if 'arrival_time' in vessel_data.columns:
-                            duplicate_columns.append('arrival_time')
-                        elif 'timestamp' in vessel_data.columns:
-                            duplicate_columns.append('timestamp')
-                        vessel_data = vessel_data.drop_duplicates(subset=duplicate_columns, keep='first')
-                        
-                        # Apply time filtering
-                        vessel_data = filter_vessel_data_by_time_range(vessel_data, selected_time_range)
-                    else:
-                        vessel_data = pd.DataFrame()
-                else:
-                    # Load current vessel data only (for backward compatibility)
-                    vessel_data = load_combined_vessel_data()
-            
+            vessel_data = load_combined_vessel_data()
             if vessel_data is None or vessel_data.empty:
                 st.warning("⚠️ No vessel data available")
                 st.info("Please ensure vessel data files are available in the data directory.")
                 vessel_data = pd.DataFrame()
         except Exception as e:
-            st.error(f"Error loading vessel data: {str(e)}")
+            st.error(f"Error loading combined vessel data: {str(e)}")
             vessel_data = pd.DataFrame()
         
         if not vessel_data.empty:
@@ -1247,18 +964,6 @@ def main():
             with col4:
                 departed_vessels = len(vessel_data[vessel_data.get('status', '') == 'departed']) if 'status' in vessel_data.columns else 0
                 st.metric("Departed", departed_vessels)
-            
-            # Data Source Summary
-            st.subheader("📋 Data Source Summary")
-            if selected_time_range == 'All historical data':
-                st.success(f"✅ **Historical Data Loaded**: Displaying {total_vessels:,} vessels from 466 backup files + current data")
-                st.info("🗂️ **Data Coverage**: Complete historical records with enhanced vessel tracking")
-            elif selected_time_range in ['Last 180 days', 'Last 1 year', 'Last 2 years', 'Last 3 years']:
-                st.success(f"✅ **Filtered Historical Data**: Displaying {total_vessels:,} vessels from {selected_time_range.lower()}")
-                st.info("🗂️ **Data Source**: Filtered from complete historical database (466 backup files + current data)")
-            else:
-                st.info(f"📅 **Current Data**: Displaying {total_vessels:,} vessels from {selected_time_range.lower()}")
-                st.warning("💡 **Tip**: Select 'All historical data' above to see the complete vessel database (466 backup files)")
             
             # Vessel locations
             st.subheader("📍 Vessel Locations")
@@ -1368,7 +1073,7 @@ def main():
                 st.plotly_chart(fig, use_container_width=True, key="activity_trend_chart")
             
             # Detailed vessel table
-            st.subheader("📋 Arriving and Departing Vessels - Details")
+            st.subheader("📋 Arriving and Departing Vessels (last 3 days) - Details")
             
             # Add filters
             col1, col2, col3 = st.columns(3)
@@ -1388,51 +1093,27 @@ def main():
                     selected_location = 'All'
             
             with col3:
-                if 'status' in vessel_data.columns:
-                    statuses = ['All'] + sorted(list(vessel_data['status'].unique()))
-                    selected_status = st.selectbox("Filter by Status", statuses)
-                else:
-                    selected_status = 'All'
-            
-
+                show_all = st.checkbox("Show All Columns", value=False)
             
             # Apply filters
             filtered_data = vessel_data.copy()
             
-            # Apply filters
             if selected_type != 'All' and ship_type_column in vessel_data.columns:
                 filtered_data = filtered_data[filtered_data[ship_type_column] == selected_type]
             
             if selected_location != 'All' and location_column in vessel_data.columns:
                 filtered_data = filtered_data[filtered_data[location_column] == selected_location]
             
-            if selected_status != 'All' and 'status' in vessel_data.columns:
-                filtered_data = filtered_data[filtered_data['status'] == selected_status]
-            
             # Display table
             if not show_all:
-                # Show only key columns including date/time information
+                # Show only key columns
                 display_columns = []
-                for col in ['vessel_name', 'ship_type', 'location', 'arrival_time', 'departure_time', 'timestamp', 'status']:
+                for col in ['vessel_name', 'ship_type', 'location', 'arrival_time', 'status']:
                     if col in filtered_data.columns:
                         display_columns.append(col)
                 
                 if display_columns:
-                    # Create a copy for display formatting
-                    display_data = filtered_data[display_columns].copy()
-                    
-                    # Format datetime columns for better display
-                    datetime_columns = ['arrival_time', 'departure_time', 'timestamp']
-                    for col in datetime_columns:
-                        if col in display_data.columns:
-                            # Convert to datetime if not already and format
-                            try:
-                                display_data[col] = pd.to_datetime(display_data[col]).dt.strftime('%Y-%m-%d %H:%M')
-                            except:
-                                # If conversion fails, keep original values
-                                pass
-                    
-                    st.dataframe(display_data, use_container_width=True)
+                    st.dataframe(filtered_data[display_columns], use_container_width=True)
                 else:
                     st.dataframe(filtered_data, use_container_width=True)
             else:
