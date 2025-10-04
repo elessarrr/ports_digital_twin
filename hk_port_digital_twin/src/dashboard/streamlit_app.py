@@ -911,7 +911,7 @@ def main():
         st.markdown("Real-time analysis of vessel distribution and activity patterns")
         
         # Add refresh data button and status
-        col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+        col1, col2, col3, col4 = st.columns([0.3, 0.5, 1, 1])
         with col1:
             if st.button("🔄 Refresh Data", help="Download latest vessel data from Hong Kong Marine Department"):
                 with st.spinner("Refreshing vessel data..."):
@@ -942,36 +942,8 @@ def main():
                         st.error(f"❌ Error refreshing data: {str(e)}")
         
         with col2:
-            # Show data freshness indicator
-            try:
-                from hk_port_digital_twin.src.utils.vessel_data_fetcher import VesselDataFetcher
-                fetcher = VesselDataFetcher()
-                
-                # Check the last update time of the most recent file
-                latest_update = None
-                for file_name in fetcher.expected_files:
-                    file_update = fetcher.get_last_update_time(file_name)
-                    if file_update and (latest_update is None or file_update > latest_update):
-                        latest_update = file_update
-                
-                if latest_update:
-                    time_diff = datetime.now() - latest_update
-                    hours_old = time_diff.total_seconds() / 3600
-                    
-                    if hours_old < 1:
-                        st.success(f"🟢 Data is fresh ({int(time_diff.total_seconds() / 60)} min old)")
-                    elif hours_old < 6:
-                        st.info(f"🟡 Data is {int(hours_old)} hours old")
-                    else:
-                        st.warning(f"🟠 Data is {int(hours_old)} hours old")
-                else:
-                    st.warning("🔍 Data age unknown")
-                    
-            except Exception as e:
-                st.caption(f"Status check unavailable: {str(e)}")
-        
-        with col3:
-            # Show scheduler status
+            # Show scheduler status side by side with the refresh button
+            # Use a compact container to limit the width of the auto-refresh info
             try:
                 scheduler = st.session_state.get('vessel_data_scheduler')
                 if scheduler:
@@ -984,17 +956,46 @@ def main():
                             minutes_until = int(time_until.total_seconds() / 60)
                             
                             if minutes_until > 0:
-                                st.info(f"🤖 Auto-refresh in {minutes_until} min")
+                                # Create a compact container for the auto-refresh info
+                                with st.container():
+                                    st.markdown(
+                                        f'<div style="background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 0.25rem; padding: 0.5rem; margin: 0.25rem 0; display: inline-block; color: #0c5460; font-size: 0.875rem;">🤖 Auto-refresh in {minutes_until} min</div>',
+                                        unsafe_allow_html=True
+                                    )
                             else:
-                                st.info("🤖 Auto-refresh running...")
+                                with st.container():
+                                    st.markdown(
+                                        f'<div style="background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 0.25rem; padding: 0.5rem; margin: 0.25rem 0; display: inline-block; color: #0c5460; font-size: 0.875rem;">🤖 Auto-refresh running...</div>',
+                                        unsafe_allow_html=True
+                                    )
                         else:
-                            st.info("🤖 Auto-refresh active")
+                            with st.container():
+                                st.markdown(
+                                    f'<div style="background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 0.25rem; padding: 0.5rem; margin: 0.25rem 0; display: inline-block; color: #0c5460; font-size: 0.875rem;">🤖 Auto-refresh active</div>',
+                                    unsafe_allow_html=True
+                                )
                     else:
-                        st.warning("🤖 Auto-refresh disabled")
+                        with st.container():
+                            st.markdown(
+                                f'<div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 0.25rem; padding: 0.5rem; margin: 0.25rem 0; display: inline-block; color: #856404; font-size: 0.875rem;">🤖 Auto-refresh disabled</div>',
+                                unsafe_allow_html=True
+                            )
                 else:
-                    st.warning("🤖 Scheduler unavailable")
+                    with st.container():
+                        st.markdown(
+                            f'<div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 0.25rem; padding: 0.5rem; margin: 0.25rem 0; display: inline-block; color: #856404; font-size: 0.875rem;">🤖 Scheduler unavailable</div>',
+                            unsafe_allow_html=True
+                        )
             except Exception as e:
                 st.caption(f"Scheduler status unavailable: {str(e)}")
+        
+        with col2:
+            # Column intentionally left empty
+            pass
+        
+        with col3:
+            # Column intentionally left empty
+            pass
         
         try:
             # Load comprehensive vessel analysis data (includes timestamps from all XML files)
