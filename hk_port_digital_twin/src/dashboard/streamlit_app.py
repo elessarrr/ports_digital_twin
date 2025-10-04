@@ -1371,7 +1371,7 @@ def main():
             st.subheader("📋 Arriving and Departing Vessels - Details")
             
             # Add filters
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns(3)
             
             with col1:
                 if ship_type_column in vessel_data.columns:
@@ -1387,6 +1387,13 @@ def main():
                 else:
                     selected_location = 'All'
             
+            with col3:
+                if 'status' in vessel_data.columns:
+                    statuses = ['All'] + sorted(list(vessel_data['status'].unique()))
+                    selected_status = st.selectbox("Filter by Status", statuses)
+                else:
+                    selected_status = 'All'
+            
 
             
             # Apply filters
@@ -1398,6 +1405,9 @@ def main():
             
             if selected_location != 'All' and location_column in vessel_data.columns:
                 filtered_data = filtered_data[filtered_data[location_column] == selected_location]
+            
+            if selected_status != 'All' and 'status' in vessel_data.columns:
+                filtered_data = filtered_data[filtered_data['status'] == selected_status]
             
             # Display table
             if not show_all:

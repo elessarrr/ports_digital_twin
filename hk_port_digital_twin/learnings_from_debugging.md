@@ -123,3 +123,80 @@ Added comprehensive cargo-specific parameters for each scenario:
 - Implement historical trend analysis
 - Add scenario comparison features
 - Include confidence intervals for forecasted values
+
+## Error 9: Missing 'Arriving' Vessels in Streamlit UI
+
+### Symptom
+- **Issue**: 'Arriving' vessels were not appearing in the Streamlit dashboard despite being present in the raw data files
+- **Context**: The `Expected_arrivals.xml` file contained vessel data, but these vessels were not showing up with 'arriving' status in the UI
+- **Impact**: Users could not see incoming vessels, limiting the dashboard's real-time monitoring capabilities
+
+### Root Cause Analysis
+- **Data Loading Path**: The Streamlit app used `load_all_vessel_data_with_backups()` by default (for "Last 7 days" selection), which internally calls `load_vessel_data_from_xml()`
+- **Status Assignment Logic**: In `load_vessel_data_from_xml()` function, the status assignment logic had a flaw:
+  ```python
+  # Problematic logic in data_loader.py (lines 1532-1540)
+  if 'departed' in file_name:
+      vessel_data['status'] = 'departed'
+  elif 'expected' in file_name:  # This caught Expected_arrivals.xml incorrectly
+      vessel_data['status'] = 'expected'
+  elif vessel_data.get('remark') == 'Departed':
+      vessel_data['status'] = 'departed'
+  else:
+      vessel_data['status'] = 'in_port'
+  ```
+- **The Problem**: `Expected_arrivals.xml` contains the substring 'expected', so it was being assigned 'expected' status instead of 'arriving'
+
+### Debugging Process
+1. **Initial Investigation**: Used `debug_backup_data.py` to analyze what `load_all_vessel_data_with_backups()` was returning
+2. **Data Verification**: Confirmed that 0 'arriving' vessels were found in the default data loading path
+3. **Comparison Analysis**: Verified that `load_combined_vessel_data()` correctly identified 'arriving' vessels
+4. **Code Inspection**: Traced the data flow to identify the exact location of the status assignment issue
+
+### Resolution
+**Solution**: Added a specific condition for 'arriving' vessels in the status assignment logic:
+
+```python
+# Fixed logic in load_vessel_data_from_xml() function
+if 'departed' in file_name:
+    vessel_data['status'] = 'departed'
+elif 'expected_arrivals' in file_name:  # ✅ NEW: Specific handling for arriving vessels
+    vessel_data['status'] = 'arriving'
+elif 'expected' in file_name:
+    vessel_data['status'] = 'expected'
+elif vessel_data.get('remark') == 'Departed':
+    vessel_data['status'] = 'departed'
+else:
+    vessel_data['status'] = 'in_port'
+```
+
+**Implementation Details**:
+- **File Modified**: `/hk_port_digital_twin/src/utils/data_loader.py`
+- **Lines Changed**: 1532-1540 (added 3 lines)
+- **Backup Created**: `data_loader.py.backup` for safety
+- **Minimal Impact**: Only affects status assignment for `Expected_arrivals.xml`
+
+### Verification Results
+**Before Fix**:
+- departed: 1010, expected: 633, in_port: 153, **arriving: 0**
+
+**After Fix**:
+- departed: 1008, expected: 372, in_port: 160, **arriving: 288** ✅
+
+### Key Learnings
+1. **Order Matters in Conditional Logic**: When using substring matching for file names, more specific conditions must come before general ones
+2. **Default Data Loading Paths**: Understanding which data loading function the UI uses by default is crucial for debugging display issues
+3. **Status Assignment Consistency**: Different data loading functions (`load_combined_vessel_data()` vs `load_all_vessel_data_with_backups()`) should assign statuses consistently
+4. **Debug Script Value**: Creating targeted debug scripts helps isolate data loading issues without UI complexity
+5. **Conservative Approach**: When multiple solutions exist (replace function vs modify function), choose the one that preserves existing functionality and historical data capabilities
+
+### Technical Notes
+- **Preserved Functionality**: The fix maintains all existing historical data pipelining and backup file processing
+- **Minimal Code Change**: Only 3 lines added, reducing risk of introducing new bugs
+- **Backward Compatibility**: All existing vessel statuses ('departed', 'expected', 'in_port') continue to work as before
+- **Performance Impact**: Negligible - only adds one additional string comparison per vessel record
+
+### Prevention Strategy
+- **Unit Tests**: Add specific tests for status assignment logic with different XML file names
+- **Integration Tests**: Verify that all data loading paths produce consistent vessel status assignments
+- **Documentation**: Document the expected status values and their corresponding data sources

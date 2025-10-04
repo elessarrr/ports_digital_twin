@@ -1533,9 +1533,6 @@ def load_vessel_data_from_xml(xml_file_path: Path) -> pd.DataFrame:
             file_name = xml_file_path.name.lower()
             if 'departed' in file_name:
                 vessel_data['status'] = 'departed'
-            elif 'expected_arrivals' in file_name:
-                # Specifically handle Expected_arrivals.xml to assign 'arriving' status
-                vessel_data['status'] = 'arriving'
             elif 'expected' in file_name:
                 vessel_data['status'] = 'expected'
             elif vessel_data.get('remark') == 'Departed':

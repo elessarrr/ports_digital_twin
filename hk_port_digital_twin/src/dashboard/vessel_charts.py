@@ -9,7 +9,7 @@ import plotly.express as px
 import pandas as pd
 from typing import Dict, Any, Optional
 from datetime import datetime
-from utils.data_loader import load_vessel_arrivals
+from hk_port_digital_twin.src.utils.data_loader import load_vessel_arrivals
 
 def render_vessel_location_distribution(vessel_analysis: Dict[str, Any]) -> None:
     """
@@ -269,7 +269,7 @@ def render_arriving_ships_list() -> None:
     """
     try:
         # Load combined vessel data to get all vessels
-        from utils.data_loader import load_combined_vessel_data
+        from hk_port_digital_twin.src.utils.data_loader import load_combined_vessel_data
         vessel_data = load_combined_vessel_data()
         
         if vessel_data.empty:
