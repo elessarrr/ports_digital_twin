@@ -136,6 +136,33 @@ def filter_vessel_data_by_time_range(vessel_data: pd.DataFrame, time_range: str)
     return filtered_data
 
 
+def count_backup_files():
+    """Count the number of XML backup files in the vessel data backup directory.
+    
+    Returns:
+        int: Number of XML files in the backup directory, or 0 if directory doesn't exist
+    """
+    try:
+        # Get the project root and construct the backup directory path
+        backup_dir = os.path.join(find_project_root(), 'raw_data', 'vessel_data', 'backups')
+        backup_dir = os.path.abspath(backup_dir)
+        
+        if not os.path.exists(backup_dir):
+            logging.warning(f"Backup directory not found: {backup_dir}")
+            return 0
+        
+        # Count XML files in the backup directory
+        xml_files = [f for f in os.listdir(backup_dir) if f.endswith('.xml')]
+        file_count = len(xml_files)
+        
+        logging.info(f"Found {file_count} XML backup files in {backup_dir}")
+        return file_count
+        
+    except Exception as e:
+        logging.error(f"Error counting backup files: {e}")
+        return 0
+
+
 def load_sample_data(scenario='normal', use_real_throughput_data=True):
     """Load sample data based on scenario"""
     # Define scenario-based parameters with distinct, non-overlapping ranges
@@ -936,101 +963,104 @@ def main():
 
     
     with tab3:
-        st.subheader("🚢 Live Vessel Arrivals")
-        st.markdown("Real-time vessel arrival data and analytics for Hong Kong port")
+        # COMMENTED OUT: Live Vessel Arrivals heading and Refresh Data button - user requested to hide these for now
+        # st.subheader("🚢 Live Vessel Arrivals")
+        # st.markdown("Real-time vessel arrival data and analytics for Hong Kong port")
         
-        # Add refresh data button and status (moved from Strategic tab)
-        col1, col2, col3, col4 = st.columns([0.3, 0.5, 1, 1])
-        with col1:
-            if st.button("🔄 Refresh Data", help="Download latest vessel data from Hong Kong Marine Department", key="refresh_live_arrivals"):
-                with st.spinner("Refreshing vessel data..."):
-                    try:
-                        # Import and use the vessel data fetcher
-                        from hk_port_digital_twin.src.utils.vessel_data_fetcher import VesselDataFetcher
-                        
-                        fetcher = VesselDataFetcher()
-                        results = fetcher.fetch_xml_files()
-                        
-                        if results:
-                            success_count = sum(1 for success in results.values() if success)
-                            total_count = len(results)
-                            
-                            if success_count == total_count:
-                                st.success(f"✅ Successfully refreshed all {total_count} vessel data files!")
-                            elif success_count > 0:
-                                st.warning(f"⚠️ Refreshed {success_count} of {total_count} files. Some files may have failed.")
-                            else:
-                                st.error("❌ Failed to refresh vessel data. Please check the logs.")
-                        else:
-                            st.error("❌ No data files were processed. Please check the configuration.")
-                            
-                        # Force a rerun to reload the data
-                        st.rerun()
-                        
-                    except Exception as e:
-                        st.error(f"❌ Error refreshing data: {str(e)}")
+        # # Add refresh data button and status (moved from Strategic tab)
+        # col1, col2, col3, col4 = st.columns([0.3, 0.5, 1, 1])
+        # with col1:
+        #     if st.button("🔄 Refresh Data", help="Download latest vessel data from Hong Kong Marine Department", key="refresh_live_arrivals"):
+        #         with st.spinner("Refreshing vessel data..."):
+        #             try:
+        #                 # Import and use the vessel data fetcher
+        #                 from hk_port_digital_twin.src.utils.vessel_data_fetcher import VesselDataFetcher
+        #                 
+        #                 fetcher = VesselDataFetcher()
+        #                 results = fetcher.fetch_xml_files()
+        #                 
+        #                 if results:
+        #                     success_count = sum(1 for success in results.values() if success)
+        #                     total_count = len(results)
+        #                     
+        #                     if success_count == total_count:
+        #                         st.success(f"✅ Successfully refreshed all {total_count} vessel data files!")
+        #                     elif success_count > 0:
+        #                         st.warning(f"⚠️ Refreshed {success_count} of {total_count} files. Some files may have failed.")
+        #                     else:
+        #                         st.error("❌ Failed to refresh vessel data. Please check the logs.")
+        #                 else:
+        #                     st.error("❌ No data files were processed. Please check the configuration.")
+        #                     
+        #                 # Force a rerun to reload the data
+        #                 st.rerun()
+        #                 
+        #             except Exception as e:
+        #                 st.error(f"❌ Error refreshing data: {str(e)}")
         
-        with col2:
-            # Show scheduler status side by side with the refresh button
-            # Use a compact container to limit the width of the auto-refresh info
-            try:
-                scheduler = st.session_state.get('vessel_data_scheduler')
-                if scheduler:
-                    status = scheduler.get_scheduler_status()
-                    if status['running']:
-                        next_run = status.get('next_execution_time')
-                        if next_run:
-                            next_run_dt = datetime.fromisoformat(next_run.replace('Z', '+00:00'))
-                            time_until = next_run_dt - datetime.now()
-                            minutes_until = int(time_until.total_seconds() / 60)
-                            
-                            if minutes_until > 0:
-                                # Create a compact container for the auto-refresh info
-                                with st.container():
-                                    st.markdown(
-                                        f'<div style="background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 0.25rem; padding: 0.5rem; margin: 0.25rem 0; display: inline-block; color: #0c5460; font-size: 0.875rem;">🤖 Auto-refresh in {minutes_until} min</div>',
-                                        unsafe_allow_html=True
-                                    )
-                            else:
-                                with st.container():
-                                    st.markdown(
-                                        f'<div style="background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 0.25rem; padding: 0.5rem; margin: 0.25rem 0; display: inline-block; color: #0c5460; font-size: 0.875rem;">🤖 Auto-refresh running...</div>',
-                                        unsafe_allow_html=True
-                                    )
-                        else:
-                            with st.container():
-                                st.markdown(
-                                    f'<div style="background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 0.25rem; padding: 0.5rem; margin: 0.25rem 0; display: inline-block; color: #0c5460; font-size: 0.875rem;">🤖 Auto-refresh active</div>',
-                                    unsafe_allow_html=True
-                                )
-                    else:
-                        with st.container():
-                            st.markdown(
-                                f'<div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 0.25rem; padding: 0.5rem; margin: 0.25rem 0; display: inline-block; color: #856404; font-size: 0.875rem;">🤖 Auto-refresh disabled</div>',
-                                unsafe_allow_html=True
-                            )
-                else:
-                    with st.container():
-                        st.markdown(
-                            f'<div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 0.25rem; padding: 0.5rem; margin: 0.25rem 0; display: inline-block; color: #856404; font-size: 0.875rem;">🤖 Scheduler unavailable</div>',
-                            unsafe_allow_html=True
-                        )
-            except Exception as e:
-                st.caption(f"Scheduler status unavailable: {str(e)}")
+        # # with col2:
+        #     # Show scheduler status side by side with the refresh button
+        #     # Use a compact container to limit the width of the auto-refresh info
+        #     # COMMENTED OUT: Auto-refresh display section - user requested to hide this for now
+        #     # try:
+        #     #     scheduler = st.session_state.get('vessel_data_scheduler')
+        #     #     if scheduler:
+        #     #         status = scheduler.get_scheduler_status()
+        #     #         if status['running']:
+        #     #             next_run = status.get('next_execution_time')
+        #     #             if next_run:
+        #     #                 next_run_dt = datetime.fromisoformat(next_run.replace('Z', '+00:00'))
+        #     #                 time_until = next_run_dt - datetime.now()
+        #     #                 minutes_until = int(time_until.total_seconds() / 60)
+        #     #                 
+        #     #                 if minutes_until > 0:
+        #     #                     # Create a compact container for the auto-refresh info
+        #     #                     with st.container():
+        #     #                         st.markdown(
+        #     #                             f'<div style="background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 0.25rem; padding: 0.5rem; margin: 0.25rem 0; display: inline-block; color: #0c5460; font-size: 0.875rem;">🤖 Auto-refresh in {minutes_until} min</div>',
+        #     #                             unsafe_allow_html=True
+        #     #                         )
+        #     #                 else:
+        #     #                     with st.container():
+        #     #                         st.markdown(
+        #     #                             f'<div style="background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 0.25rem; padding: 0.5rem; margin: 0.25rem 0; display: inline-block; color: #0c5460; font-size: 0.875rem;">🤖 Auto-refresh running...</div>',
+        #     #                             unsafe_allow_html=True
+        #     #                         )
+        #     #             else:
+        #     #                 with st.container():
+        #     #                     st.markdown(
+        #     #                         f'<div style="background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 0.25rem; padding: 0.5rem; margin: 0.25rem 0; display: inline-block; color: #0c5460; font-size: 0.875rem;">🤖 Auto-refresh active</div>',
+        #     #                         unsafe_allow_html=True
+        #     #                     )
+        #     #         else:
+        #     #             with st.container():
+        #     #                 st.markdown(
+        #     #                     f'<div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 0.25rem; padding: 0.5rem; margin: 0.25rem 0; display: inline-block; color: #0c5460; font-size: 0.875rem;">🤖 Auto-refresh disabled</div>',
+        #     #                     unsafe_allow_html=True
+        #     #                 )
+        #     #     else:
+        #     #         with st.container():
+        #     #             st.markdown(
+        #     #                 f'<div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 0.25rem; padding: 0.5rem; margin: 0.25rem 0; display: inline-block; color: #856404; font-size: 0.875rem;">🤖 Scheduler unavailable</div>',
+        #     #                 unsafe_allow_html=True
+        #     #             )
+        #     # except Exception as e:
+        #     #     st.caption(f"Scheduler status unavailable: {str(e)}")
+        #     pass  # Placeholder to maintain code structure
         
-        with col3:
-            # Column intentionally left empty
-            pass
+        # with col3:
+        #     # Column intentionally left empty
+        #     pass
         
-        with col4:
-            # Column intentionally left empty
-            pass
+        # with col4:
+        #     # Column intentionally left empty
+        #     pass
         
         # Time range selection (moved to top to determine data loading strategy)
         st.subheader("📊 Data Selection")
         
         # Add info about historical data availability
-        st.info("💡 **Historical Data Available**: 466 backup files ready to load. Select 'All historical data' to access comprehensive vessel history!")
+        #st.info("💡 **Historical Data Available**: 466 backup files ready to load. Select 'All historical data' to access comprehensive vessel history!")
         
         col1, col2, col3 = st.columns(3)
         
@@ -1067,7 +1097,7 @@ def main():
                 selected_time_range = 'All historical data'
         
         with col2:
-            show_all = st.checkbox("Show All Columns", value=False)
+            st.write("")  # Placeholder for future controls
         
         with col3:
             st.write("")  # Placeholder for future controls
@@ -1077,7 +1107,8 @@ def main():
             if selected_time_range == 'All historical data':
                 # Enhanced loading feedback
                 with st.spinner("🔄 Loading comprehensive historical data..."):
-                    st.warning("⏳ **Loading 466 backup files** - This may take 30-60 seconds. Please wait...")
+                    backup_file_count = count_backup_files()
+                    st.warning(f"⏳ **Loading {backup_file_count} backup files** - This may take 30-60 seconds. Please wait...")
                     progress_bar = st.progress(0)
                     status_text = st.empty()
                     
@@ -1174,14 +1205,14 @@ def main():
             # Data Source Summary
             st.subheader("📋 Data Source Summary")
             if selected_time_range == 'All historical data':
-                st.success(f"✅ **Historical Data Loaded**: Displaying {total_vessels:,} vessels from 466 backup files + current data")
+                st.success(f"✅ **Historical Data Loaded**: Displaying {total_vessels:,} vessels from {backup_file_count} backup files + current data")
                 st.info("🗂️ **Data Coverage**: Complete historical records with enhanced vessel tracking")
             elif selected_time_range in ['Last 180 days', 'Last 1 year', 'Last 2 years', 'Last 3 years']:
                 st.success(f"✅ **Filtered Historical Data**: Displaying {total_vessels:,} vessels from {selected_time_range.lower()}")
-                st.info("🗂️ **Data Source**: Filtered from complete historical database (466 backup files + current data)")
+                st.info("🗂️ **Data Source**: Filtered from complete historical database (backup files + current data)")
             else:
                 st.info(f"📅 **Current Data**: Displaying {total_vessels:,} vessels from {selected_time_range.lower()}")
-                st.warning("💡 **Tip**: Select 'All historical data' above to see the complete vessel database (466 backup files)")
+                st.warning("💡 **Tip**: Select 'All historical data' above to see the complete vessel database ")
             
             # Vessel locations
             st.subheader("📍 Vessel Locations")
@@ -1388,7 +1419,9 @@ def main():
                 else:
                     selected_status = 'All'
             
-
+            # Add Show All Columns checkbox
+            show_all = st.checkbox("Show All Columns", value=False)
+            
             
             # Apply filters
             filtered_data = vessel_data.copy()
