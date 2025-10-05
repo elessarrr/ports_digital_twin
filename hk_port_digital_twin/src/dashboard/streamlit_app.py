@@ -75,6 +75,37 @@ except ImportError:
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(threadName)s - %(message)s')
 
 
+def get_scenario_display_name(scenario_key: str) -> str:
+    """
+    Get display name with emoji for a scenario.
+    
+    Args:
+        scenario_key: The scenario key ('peak', 'normal', 'low')
+        
+    Returns:
+        Display name with emoji (e.g., 'peak 🔥')
+    """
+    emoji_map = {
+        'peak': '🔥',
+        'normal': '✅', 
+        'low': '📉'
+    }
+    emoji = emoji_map.get(scenario_key, '')
+    return f"{scenario_key} {emoji}" if emoji else scenario_key
+
+def get_scenario_key_from_display(display_name: str) -> str:
+    """
+    Extract scenario key from display name with emoji.
+    
+    Args:
+        display_name: Display name with emoji (e.g., 'peak 🔥')
+        
+    Returns:
+        Scenario key (e.g., 'peak')
+    """
+    # Remove emojis and extra spaces to get the key
+    return display_name.split()[0].strip()
+
 def filter_vessel_data_by_time_range(vessel_data: pd.DataFrame, time_range: str) -> pd.DataFrame:
     """Filter vessel data based on the selected time range.
     
@@ -161,6 +192,55 @@ def count_backup_files():
     except Exception as e:
         logging.error(f"Error counting backup files: {e}")
         return 0
+
+
+def get_recent_vessel_counts():
+    """
+    Get vessel status counts for the most recent day with data.
+    Returns counts for arriving, departing, and in_port vessels.
+    """
+    try:
+        # Load the combined vessel data (same as used in Vessel Insights tab)
+        vessel_data = load_combined_vessel_data()
+        
+        if vessel_data is None or vessel_data.empty:
+            logging.warning("No vessel data available for recent counts")
+            return {'arriving': 0, 'departing': 0, 'in_port': 0}
+        
+        # Get the most recent date in the data
+        if 'timestamp' in vessel_data.columns:
+            vessel_data['timestamp'] = pd.to_datetime(vessel_data['timestamp'])
+            most_recent_date = vessel_data['timestamp'].max()
+            # Filter to last 24 hours from the most recent date
+            cutoff_time = most_recent_date - timedelta(hours=24)
+            recent_data = vessel_data[vessel_data['timestamp'] >= cutoff_time]
+        else:
+            # If no timestamp column, use all data
+            recent_data = vessel_data
+        
+        # Count vessels by status
+        if 'status' in recent_data.columns:
+            status_counts = recent_data['status'].value_counts()
+            
+            # Map status values to our categories
+            arriving_count = status_counts.get('arriving', 0)
+            departing_count = status_counts.get('departing', 0) + status_counts.get('departed', 0)
+            in_port_count = status_counts.get('in_port', 0)
+            
+            logging.info(f"Recent vessel counts - Arriving: {arriving_count}, Departing: {departing_count}, In Port: {in_port_count}")
+            
+            return {
+                'arriving': int(arriving_count),
+                'departing': int(departing_count), 
+                'in_port': int(in_port_count)
+            }
+        else:
+            logging.warning("No 'status' column found in vessel data")
+            return {'arriving': 0, 'departing': 0, 'in_port': 0}
+            
+    except Exception as e:
+        logging.error(f"Error getting recent vessel counts: {e}")
+        return {'arriving': 0, 'departing': 0, 'in_port': 0}
 
 
 def load_sample_data(scenario='normal', use_real_throughput_data=True):
@@ -421,26 +501,13 @@ def initialize_session_state():
     if 'scenario_manager' not in st.session_state:
         st.session_state.scenario_manager = ScenarioManager()
     
-    # Initialize vessel data scheduler for automated background fetching
+    # Vessel data scheduler disabled to prevent frequent XML downloads
+    # The scheduler was causing downloads every minute due to Streamlit app restarts
+    # Manual vessel data fetching is still available when needed
+    # Daily downloads can be configured separately if needed via cron or external scheduler
     if 'vessel_data_scheduler' not in st.session_state:
-        try:
-            from hk_port_digital_twin.src.utils.vessel_data_scheduler import VesselDataScheduler
-            from hk_port_digital_twin.src.utils.vessel_data_fetcher import VesselDataFetcher
-            
-            # Create a callback function for the scheduler
-            def fetch_vessel_data():
-                fetcher = VesselDataFetcher()
-                return fetcher.fetch_xml_files()
-            
-            # Initialize and start the scheduler
-            scheduler = VesselDataScheduler(fetch_vessel_data)
-            scheduler.start(run_immediately=False)  # Don't run immediately on startup to avoid blocking
-            st.session_state.vessel_data_scheduler = scheduler
-            
-            logging.info("Vessel data scheduler initialized and started successfully")
-        except Exception as e:
-            logging.warning(f"Could not initialize vessel data scheduler: {e}")
-            st.session_state.vessel_data_scheduler = None
+        st.session_state.vessel_data_scheduler = None
+        logging.info("Vessel data scheduler disabled - no automatic XML downloads")
 
 
 
@@ -583,14 +650,11 @@ def main():
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
-            # Enhanced metrics with real vessel data
-            if vessel_analysis:
-                active_vessels = vessel_analysis.get('current_status', {}).get('active_vessels', 0)
-                st.metric("Live Vessels", active_vessels)
-            else:
-                # Safe access to queue data with fallback
-                queue_length = len(data.get('queue', [])) if 'queue' in data and data['queue'] is not None else 0
-                st.metric("Active Ships", queue_length)
+            # Get recent vessel counts for the most recent day with data
+            vessel_counts = get_recent_vessel_counts()
+            st.metric("🚢 Arriving", vessel_counts['arriving'])
+            st.metric("⚓ In Port", vessel_counts['in_port'])
+            st.metric("🛳️ Departing", vessel_counts['departing'])
 
         with col2:
             # Safe access to berths data with fallback
@@ -1393,7 +1457,7 @@ def main():
                 st.error(f"Error displaying 7-day activity chart: {str(e)}")
             
             # Detailed vessel table
-            st.subheader("📋 Arriving and Departing Vessels - Details")
+            st.subheader("📋 Vessels activity - detailed look")
             
             # Add filters
             col1, col2, col3 = st.columns(3)
@@ -1656,8 +1720,15 @@ def main():
             with col1:
                 st.write("**Select Scenarios to Compare**")
                 available_scenarios = list_available_scenarios()
-                scenario1 = st.selectbox("Scenario 1", available_scenarios, key="scenario1_select")
-                scenario2 = st.selectbox("Scenario 2", available_scenarios, key="scenario2_select", index=1 if len(available_scenarios) > 1 else 0)
+                # Create display names with emojis
+                scenario_display_options = [get_scenario_display_name(scenario) for scenario in available_scenarios]
+                
+                scenario1_display = st.selectbox("Scenario 1", scenario_display_options, key="scenario1_select")
+                scenario2_display = st.selectbox("Scenario 2", scenario_display_options, key="scenario2_select", index=1 if len(scenario_display_options) > 1 else 0)
+                
+                # Extract actual scenario keys for processing
+                scenario1 = get_scenario_key_from_display(scenario1_display)
+                scenario2 = get_scenario_key_from_display(scenario2_display)
             
             with col2:
                 st.write("**Comparison Parameters**")

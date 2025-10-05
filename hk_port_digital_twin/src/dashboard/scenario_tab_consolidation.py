@@ -52,6 +52,21 @@ except ImportError:
 # Import existing visualization and data functions
 # These will be imported as needed from existing modules
 
+# Helper functions for scenario display with emojis
+def get_scenario_display_name(scenario_key: str) -> str:
+    """Convert scenario key to display name with emoji."""
+    emoji_map = {
+        'peak': '🔥',
+        'normal': '✅', 
+        'low': '📉'
+    }
+    emoji = emoji_map.get(scenario_key, '✅')
+    return f"{scenario_key} {emoji}"
+
+def get_scenario_key_from_display(display_name: str) -> str:
+    """Extract scenario key from display name."""
+    return display_name.split(' ')[0]
+
 
 class ConsolidatedScenariosTab:
     """Main class for managing the consolidated scenarios tab functionality."""
@@ -319,13 +334,15 @@ class ConsolidatedScenariosTab:
             scenario_color = self._get_scenario_color(current_scenario)
             scenario_badge = self._get_scenario_badge(current_scenario, 'overview')
             
-            # Primary scenario selection
-            primary_scenario = st.selectbox(
+            # Primary scenario selection with emojis
+            scenario_display_options = [get_scenario_display_name(scenario) for scenario in available_scenarios]
+            primary_scenario_display = st.selectbox(
                 "Primary Scenario",
-                available_scenarios,
+                scenario_display_options,
                 help="Select the main scenario for analysis",
                 key="primary_scenario_select"
             )
+            primary_scenario = get_scenario_key_from_display(primary_scenario_display)
             
             # Detect scenario change
             scenario_changed = self._detect_scenario_change(primary_scenario)

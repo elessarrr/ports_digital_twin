@@ -121,7 +121,7 @@ Enterprise-grade architecture with modern Python stack, built for reliability an
 Demonstrate real-time capabilities and the practical application of vibe coding in data integration.
 
 **Script:**
-"Let me show you the system in action. [Navigate to dashboard] This data you're seeing is live—vessel arrivals and departures from the Hong Kong Marine Department, updated every 20 minutes. Notice how the system categorizes ship types, calculates waiting times, and identifies patterns. This real-time integration was built using vibe coding principles— for exampleI didn't know XML parsing initially, but AI tools helped me understand the data structure and build robust processing pipelines."
+"Let me show you the system in action. [Navigate to dashboard] This data you're seeing is live—vessel arrivals and departures from the Hong Kong Marine Department, updated every 20 minutes. Notice how the system categorizes ship types and locations, and uses all the data to identify patterns and generate insights like waiting times. This real-time integration was built using vibe coding principles— for example, I didn't know enough about XML parsing to build this initially, but AI tools helped me understand the data structure and build robust processing pipelines."
 
 ---
 
