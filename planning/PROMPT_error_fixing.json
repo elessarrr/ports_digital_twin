@@ -14,6 +14,7 @@
       "step": "Error Correction",
       "description": [
         "Make code changes to resolve the identified error.",
+        "Think through the process step by step, and share out loud the current step and the next step to be taken.",
         "Write only the minimal required code to deliver the correction."
       ]
     },

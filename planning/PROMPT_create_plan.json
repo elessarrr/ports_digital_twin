@@ -22,6 +22,7 @@
       "description": [
         "Plan to place all new logic/code in separate functions or modules.",
         "Import these into the relevant parts of the application only where needed.",
+        "Think through the process step by step, and share out loud the current step and the next step to be taken.",
         "This isolation facilitates rollback and reduces the risk of side effects."
       ]
     },

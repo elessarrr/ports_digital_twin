@@ -22,6 +22,20 @@ import os
 
 # Add the config directory to the path to import settings
 from pathlib import Path
+
+# Add the utils directory to the path to import scenario calculator
+sys.path.append(str(Path(__file__).resolve().parents[1] / 'utils'))
+try:
+    from scenario_aware_calculator import ScenarioAwareCalculator, ValueType, ScenarioType
+    from wait_time_calculator import WaitTimeCalculator, calculate_wait_time
+    from scenario_helpers import get_wait_time_scenario_name
+except ImportError:
+    # Fallback if calculator modules are not available
+    ScenarioAwareCalculator = None
+    ValueType = None
+    ScenarioType = None
+    WaitTimeCalculator = None
+    calculate_wait_time = None
 sys.path.append(str(Path(__file__).resolve().parents[2] / 'config'))
 try:
     from settings import get_dashboard_preferences, get_default_section_states
@@ -104,6 +118,12 @@ class ConsolidatedScenariosTab:
         # Load preferences
         self.preferences = get_dashboard_preferences()
         self.default_states = get_default_section_states()
+        
+        # Initialize scenario-aware calculator
+        if ScenarioAwareCalculator is not None:
+            self.calculator = ScenarioAwareCalculator()
+        else:
+            self.calculator = None
         
     @property
     def section_states(self):
@@ -501,7 +521,9 @@ class ConsolidatedScenariosTab:
         st.markdown("Real-time analysis of ships and berths including queue management, berth utilization, and vessel tracking.")
         
         # Create tabs for different operational views
-        ops_tab1, ops_tab2, ops_tab3 = st.tabs(["🚢 Ship Queue", "🏗️ Berth Utilization", "📊 Live Operations"])
+        ops_tab1, ops_tab2, ops_tab3, ops_tab4 = st.tabs([
+            "🚢 Ship Queue", "🏗️ Berth Utilization", "📊 Live Operations", "⚓ Ship Characteristics"
+        ])
         
         with ops_tab1:
             self._render_ship_queue_analysis(scenario_data)
@@ -511,6 +533,9 @@ class ConsolidatedScenariosTab:
             
         with ops_tab3:
             self._render_live_operations_analysis(scenario_data)
+            
+        with ops_tab4:
+            self._render_ship_characteristics_analysis(scenario_data)
     
     def _render_ship_queue_analysis(self, scenario_data: Optional[Dict[str, Any]] = None) -> None:
         """Render ship queue analysis and management."""
@@ -524,16 +549,13 @@ class ConsolidatedScenariosTab:
             queue_data = simulation_data.ship_queue
             
             # Queue metrics
-            queue_col1, queue_col2, queue_col3, queue_col4 = st.columns(4)
+            queue_col1, queue_col2, queue_col3 = st.columns(3)
             with queue_col1:
                 st.metric("Ships in Queue", len(queue_data))
             with queue_col2:
-                avg_wait = sum(ship.get('waiting_time', 0) for ship in queue_data) / max(len(queue_data), 1)
-                st.metric("Avg Wait Time", f"{avg_wait:.1f} hrs")
-            with queue_col3:
                 priority_ships = sum(1 for ship in queue_data if ship.get('priority', 'normal') == 'high')
                 st.metric("Priority Ships", priority_ships)
-            with queue_col4:
+            with queue_col3:
                 total_cargo = sum(ship.get('cargo_volume', 0) for ship in queue_data)
                 st.metric("Total Cargo", f"{total_cargo:,.0f} TEU")
             
@@ -564,8 +586,12 @@ class ConsolidatedScenariosTab:
             # Sample data for demonstration
             st.info("📊 Using sample data - Start simulation for real-time queue data")
             
-            # Generate scenario-aware sample queue data
+            # Generate scenario-aware sample queue data using ScenarioAwareCalculator
             import numpy as np
+            
+            # Get current scenario
+            current_scenario = self._get_current_scenario()
+            scenario_type = self._map_scenario_to_type(current_scenario)
             
             # Get scenario-specific values
             scenario_values = self._get_all_scenario_values()
@@ -573,37 +599,89 @@ class ConsolidatedScenariosTab:
             
             sample_queue = []
             for i in range(queue_size):
-                # Generate scenario-aware waiting times (higher for peak, lower for low season)
-                base_wait = scenario_values['handling_time'] / 60  # Convert minutes to hours
-                waiting_time = np.random.exponential(base_wait)
-                
-                # Generate scenario-aware cargo volumes
-                cargo_base = scenario_values['monthly_volume'] / 30 / queue_size  # Daily average per ship
-                cargo_volume = int(np.random.normal(cargo_base, cargo_base * 0.3))
-                cargo_volume = max(500, min(cargo_volume, 5000))  # Reasonable bounds
+                # Use ScenarioAwareCalculator for enhanced ship characteristics
+                if self.calculator:
+                    # Generate enhanced ship characteristics
+                    ship_containers = self.calculator.generate_value(scenario_type, ValueType.SHIP_CONTAINERS)
+                    ship_teu_size = self.calculator.generate_value(scenario_type, ValueType.SHIP_TEU_SIZE)
+                    ship_cargo_volume = self.calculator.generate_value(scenario_type, ValueType.SHIP_CARGO_VOLUME)
+                    ship_processing_time = self.calculator.generate_value(scenario_type, ValueType.SHIP_PROCESSING_TIME)
+                    ship_length = self.calculator.generate_value(scenario_type, ValueType.SHIP_LENGTH)
+                    ship_draft = self.calculator.generate_value(scenario_type, ValueType.SHIP_DRAFT)
+                    
+                    # Use new threshold-based wait time calculator if available
+                    if calculate_wait_time:
+                        scenario_name = get_wait_time_scenario_name(scenario_data.get('key', 'normal')) if scenario_data else get_wait_time_scenario_name('normal')
+                        waiting_time = calculate_wait_time(scenario_name)
+                        
+                        # Apply any existing multipliers for consistency
+                        if hasattr(self, 'waiting_time_multiplier'):
+                            waiting_time *= self.waiting_time_multiplier
+                    else:
+                        # Fallback to existing enhanced calculator
+                        waiting_time_stats = self.calculator.get_wait_time_statistics(scenario_type)
+                        stats = waiting_time_stats.get('statistics', {})
+                        waiting_time = np.random.normal(stats.get('mean', 2.0), stats.get('std_dev', 1.0))
+                        waiting_time = max(0.1, waiting_time)  # Ensure positive waiting time
+                else:
+                    # Fallback to basic generation if calculator not available
+                    base_wait = scenario_values['handling_time'] / 60  # Convert minutes to hours
+                    waiting_time = np.random.exponential(base_wait)
+                    
+                    # Basic cargo volume generation
+                    cargo_base = scenario_values['monthly_volume'] / 30 / queue_size  # Daily average per ship
+                    ship_cargo_volume = int(np.random.normal(cargo_base, cargo_base * 0.3))
+                    ship_cargo_volume = max(500, min(ship_cargo_volume, 5000))  # Reasonable bounds
+                    
+                    # Basic ship characteristics
+                    ship_containers = int(np.random.normal(1500, 300))
+                    ship_teu_size = int(np.random.normal(2000, 400))
+                    ship_processing_time = np.random.normal(8, 2)
+                    ship_length = np.random.normal(200, 30)
+                    ship_draft = np.random.normal(12, 2)
                 
                 sample_queue.append({
                     'ship_id': f'SHIP-{i:03d}', 
                     'ship_type': np.random.choice(['Container', 'Bulk', 'Tanker']),
                     'arrival_time': f'{np.random.randint(0, 24):02d}:00', 
                     'waiting_time': waiting_time,
-                    'cargo_volume': cargo_volume, 
+                    'containers': int(ship_containers),
+                    'teu_size': int(ship_teu_size),
+                    'cargo_volume': int(ship_cargo_volume), 
+                    'processing_time': round(ship_processing_time, 1),
+                    'ship_length': round(ship_length, 1),
+                    'ship_draft': round(ship_draft, 1),
                     'priority': np.random.choice(['normal', 'high'], p=[0.8, 0.2])
                 })
             
-            # Sample metrics
+            # Enhanced metrics with ship characteristics
             queue_col1, queue_col2, queue_col3, queue_col4 = st.columns(4)
             with queue_col1:
                 st.metric("Ships in Queue", len(sample_queue))
             with queue_col2:
-                avg_wait = sum(ship['waiting_time'] for ship in sample_queue) / len(sample_queue)
-                st.metric("Avg Wait Time", f"{avg_wait:.1f} hrs")
-            with queue_col3:
                 priority_ships = sum(1 for ship in sample_queue if ship['priority'] == 'high')
                 st.metric("Priority Ships", priority_ships)
-            with queue_col4:
+            with queue_col3:
                 total_cargo = sum(ship['cargo_volume'] for ship in sample_queue)
                 st.metric("Total Cargo", f"{total_cargo:,.0f} TEU")
+            with queue_col4:
+                avg_processing_time = sum(ship['processing_time'] for ship in sample_queue) / len(sample_queue)
+                st.metric("Avg Processing Time", f"{avg_processing_time:.1f} hrs")
+            
+            # Additional ship characteristics metrics
+            char_col1, char_col2, char_col3, char_col4 = st.columns(4)
+            with char_col1:
+                avg_length = sum(ship['ship_length'] for ship in sample_queue) / len(sample_queue)
+                st.metric("Avg Ship Length", f"{avg_length:.1f} m")
+            with char_col2:
+                avg_draft = sum(ship['ship_draft'] for ship in sample_queue) / len(sample_queue)
+                st.metric("Avg Ship Draft", f"{avg_draft:.1f} m")
+            with char_col3:
+                total_containers = sum(ship['containers'] for ship in sample_queue)
+                st.metric("Total Containers", f"{total_containers:,.0f}")
+            with char_col4:
+                total_teu = sum(ship['teu_size'] for ship in sample_queue)
+                st.metric("Total TEU", f"{total_teu:,.0f}")
             
             # Sample visualization
             queue_df = pd.DataFrame(sample_queue)
@@ -618,9 +696,45 @@ class ConsolidatedScenariosTab:
             )
             st.plotly_chart(fig_queue, use_container_width=True)
             
-            # Sample queue table
+            # Enhanced queue table with ship characteristics
             st.subheader("📋 Queue Details")
-            st.dataframe(queue_df, use_container_width=True)
+            
+            # Create a more organized display of the queue data
+            display_df = queue_df.copy()
+            
+            # Rename columns for better display
+            column_mapping = {
+                'ship_id': 'Ship ID',
+                'name': 'Ship Name',
+                'ship_type': 'Type',
+                'arrival_time': 'Arrival Time',
+                'containers': 'Containers',
+                'teu_size': 'TEU Size',
+                'cargo_volume': 'Cargo Volume (TEU)',
+                'processing_time': 'Processing Time (hrs)',
+                'ship_length': 'Length (m)',
+                'ship_draft': 'Draft (m)',
+                'waiting_time': 'Waiting Time (hrs)',
+                'priority': 'Priority'
+            }
+            
+            # Select and rename columns that exist in the dataframe
+            available_columns = [col for col in column_mapping.keys() if col in display_df.columns]
+            display_df = display_df[available_columns].rename(columns=column_mapping)
+            
+            # Format numeric columns for better readability
+            if 'Cargo Volume (TEU)' in display_df.columns:
+                display_df['Cargo Volume (TEU)'] = display_df['Cargo Volume (TEU)'].round(0).astype(int)
+            if 'Processing Time (hrs)' in display_df.columns:
+                display_df['Processing Time (hrs)'] = display_df['Processing Time (hrs)'].round(1)
+            if 'Length (m)' in display_df.columns:
+                display_df['Length (m)'] = display_df['Length (m)'].round(1)
+            if 'Draft (m)' in display_df.columns:
+                display_df['Draft (m)'] = display_df['Draft (m)'].round(1)
+            if 'Waiting Time (hrs)' in display_df.columns:
+                display_df['Waiting Time (hrs)'] = display_df['Waiting Time (hrs)'].round(1)
+            
+            st.dataframe(display_df, use_container_width=True)
     
     def _render_berth_utilization_analysis(self, scenario_data: Optional[Dict[str, Any]] = None) -> None:
         """Render berth utilization analysis."""
@@ -822,6 +936,193 @@ class ConsolidatedScenariosTab:
                 st.warning(f"🟡 {alert['time']} - {alert['message']}")
             else:
                 st.info(f"🔵 {alert['time']} - {alert['message']}")
+    
+    def _render_ship_characteristics_analysis(self, scenario_data: Optional[Dict[str, Any]] = None) -> None:
+        """Render detailed ship characteristics analysis with enhanced statistics and visualizations."""
+        st.subheader("⚓ Ship Characteristics Analysis")
+        
+        scenario_name = scenario_data.get('name') if scenario_data else 'Normal Operations'
+        
+        try:
+            # Use ScenarioAwareCalculator for enhanced ship characteristics
+            from src.utils.scenario_aware_calculator import ScenarioAwareCalculator, ScenarioType
+            
+            # Map scenario name to ScenarioType using centralized method
+            scenario_type = self._map_scenario_to_type(scenario_name)
+            calculator = ScenarioAwareCalculator(scenario_type)
+            
+            # Get enhanced ship characteristics
+            ship_stats = calculator.get_ship_characteristics_statistics()
+            processing_stats = calculator.get_processing_rate_statistics()
+            
+            # Display key ship characteristics metrics
+            st.markdown("#### 📊 Ship Fleet Overview")
+            char_col1, char_col2, char_col3, char_col4 = st.columns(4)
+            
+            with char_col1:
+                st.metric(
+                    "Average Ship Length", 
+                    f"{ship_stats['average_length']:.0f} m",
+                    help="Average length of ships in the current scenario"
+                )
+            with char_col2:
+                st.metric(
+                    "Average Ship Draft", 
+                    f"{ship_stats['average_draft']:.1f} m",
+                    help="Average draft depth of ships"
+                )
+            with char_col3:
+                st.metric(
+                    "Average Cargo Volume", 
+                    f"{ship_stats['average_cargo_volume']:.0f} TEU",
+                    help="Average cargo capacity per ship"
+                )
+            with char_col4:
+                st.metric(
+                    "Average Processing Time", 
+                    f"{ship_stats['average_processing_time']:.1f} hrs",
+                    help="Average time to process each ship"
+                )
+            
+            # Generate sample ship data for visualization
+            import numpy as np
+            import pandas as pd
+            
+            # Create sample fleet data based on scenario characteristics
+            num_ships = 50  # Sample size for visualization
+            ship_data = []
+            
+            for i in range(num_ships):
+                # Generate ship characteristics with realistic distributions
+                length = np.random.normal(ship_stats['average_length'], ship_stats['average_length'] * 0.15)
+                length = max(50, min(length, 400))  # Realistic bounds
+                
+                draft = np.random.normal(ship_stats['average_draft'], ship_stats['average_draft'] * 0.1)
+                draft = max(5, min(draft, 20))  # Realistic bounds
+                
+                cargo = np.random.normal(ship_stats['average_cargo_volume'], ship_stats['average_cargo_volume'] * 0.2)
+                cargo = max(100, min(cargo, 25000))  # Realistic bounds
+                
+                processing_time = np.random.normal(ship_stats['average_processing_time'], ship_stats['average_processing_time'] * 0.15)
+                processing_time = max(2, min(processing_time, 48))  # Realistic bounds
+                
+                ship_data.append({
+                    'Ship_ID': f'SHIP-{i+1:03d}',
+                    'Length (m)': length,
+                    'Draft (m)': draft,
+                    'Cargo Volume (TEU)': cargo,
+                    'Processing Time (hrs)': processing_time,
+                    'Ship Type': np.random.choice(['Container', 'Bulk', 'Tanker'], p=[0.7, 0.2, 0.1])
+                })
+            
+            ship_df = pd.DataFrame(ship_data)
+            
+            # Create visualizations
+            st.markdown("#### 📈 Ship Characteristics Distributions")
+            
+            # Create two columns for charts
+            viz_col1, viz_col2 = st.columns(2)
+            
+            with viz_col1:
+                # Ship length vs cargo volume scatter plot
+                import plotly.express as px
+                fig_scatter = px.scatter(
+                    ship_df,
+                    x='Length (m)',
+                    y='Cargo Volume (TEU)',
+                    color='Ship Type',
+                    size='Processing Time (hrs)',
+                    title='Ship Length vs Cargo Volume',
+                    hover_data=['Draft (m)', 'Processing Time (hrs)']
+                )
+                fig_scatter.update_layout(height=400)
+                st.plotly_chart(fig_scatter, use_container_width=True)
+            
+            with viz_col2:
+                # Processing time distribution
+                fig_hist = px.histogram(
+                    ship_df,
+                    x='Processing Time (hrs)',
+                    color='Ship Type',
+                    title='Processing Time Distribution',
+                    nbins=15
+                )
+                fig_hist.update_layout(height=400)
+                st.plotly_chart(fig_hist, use_container_width=True)
+            
+            # Ship characteristics summary table
+            st.markdown("#### 📋 Detailed Ship Characteristics")
+            
+            # Summary statistics by ship type
+            summary_stats = ship_df.groupby('Ship Type').agg({
+                'Length (m)': ['mean', 'std', 'min', 'max'],
+                'Draft (m)': ['mean', 'std', 'min', 'max'],
+                'Cargo Volume (TEU)': ['mean', 'std', 'min', 'max'],
+                'Processing Time (hrs)': ['mean', 'std', 'min', 'max']
+            }).round(2)
+            
+            # Flatten column names
+            summary_stats.columns = [f'{col[0]} ({col[1]})' for col in summary_stats.columns]
+            
+            st.dataframe(summary_stats, use_container_width=True)
+            
+            # Additional insights
+            st.markdown("#### 🔍 Key Insights")
+            
+            insight_col1, insight_col2 = st.columns(2)
+            
+            with insight_col1:
+                # Efficiency metrics
+                avg_efficiency = processing_stats['containers_processed_per_hour'] / ship_stats['average_cargo_volume'] * ship_stats['average_processing_time']
+                st.metric(
+                    "Processing Efficiency", 
+                    f"{avg_efficiency:.2f}",
+                    help="Ratio of processing rate to ship characteristics"
+                )
+                
+                # Fleet utilization
+                total_capacity = ship_df['Cargo Volume (TEU)'].sum()
+                st.metric(
+                    "Fleet Capacity", 
+                    f"{total_capacity:,.0f} TEU",
+                    help="Total cargo capacity of current fleet"
+                )
+            
+            with insight_col2:
+                # Average turnaround
+                avg_turnaround = ship_df['Processing Time (hrs)'].mean()
+                st.metric(
+                    "Average Turnaround", 
+                    f"{avg_turnaround:.1f} hrs",
+                    help="Average time ships spend in port"
+                )
+                
+                # Ship size distribution
+                large_ships = len(ship_df[ship_df['Length (m)'] > ship_stats['average_length']])
+                st.metric(
+                    "Large Ships", 
+                    f"{large_ships}/{num_ships}",
+                    help="Ships larger than average length"
+                )
+                
+        except Exception as e:
+            # Fallback to basic ship characteristics display
+            st.warning(f"Using basic ship characteristics data (ScenarioAwareCalculator unavailable: {str(e)})")
+            
+            # Basic ship characteristics metrics
+            st.markdown("#### 📊 Basic Ship Fleet Overview")
+            basic_col1, basic_col2, basic_col3, basic_col4 = st.columns(4)
+            
+            with basic_col1:
+                st.metric("Average Ship Length", "180 m")
+            with basic_col2:
+                st.metric("Average Ship Draft", "12.5 m")
+            with basic_col3:
+                st.metric("Average Cargo Volume", "8,500 TEU")
+            with basic_col4:
+                st.metric("Average Processing Time", "18.5 hrs")
+            
+            st.info("Enhanced ship characteristics analysis requires the ScenarioAwareCalculator module.")
             
     def render_performance_analytics_section(self, scenario_data: Optional[Dict[str, Any]] = None) -> None:
         """Render performance analytics.
@@ -858,28 +1159,53 @@ class ConsolidatedScenariosTab:
         scenario_name = scenario_data.get('name') if scenario_data else 'Normal Operations'
         params = self._get_scenario_performance_params(scenario_name)
         
-        # Generate scenario-aware sample throughput data
+        # Generate enhanced throughput data using ScenarioAwareCalculator
         import numpy as np
         hours = list(range(24))
-        scenario_values = self._get_all_scenario_values()
         
-        # Use scenario-aware throughput as base
-        base_throughput = scenario_values['throughput']
-        
-        # Generate hourly throughput with daily patterns and scenario-aware variations
-        throughput_data = []
-        for hour in hours:
-            # Add daily pattern (peak during business hours)
-            daily_factor = 0.7 + 0.6 * np.sin(2 * np.pi * (hour - 6) / 24)
-            daily_factor = max(0.5, min(daily_factor, 1.3))
+        try:
+            # Use ScenarioAwareCalculator for enhanced processing rate data
+            from src.utils.scenario_aware_calculator import ScenarioAwareCalculator, ScenarioType
             
-            # Apply scenario-aware base with daily pattern and random variation
-            hourly_throughput = base_throughput * daily_factor * np.random.normal(1, 0.1)
-            hourly_throughput = max(0, hourly_throughput)
-            throughput_data.append(hourly_throughput)
-        
-        # Set target as the scenario's base throughput
-        target_throughput = base_throughput
+            # Map scenario name to ScenarioType using centralized method
+            scenario_type = self._map_scenario_to_type(scenario_name)
+            calculator = ScenarioAwareCalculator(scenario_type)
+            
+            # Get enhanced processing rate statistics
+            processing_stats = calculator.get_processing_rate_statistics()
+            base_throughput = processing_stats['containers_processed_per_hour']
+            target_throughput = processing_stats['target_processing_rate']
+            
+            # Generate hourly throughput with daily patterns and enhanced variations
+            throughput_data = []
+            for hour in hours:
+                # Add daily pattern (peak during business hours)
+                daily_factor = 0.7 + 0.6 * np.sin(2 * np.pi * (hour - 6) / 24)
+                daily_factor = max(0.5, min(daily_factor, 1.3))
+                
+                # Apply scenario-aware base with daily pattern and realistic variation
+                hourly_throughput = base_throughput * daily_factor * np.random.normal(1, 0.08)
+                hourly_throughput = max(0, hourly_throughput)
+                throughput_data.append(hourly_throughput)
+                
+        except Exception as e:
+            # Fallback to basic scenario values if calculator is unavailable
+            st.warning(f"Using basic throughput data (ScenarioAwareCalculator unavailable: {str(e)})")
+            scenario_values = self._get_all_scenario_values()
+            base_throughput = scenario_values['throughput']
+            target_throughput = base_throughput
+            
+            # Generate hourly throughput with daily patterns and scenario-aware variations
+            throughput_data = []
+            for hour in hours:
+                # Add daily pattern (peak during business hours)
+                daily_factor = 0.7 + 0.6 * np.sin(2 * np.pi * (hour - 6) / 24)
+                daily_factor = max(0.5, min(daily_factor, 1.3))
+                
+                # Apply scenario-aware base with daily pattern and random variation
+                hourly_throughput = base_throughput * daily_factor * np.random.normal(1, 0.1)
+                hourly_throughput = max(0, hourly_throughput)
+                throughput_data.append(hourly_throughput)
         
         # Create throughput timeline
         throughput_df = pd.DataFrame({
@@ -921,17 +1247,50 @@ class ConsolidatedScenariosTab:
         
         st.plotly_chart(fig, use_container_width=True)
         
-        # Throughput statistics
+        # Enhanced throughput statistics
         throughput_col1, throughput_col2, throughput_col3, throughput_col4 = st.columns(4)
+        
+        avg_throughput = np.mean(throughput_data)
+        peak_throughput = np.max(throughput_data)
+        min_throughput = np.min(throughput_data)
+        
         with throughput_col1:
-            st.metric("Avg Throughput", f"{np.mean(throughput_data):.1f} TEU/hr")
+            # Calculate delta from target
+            avg_delta = avg_throughput - target_throughput
+            st.metric(
+                "Avg Throughput", 
+                f"{avg_throughput:.1f} TEU/hr",
+                delta=f"{avg_delta:+.1f} vs target"
+            )
         with throughput_col2:
-            st.metric("Peak Throughput", f"{np.max(throughput_data):.1f} TEU/hr")
+            st.metric("Peak Throughput", f"{peak_throughput:.1f} TEU/hr")
         with throughput_col3:
-            st.metric("Min Throughput", f"{np.min(throughput_data):.1f} TEU/hr")
+            st.metric("Min Throughput", f"{min_throughput:.1f} TEU/hr")
         with throughput_col4:
-            efficiency = (np.mean(throughput_data) / 100) * 100
-            st.metric("Efficiency", f"{efficiency:.1f}%")
+            # Calculate efficiency as percentage of target achieved
+            efficiency = (avg_throughput / target_throughput) * 100 if target_throughput > 0 else 0
+            st.metric("Target Efficiency", f"{efficiency:.1f}%")
+        
+        # Additional enhanced statistics row
+        st.markdown("---")
+        stats_col1, stats_col2, stats_col3, stats_col4 = st.columns(4)
+        
+        with stats_col1:
+            # Daily total containers processed
+            daily_total = sum(throughput_data)
+            st.metric("Daily Total", f"{daily_total:.0f} TEU")
+        with stats_col2:
+            # Throughput variance
+            throughput_std = np.std(throughput_data)
+            st.metric("Variability", f"±{throughput_std:.1f} TEU/hr")
+        with stats_col3:
+            # Peak vs average ratio
+            peak_ratio = (peak_throughput / avg_throughput) if avg_throughput > 0 else 0
+            st.metric("Peak Factor", f"{peak_ratio:.1f}x")
+        with stats_col4:
+            # Hours above target
+            hours_above_target = sum(1 for t in throughput_data if t >= target_throughput)
+            st.metric("Hours Above Target", f"{hours_above_target}/24")
     
     def _render_waiting_time_analysis(self, scenario_data: Optional[Dict[str, Any]] = None) -> None:
         """Render waiting time distribution analysis."""
@@ -947,8 +1306,13 @@ class ConsolidatedScenariosTab:
         # Use scenario-aware queue length as base for waiting times
         base_wait = scenario_values['queue_length']
         
-        # Generate waiting times with exponential distribution but scenario-aware scale
-        waiting_times = np.random.exponential(base_wait * 0.5, 1000)
+        # Generate waiting times using new threshold-based calculator if available
+        if calculate_wait_time:
+            wait_time_scenario = get_wait_time_scenario_name(scenario_name)
+            waiting_times = np.array([calculate_wait_time(wait_time_scenario) for _ in range(1000)])
+        else:
+            # Fallback to exponential distribution with scenario-aware scale
+            waiting_times = np.random.exponential(base_wait * 0.5, 1000)
         
         # Add some variation based on efficiency (higher efficiency = lower waiting times)
         efficiency_factor = scenario_values['efficiency'] / 100
@@ -977,19 +1341,17 @@ class ConsolidatedScenariosTab:
         st.plotly_chart(fig, use_container_width=True)
         
         # Waiting time statistics
-        wait_col1, wait_col2, wait_col3, wait_col4 = st.columns(4)
+        wait_col1, wait_col2, wait_col3 = st.columns(3)
         with wait_col1:
-            st.metric("Avg Wait Time", f"{np.mean(waiting_times):.1f} hrs")
-        with wait_col2:
             st.metric("Median Wait Time", f"{np.median(waiting_times):.1f} hrs")
-        with wait_col3:
+        with wait_col2:
             st.metric("95th Percentile", f"{np.percentile(waiting_times, 95):.1f} hrs")
-        with wait_col4:
+        with wait_col3:
             long_waits = np.sum(waiting_times > 4)  # Ships waiting more than 4 hours
             st.metric("Long Waits (>4hrs)", f"{long_waits} ships")
     
     def _render_performance_metrics(self, scenario_data: Optional[Dict[str, Any]] = None) -> None:
-        """Render performance metrics and KPIs."""
+        """Render performance metrics and KPIs with enhanced processing rate statistics."""
         st.subheader("🎯 Key Performance Indicators")
         
         scenario_name = scenario_data.get('name') if scenario_data else 'Normal Operations'
@@ -998,37 +1360,121 @@ class ConsolidatedScenariosTab:
         # Performance metrics overview
         import numpy as np
         
-        # Generate scenario-aware KPI data
-        scenario_values = self._get_all_scenario_values()
+        # Generate scenario-aware KPI data using ScenarioAwareCalculator if available
+        if self.calculator:
+            try:
+                # Get enhanced processing rate statistics from calculator
+                processing_stats = self.calculator.get_processing_rate_statistics(scenario_name)
+                
+                # Use enhanced values for KPIs
+                kpis = {
+                    'Port Efficiency': processing_stats.get('efficiency', 85),
+                    'Processing Rate': processing_stats.get('processing_rate', 120),  # TEU/hr
+                    'Ships Processed/Day': processing_stats.get('ships_per_day', 24),
+                    'Crane Moves/Hour': processing_stats.get('crane_moves_per_hour', 30),
+                    'Truck Turnaround': processing_stats.get('truck_turnaround', 2.5),  # hours
+                    'Vessel Turnaround': processing_stats.get('vessel_turnaround', 18)   # hours
+                }
+                
+                # Additional processing metrics
+                processing_metrics = {
+                    'Containers Processed/Day': processing_stats.get('containers_per_day', 2880),
+                    'Average Berth Utilization': processing_stats.get('berth_utilization', 78),
+                    'Queue Processing Rate': processing_stats.get('queue_processing_rate', 1.2),  # ships/hr
+                    'Peak Hour Capacity': processing_stats.get('peak_capacity', 180)  # TEU/hr
+                }
+                
+            except Exception as e:
+                st.warning(f"Could not get enhanced processing statistics: {e}")
+                # Fallback to basic scenario values
+                scenario_values = self._get_all_scenario_values()
+                kpis = {
+                    'Port Efficiency': scenario_values['efficiency'],
+                    'Crane Productivity': scenario_values['efficiency'] * 0.95,
+                    'Truck Turnaround': scenario_values['handling_time'] * 0.8,
+                    'Vessel Turnaround': scenario_values['handling_time'] * 1.2
+                }
+                processing_metrics = {}
+        else:
+            # Fallback to basic scenario values
+            scenario_values = self._get_all_scenario_values()
+            kpis = {
+                'Port Efficiency': scenario_values['efficiency'],
+                'Crane Productivity': scenario_values['efficiency'] * 0.95,
+                'Truck Turnaround': scenario_values['handling_time'] * 0.8,
+                'Vessel Turnaround': scenario_values['handling_time'] * 1.2
+            }
+            processing_metrics = {}
         
-        # Use scenario-aware values for KPIs
-        kpis = {
-            'Port Efficiency': scenario_values['efficiency'],
-            'Crane Productivity': scenario_values['efficiency'] * 0.95,  # Slightly lower than port efficiency
-            'Truck Turnaround': scenario_values['handling_time'] * 0.8,  # Convert to hours
-            'Vessel Turnaround': scenario_values['handling_time'] * 1.2   # Slightly higher than truck
-        }
         
-        
-        # Display KPIs in a grid
+        # Display main KPIs in a grid
+        st.subheader("📊 Primary Performance Metrics")
         kpi_cols = st.columns(3)
         for i, (kpi, value) in enumerate(kpis.items()):
             with kpi_cols[i % 3]:
-                # Determine color based on performance
-                if value >= 90:
-                    delta_color = "normal"
-                    delta = "Excellent"
-                elif value >= 80:
-                    delta_color = "normal"
-                    delta = "Good"
-                else:
-                    delta_color = "inverse"
-                    delta = "Needs Improvement"
-                
+                # Determine color based on performance and metric type
                 if 'Turnaround' in kpi:
+                    # For turnaround times, lower is better
+                    if value <= 2:
+                        delta_color = "normal"
+                        delta = "Excellent"
+                    elif value <= 4:
+                        delta_color = "normal"
+                        delta = "Good"
+                    else:
+                        delta_color = "inverse"
+                        delta = "Needs Improvement"
                     st.metric(kpi, f"{value:.1f} hrs", delta=delta, delta_color=delta_color)
+                elif 'Rate' in kpi or 'Processed' in kpi or 'Moves' in kpi:
+                    # For rate metrics, higher is better
+                    if value >= 100:
+                        delta_color = "normal"
+                        delta = "Excellent"
+                    elif value >= 80:
+                        delta_color = "normal"
+                        delta = "Good"
+                    else:
+                        delta_color = "inverse"
+                        delta = "Needs Improvement"
+                    
+                    if 'Ships' in kpi:
+                        st.metric(kpi, f"{value:.0f} ships", delta=delta, delta_color=delta_color)
+                    elif 'Moves' in kpi:
+                        st.metric(kpi, f"{value:.0f} moves", delta=delta, delta_color=delta_color)
+                    else:
+                        st.metric(kpi, f"{value:.1f} TEU/hr", delta=delta, delta_color=delta_color)
                 else:
+                    # For efficiency metrics, higher is better
+                    if value >= 90:
+                        delta_color = "normal"
+                        delta = "Excellent"
+                    elif value >= 80:
+                        delta_color = "normal"
+                        delta = "Good"
+                    else:
+                        delta_color = "inverse"
+                        delta = "Needs Improvement"
                     st.metric(kpi, f"{value:.1f}%", delta=delta, delta_color=delta_color)
+        
+        # Display additional processing metrics if available
+        if processing_metrics:
+            st.subheader("⚙️ Processing Rate Statistics")
+            proc_cols = st.columns(4)
+            for i, (metric, value) in enumerate(processing_metrics.items()):
+                with proc_cols[i % 4]:
+                    if 'Containers' in metric:
+                        st.metric(metric, f"{value:,.0f}")
+                    elif 'Utilization' in metric:
+                        st.metric(metric, f"{value:.1f}%")
+                    elif 'Rate' in metric:
+                        if 'ships' in metric.lower():
+                            st.metric(metric, f"{value:.1f} ships/hr")
+                        else:
+                            st.metric(metric, f"{value:.1f}")
+                    elif 'Capacity' in metric:
+                        st.metric(metric, f"{value:.0f} TEU/hr")
+                    else:
+                        st.metric(metric, f"{value:.1f}")
         
         # Performance trend radar chart
         st.subheader("📊 Performance Radar Chart")
@@ -1042,16 +1488,46 @@ class ConsolidatedScenariosTab:
         for kpi, value in kpis.items():
             if 'Turnaround' in kpi:
                 # For turnaround times (lower is better), normalize and invert
-                # Assume max acceptable time is 8 hours, target is 3 hours
-                max_time = 8.0
-                target_time = 3.0
+                if 'Truck' in kpi:
+                    max_time = 6.0
+                    target_time = 2.0
+                else:  # Vessel turnaround
+                    max_time = 30.0
+                    target_time = 15.0
                 normalized_value = max(0, (max_time - value) / max_time * 100)
                 normalized_target = (max_time - target_time) / max_time * 100
                 normalized_kpis[kpi] = normalized_value
                 target_values[kpi] = normalized_target
+            elif 'Processing Rate' in kpi:
+                # For processing rate (TEU/hr), normalize to 0-100 scale
+                # Assume max rate is 200 TEU/hr, target is 150 TEU/hr
+                max_rate = 200.0
+                target_rate = 150.0
+                normalized_value = min(100, (value / max_rate) * 100)
+                normalized_target = (target_rate / max_rate) * 100
+                normalized_kpis[kpi] = normalized_value
+                target_values[kpi] = normalized_target
+            elif 'Ships Processed' in kpi:
+                # For ships processed per day, normalize to 0-100 scale
+                # Assume max is 40 ships/day, target is 30 ships/day
+                max_ships = 40.0
+                target_ships = 30.0
+                normalized_value = min(100, (value / max_ships) * 100)
+                normalized_target = (target_ships / max_ships) * 100
+                normalized_kpis[kpi] = normalized_value
+                target_values[kpi] = normalized_target
+            elif 'Crane Moves' in kpi:
+                # For crane moves per hour, normalize to 0-100 scale
+                # Assume max is 50 moves/hr, target is 35 moves/hr
+                max_moves = 50.0
+                target_moves = 35.0
+                normalized_value = min(100, (value / max_moves) * 100)
+                normalized_target = (target_moves / max_moves) * 100
+                normalized_kpis[kpi] = normalized_value
+                target_values[kpi] = normalized_target
             else:
                 # For efficiency metrics (higher is better), use as-is
-                normalized_kpis[kpi] = value
+                normalized_kpis[kpi] = min(100, value)  # Cap at 100
                 target_values[kpi] = 90  # 90% target for efficiency metrics
         
         fig = go.Figure()
@@ -1158,6 +1634,18 @@ class ConsolidatedScenariosTab:
                 "monthly_volume_base": 50_000,
                 "monthly_volume_variance": 18_000,
                 
+                # Ship characteristics parameters - larger ships in peak season
+                "ship_containers_range": (8000, 15000),  # Higher container counts
+                "ship_teu_size_range": (12000, 24000),   # Larger TEU sizes
+                "ship_length_range": (300, 400),         # Longer ships (meters)
+                "ship_draft_range": (12, 16),            # Deeper draft (meters)
+                
+                # Processing rate parameters - higher efficiency in peak season
+                "containers_processed_range": (180, 250), # Containers per hour
+                "ships_processed_range": (8, 12),         # Ships per day
+                "crane_efficiency_range": (85, 95),       # Percentage efficiency
+                "berth_processing_rate": (40, 50),        # Moves per hour
+                
                 # KPI parameters - optimized for peak performance
                 "kpis": {
                     'Port Efficiency': (92, 99),
@@ -1204,6 +1692,18 @@ class ConsolidatedScenariosTab:
                 "monthly_volume_base": 18_000,
                 "monthly_volume_variance": 8_000,
                 
+                # Ship characteristics parameters - smaller ships in low season
+                "ship_containers_range": (2000, 6000),   # Lower container counts
+                "ship_teu_size_range": (3000, 8000),     # Smaller TEU sizes
+                "ship_length_range": (150, 250),         # Shorter ships (meters)
+                "ship_draft_range": (8, 12),             # Shallower draft (meters)
+                
+                # Processing rate parameters - lower efficiency in low season
+                "containers_processed_range": (80, 140),  # Containers per hour
+                "ships_processed_range": (3, 6),          # Ships per day
+                "crane_efficiency_range": (60, 75),       # Percentage efficiency
+                "berth_processing_rate": (15, 25),        # Moves per hour
+                
                 # KPI parameters - reduced performance
                 "kpis": {
                     'Port Efficiency': (60, 78),
@@ -1249,6 +1749,18 @@ class ConsolidatedScenariosTab:
                 # Monthly volume parameters - normal patterns
                 "monthly_volume_base": 32_000,
                 "monthly_volume_variance": 12_000,
+                
+                # Ship characteristics parameters - medium ships in normal operations
+                "ship_containers_range": (4000, 10000),  # Medium container counts
+                "ship_teu_size_range": (6000, 15000),    # Medium TEU sizes
+                "ship_length_range": (200, 320),         # Medium ships (meters)
+                "ship_draft_range": (10, 14),            # Medium draft (meters)
+                
+                # Processing rate parameters - medium efficiency in normal operations
+                "containers_processed_range": (120, 200), # Containers per hour
+                "ships_processed_range": (5, 8),          # Ships per day
+                "crane_efficiency_range": (75, 85),       # Percentage efficiency
+                "berth_processing_rate": (28, 38),        # Moves per hour
                 
                 # KPI parameters - balanced performance
                 "kpis": {
@@ -1304,8 +1816,15 @@ class ConsolidatedScenariosTab:
             values = np.random.randint(min_val, max_val + 1, count)
             
         elif value_type == 'waiting_time':
-            scale = params['waiting_time_exponential_scale']
-            values = np.random.exponential(scale, count)
+            if calculate_wait_time:
+                # Use new threshold-based calculator
+                scenario_name = getattr(self, 'current_scenario_name', 'Normal Operations')
+                wait_time_scenario = get_wait_time_scenario_name(scenario_name)
+                values = np.array([calculate_wait_time(wait_time_scenario) for _ in range(count)])
+            else:
+                # Fallback to exponential distribution
+                scale = params['waiting_time_exponential_scale']
+                values = np.random.exponential(scale, count)
             
         elif value_type == 'efficiency':
             min_val, max_val = params['efficiency_range']
@@ -1360,9 +1879,60 @@ class ConsolidatedScenariosTab:
             min_val, max_val = roi_range
             values = np.random.uniform(min_val, max_val, count)
             
+        # Ship characteristics value types
+        elif value_type == 'ship_containers':
+            min_val, max_val = params.get('ship_containers_range', (3000, 8000))
+            values = np.random.randint(min_val, max_val + 1, count)
+            
+        elif value_type == 'ship_teu_size':
+            min_val, max_val = params.get('ship_teu_size_range', (5000, 12000))
+            values = np.random.randint(min_val, max_val + 1, count)
+            
+        elif value_type == 'ship_length':
+            min_val, max_val = params.get('ship_length_range', (180, 300))
+            values = np.random.uniform(min_val, max_val, count)
+            
+        elif value_type == 'ship_draft':
+            min_val, max_val = params.get('ship_draft_range', (9, 14))
+            values = np.random.uniform(min_val, max_val, count)
+            
+        # Processing rate value types
+        elif value_type == 'containers_processed':
+            min_val, max_val = params.get('containers_processed_range', (100, 180))
+            values = np.random.uniform(min_val, max_val, count)
+            
+        elif value_type == 'ships_processed':
+            min_val, max_val = params.get('ships_processed_range', (4, 8))
+            values = np.random.randint(min_val, max_val + 1, count)
+            
+        elif value_type == 'crane_efficiency':
+            min_val, max_val = params.get('crane_efficiency_range', (70, 85))
+            values = np.random.uniform(min_val, max_val, count)
+            
+        elif value_type == 'berth_processing_rate':
+            min_val, max_val = params.get('berth_processing_rate', (25, 35))
+            values = np.random.uniform(min_val, max_val, count)
+            
         else:
-            # Fallback for unknown value types
-            values = np.random.uniform(0, 100, count)
+            # Try using the calculator if available
+            if self.calculator is not None:
+                try:
+                    # Map scenario name to ScenarioType using centralized method
+                    scenario_type = self._map_scenario_to_type(scenario_name)
+                    
+                    # Try to get value from calculator
+                    if hasattr(ValueType, value_type.upper()):
+                        value_type_enum = getattr(ValueType, value_type.upper())
+                        values = [self.calculator.generate_value(scenario_type, value_type_enum) for _ in range(count)]
+                    else:
+                        # Fallback for unknown value types
+                        values = np.random.uniform(0, 100, count)
+                except Exception:
+                    # Fallback for any calculator errors
+                    values = np.random.uniform(0, 100, count)
+            else:
+                # Fallback for unknown value types when calculator is not available
+                values = np.random.uniform(0, 100, count)
             
         # Return single value or list based on count
         if count == 1:
@@ -1421,7 +1991,11 @@ class ConsolidatedScenariosTab:
         # Define parameters that should follow Peak > Normal > Low ordering
         ascending_params = [
             'throughput_range', 'utilization_range', 'revenue_range',
-            'efficiency_range', 'cargo_volume_range', 'trade_balance_range'
+            'efficiency_range', 'cargo_volume_range', 'trade_balance_range',
+            # Ship characteristics - larger ships in peak season
+            'ship_containers_range', 'ship_teu_size_range', 'ship_length_range', 'ship_draft_range',
+            # Processing rates - higher efficiency in peak season
+            'containers_processed_range', 'ships_processed_range', 'crane_efficiency_range', 'berth_processing_rate'
         ]
         
         # Define parameters that should follow Peak < Normal < Low ordering (inverse)
@@ -1525,7 +2099,7 @@ class ConsolidatedScenariosTab:
         with st.expander("ℹ️ Scenario Parameter Validation", expanded=False):
             st.markdown("*Check scenario parameter consistency and range ordering*")
             
-            col1, col2 = st.columns([1, 3])
+            col1, col2, col3 = st.columns([1, 1, 2])
             
             with col1:
                 if st.button("🔍 Run Validation", key="run_validation"):
@@ -1535,6 +2109,13 @@ class ConsolidatedScenariosTab:
                     st.rerun()
             
             with col2:
+                if st.button("🧪 Enhanced Test", key="run_enhanced_test"):
+                    # Run comprehensive validation test
+                    test_results = self._test_enhanced_validation()
+                    st.session_state.enhanced_test_results = test_results
+                    st.rerun()
+            
+            with col3:
                 if st.button("📊 Show Parameter Ranges", key="show_ranges"):
                     st.session_state.show_parameter_ranges = not st.session_state.get('show_parameter_ranges', False)
                     st.rerun()
@@ -1544,6 +2125,12 @@ class ConsolidatedScenariosTab:
                 st.markdown("---")
                 st.subheader("Validation Results")
                 self._display_validation_results(st.session_state.validation_results)
+            
+            # Display enhanced test results if available
+            if 'enhanced_test_results' in st.session_state:
+                st.markdown("---")
+                st.subheader("Enhanced Validation Test Results")
+                self._display_enhanced_test_results(st.session_state.enhanced_test_results)
             
             # Display parameter ranges if requested
             if st.session_state.get('show_parameter_ranges', False):
@@ -1570,7 +2157,11 @@ class ConsolidatedScenariosTab:
         key_params = [
             'throughput_range', 'utilization_range', 'revenue_range',
             'efficiency_range', 'cargo_volume_range', 'handling_time_range',
-            'trade_balance_range'
+            'trade_balance_range',
+            # Ship characteristics
+            'ship_containers_range', 'ship_teu_size_range', 'ship_length_range', 'ship_draft_range',
+            # Processing rates
+            'containers_processed_range', 'ships_processed_range', 'crane_efficiency_range', 'berth_processing_rate'
         ]
         
         for param in key_params:
@@ -1593,8 +2184,11 @@ class ConsolidatedScenariosTab:
         # Add color coding explanation
         st.markdown("""
         **Expected Ordering:**
-        - 📈 **Ascending**: Peak > Normal > Low (throughput, utilization, revenue, efficiency, cargo volume, trade balance)
-        - 📉 **Descending**: Peak < Normal < Low (handling time)
+        - 📈 **Ascending**: Peak > Normal > Low 
+          - Core metrics: throughput, utilization, revenue, efficiency, cargo volume, trade balance
+          - Ship characteristics: containers, TEU size, length, draft (larger ships in peak season)
+          - Processing rates: containers/ships processed, crane efficiency, berth processing rate
+        - 📉 **Descending**: Peak < Normal < Low (handling time, waiting time)
         """)
 
     def _initialize_scenario_tracking(self) -> None:
@@ -1653,6 +2247,24 @@ class ConsolidatedScenariosTab:
         """
         return st.session_state.get('current_scenario', 'Normal Operations')
 
+    def _map_scenario_to_type(self, scenario_name: str) -> ScenarioType:
+        """
+        Map scenario name to ScenarioType enum.
+        
+        Args:
+            scenario_name: Name of the scenario (e.g., 'Normal Operations', 'Peak Season', 'Low Season')
+            
+        Returns:
+            Corresponding ScenarioType enum value
+        """
+        scenario_type_map = {
+            'Normal Operations': ScenarioType.NORMAL,
+            'Peak Season': ScenarioType.PEAK,
+            'Low Season': ScenarioType.LOW
+        }
+        
+        return scenario_type_map.get(scenario_name, ScenarioType.NORMAL)
+
     def _cache_scenario_value(self, key: str, value: Any) -> None:
         """
         Cache a value for the current scenario to maintain consistency.
@@ -1679,7 +2291,179 @@ class ConsolidatedScenariosTab:
         """
         scenario = self._get_current_scenario()
         return st.session_state.scenario_cached_values.get(scenario, {}).get(key, default)
-    
+
+    def _test_enhanced_validation(self) -> Dict[str, Any]:
+        """
+        Comprehensive test of the enhanced validation framework including new parameters.
+        
+        Returns:
+            Dictionary containing test results and validation status
+        """
+        test_results = {
+            'status': 'success',
+            'tests_passed': 0,
+            'tests_failed': 0,
+            'errors': [],
+            'warnings': [],
+            'details': {}
+        }
+        
+        try:
+            # Test 1: Validate all scenarios have required parameters
+            scenarios = ['Peak Season', 'Normal Operations', 'Low Season']
+            required_params = [
+                # Core parameters
+                'throughput_range', 'utilization_range', 'revenue_range',
+                'efficiency_range', 'cargo_volume_range', 'handling_time_range',
+                'trade_balance_range',
+                # New ship characteristics
+                'ship_containers_range', 'ship_teu_size_range', 'ship_length_range', 'ship_draft_range',
+                # New processing rates
+                'containers_processed_range', 'ships_processed_range', 'crane_efficiency_range', 'berth_processing_rate'
+            ]
+            
+            for scenario in scenarios:
+                params = self._get_scenario_performance_params(scenario)
+                missing_params = [param for param in required_params if param not in params]
+                
+                if missing_params:
+                    test_results['errors'].append(f"{scenario}: Missing parameters {missing_params}")
+                    test_results['tests_failed'] += 1
+                else:
+                    test_results['tests_passed'] += 1
+                    
+                test_results['details'][f'{scenario}_params_count'] = len(params)
+            
+            # Test 2: Validate parameter ranges are properly ordered
+            validation_results = self._validate_scenario_ranges()
+            if validation_results['status'] == 'error':
+                test_results['errors'].extend(validation_results['errors'])
+                test_results['tests_failed'] += 1
+            else:
+                test_results['tests_passed'] += 1
+                
+            if validation_results['warnings']:
+                test_results['warnings'].extend(validation_results['warnings'])
+            
+            # Test 3: Test scenario-aware calculator integration
+            if self.scenario_calculator is not None:
+                try:
+                    # Test value generation for new parameters
+                    test_scenario = 'Peak Season'
+                    test_values = {}
+                    
+                    new_value_types = [
+                        'ship_containers', 'ship_teu_size', 'ship_length', 'ship_draft',
+                        'containers_processed', 'ships_processed', 'crane_efficiency', 'berth_processing_rate'
+                    ]
+                    
+                    for value_type in new_value_types:
+                        try:
+                            value = self._generate_scenario_values(value_type, test_scenario)
+                            test_values[value_type] = value
+                            test_results['tests_passed'] += 1
+                        except Exception as e:
+                            test_results['errors'].append(f"Failed to generate {value_type}: {str(e)}")
+                            test_results['tests_failed'] += 1
+                    
+                    test_results['details']['generated_values'] = test_values
+                    
+                except Exception as e:
+                    test_results['errors'].append(f"Calculator integration test failed: {str(e)}")
+                    test_results['tests_failed'] += 1
+            else:
+                test_results['warnings'].append("Scenario calculator not available - skipping integration test")
+            
+            # Test 4: Validate logical consistency across scenarios
+            try:
+                peak_params = self._get_scenario_performance_params('Peak Season')
+                normal_params = self._get_scenario_performance_params('Normal Operations')
+                low_params = self._get_scenario_performance_params('Low Season')
+                
+                # Check ascending parameters (Peak > Normal > Low)
+                ascending_params = [
+                    'throughput_range', 'utilization_range', 'revenue_range',
+                    'efficiency_range', 'cargo_volume_range', 'trade_balance_range',
+                    'ship_containers_range', 'ship_teu_size_range', 'ship_length_range', 'ship_draft_range',
+                    'containers_processed_range', 'ships_processed_range', 'crane_efficiency_range', 'berth_processing_rate'
+                ]
+                
+                consistency_errors = 0
+                for param in ascending_params:
+                    if all(param in params for params in [peak_params, normal_params, low_params]):
+                        peak_max = peak_params[param][1] if isinstance(peak_params[param], tuple) else peak_params[param]
+                        normal_max = normal_params[param][1] if isinstance(normal_params[param], tuple) else normal_params[param]
+                        low_max = low_params[param][1] if isinstance(low_params[param], tuple) else low_params[param]
+                        
+                        if not (peak_max >= normal_max >= low_max):
+                            test_results['errors'].append(f"Logical inconsistency in {param}: Peak({peak_max}) >= Normal({normal_max}) >= Low({low_max})")
+                            consistency_errors += 1
+                
+                if consistency_errors == 0:
+                    test_results['tests_passed'] += 1
+                else:
+                    test_results['tests_failed'] += 1
+                    
+            except Exception as e:
+                test_results['errors'].append(f"Logical consistency test failed: {str(e)}")
+                test_results['tests_failed'] += 1
+            
+            # Determine overall status
+            if test_results['tests_failed'] > 0:
+                test_results['status'] = 'error'
+            elif test_results['warnings']:
+                test_results['status'] = 'warning'
+            else:
+                test_results['status'] = 'success'
+                
+        except Exception as e:
+            test_results['status'] = 'error'
+            test_results['errors'].append(f"Validation test framework error: {str(e)}")
+            test_results['tests_failed'] += 1
+        
+        return test_results
+
+    def _display_enhanced_test_results(self, test_results: Dict[str, Any]) -> None:
+        """
+        Display the results of the enhanced validation test.
+        
+        Args:
+            test_results: Dictionary containing test results
+        """
+        # Display overall status
+        if test_results['status'] == 'success':
+            st.success(f"✅ Enhanced validation passed! ({test_results['tests_passed']} tests passed)")
+        elif test_results['status'] == 'warning':
+            st.warning(f"⚠️ Enhanced validation completed with warnings ({test_results['tests_passed']} passed, {test_results['tests_failed']} failed)")
+        else:
+            st.error(f"❌ Enhanced validation failed ({test_results['tests_passed']} passed, {test_results['tests_failed']} failed)")
+        
+        # Display test summary
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Tests Passed", test_results['tests_passed'])
+        with col2:
+            st.metric("Tests Failed", test_results['tests_failed'])
+        with col3:
+            st.metric("Warnings", len(test_results['warnings']))
+        
+        # Display errors if any
+        if test_results['errors']:
+            st.subheader("❌ Errors")
+            for error in test_results['errors']:
+                st.error(f"Error: {error}")
+        
+        # Display warnings if any
+        if test_results['warnings']:
+            st.subheader("⚠️ Warnings")
+            for warning in test_results['warnings']:
+                st.warning(f"Warning: {warning}")
+        
+        # Display test details in an expander
+        if test_results['details']:
+            with st.expander("📋 Test Details", expanded=False):
+                st.json(test_results['details'])
+
     def _get_scenario_color(self, scenario: str) -> str:
         """
         Get the background color for a scenario based on its type.

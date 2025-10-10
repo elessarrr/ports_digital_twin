@@ -47,6 +47,18 @@ from hk_port_digital_twin.src.dashboard.vessel_charts import render_vessel_analy
 from hk_port_digital_twin.src.dashboard.executive_dashboard import ExecutiveDashboard
 from hk_port_digital_twin.src.utils.strategic_visualization import StrategicVisualization, render_strategic_controls
 from hk_port_digital_twin.src.core.strategic_simulation_controller import StrategicSimulationController
+from hk_port_digital_twin.src.utils.scenario_aware_calculator import ScenarioAwareCalculator, ValueType, ScenarioType
+from hk_port_digital_twin.src.utils.scenario_helpers import get_wait_time_scenario_name
+
+try:
+    from hk_port_digital_twin.src.utils.wait_time_calculator import WaitTimeCalculator, calculate_wait_time
+except (ImportError, NameError, AttributeError) as e:
+    # This allows the app to run even if the wait time calculator is not available
+    # The dashboard will gracefully degrade by hiding wait time-related features
+    # This is a robust way to handle optional dependencies
+    WaitTimeCalculator = None
+    calculate_wait_time = None
+    st.sidebar.warning(f"Wait time calculator not available. Features disabled. Error: {e}")
 
 # Function to load and apply custom CSS
 def load_css(file_name):
@@ -105,6 +117,8 @@ def get_scenario_key_from_display(display_name: str) -> str:
     """
     # Remove emojis and extra spaces to get the key
     return display_name.split()[0].strip()
+
+
 
 def filter_vessel_data_by_time_range(vessel_data: pd.DataFrame, time_range: str) -> pd.DataFrame:
     """Filter vessel data based on the selected time range.
@@ -315,52 +329,167 @@ def load_sample_data(scenario='normal', use_real_throughput_data=True):
             timeline_data['river_teus'] = timeline_data['river_teus'] * 1000
             timeline_data['total_teus'] = timeline_data['total_teus'] * 1000
         except Exception as e:
-            # Fallback to sample data if real data loading fails
+            # Enhanced fallback data using ScenarioAwareCalculator
             print(f"Warning: Could not load real throughput data: {e}")
-            timeline_data = {
-                'time': pd.date_range(start=datetime.now() - timedelta(hours=24),
-                                     end=datetime.now(), freq='h'),
-                'containers_processed': np.random.randint(10, 100, 25),
-                'ships_processed': np.random.randint(1, 8, 25)
-            }
-            timeline_data = pd.DataFrame(timeline_data)
+            calculator = ScenarioAwareCalculator()
+            
+            # Determine scenario type based on scenario parameter
+            if scenario == 'peak':
+                scenario_type = ScenarioType.PEAK
+            elif scenario == 'low':
+                scenario_type = ScenarioType.LOW
+            else:
+                scenario_type = ScenarioType.NORMAL
+            
+            # Generate 25 hours of enhanced timeline data
+            time_range = pd.date_range(start=datetime.now() - timedelta(hours=24), end=datetime.now(), freq='h')
+            containers_processed = []
+            ships_processed = []
+            
+            for hour in time_range:
+                # Generate scenario-aware processing rates for each hour
+                containers = calculator.generate_values(ValueType.CONTAINERS_PROCESSED, scenario_type, 1)[0]
+                ships = calculator.generate_values(ValueType.SHIPS_PROCESSED, scenario_type, 1)[0]
+                containers_processed.append(containers)
+                ships_processed.append(ships)
+            
+            timeline_data = pd.DataFrame({
+                'time': time_range,
+                'containers_processed': containers_processed,
+                'ships_processed': ships_processed
+            })
     else:
-        # Fallback to sample data if function not available
-        timeline_data = {
-            'time': pd.date_range(start=datetime.now() - timedelta(hours=24),
-                                 end=datetime.now(), freq='h'),
-            'containers_processed': np.random.randint(10, 100, 25),
-            'ships_processed': np.random.randint(1, 8, 25)
-        }
-        timeline_data = pd.DataFrame(timeline_data)
+        # Enhanced fallback data using ScenarioAwareCalculator
+        calculator = ScenarioAwareCalculator()
+        
+        # Determine scenario type based on scenario parameter
+        if scenario == 'peak':
+            scenario_type = ScenarioType.PEAK
+        elif scenario == 'low':
+            scenario_type = ScenarioType.LOW
+        else:
+            scenario_type = ScenarioType.NORMAL
+        
+        # Generate 25 hours of enhanced timeline data
+        time_range = pd.date_range(start=datetime.now() - timedelta(hours=24), end=datetime.now(), freq='h')
+        containers_processed = []
+        ships_processed = []
+        
+        for hour in time_range:
+            # Generate scenario-aware processing rates for each hour
+            containers = calculator.generate_values(ValueType.CONTAINERS_PROCESSED, scenario_type, 1)[0]
+            ships = calculator.generate_values(ValueType.SHIPS_PROCESSED, scenario_type, 1)[0]
+            containers_processed.append(containers)
+            ships_processed.append(ships)
+        
+        timeline_data = pd.DataFrame({
+            'time': time_range,
+            'containers_processed': containers_processed,
+            'ships_processed': ships_processed
+        })
 
-    # Sample ship queue data (ships waiting for berths)
+    # Enhanced ship queue data using ScenarioAwareCalculator
     num_ships_in_queue = int(3 * params['queue_multiplier'])
+    
+    # Initialize enhanced calculator for scenario-aware data generation
+    calculator = ScenarioAwareCalculator()
+    
+    # Determine scenario type based on scenario parameter
+    if scenario == 'peak':
+        scenario_type = ScenarioType.PEAK
+    elif scenario == 'low':
+        scenario_type = ScenarioType.LOW
+    else:
+        scenario_type = ScenarioType.NORMAL
+    
     ship_queue_data = {
         'ship_id': [f'SHIP_{i:03d}' for i in range(1, num_ships_in_queue + 1)],
         'name': [f'Ship {i}' for i in range(1, num_ships_in_queue + 1)],
         'ship_type': np.random.choice(['container', 'bulk'], num_ships_in_queue) if num_ships_in_queue > 0 else [],
         'arrival_time': [datetime.now() - timedelta(hours=i) for i in range(num_ships_in_queue, 0, -1)],
-        'containers': np.random.randint(100, 300, num_ships_in_queue) if num_ships_in_queue > 0 else [],
-        'size_teu': np.random.randint(5000, 15000, num_ships_in_queue) if num_ships_in_queue > 0 else [],
-        'waiting_time': np.random.uniform(1.0, 5.0, num_ships_in_queue) * params['waiting_time_multiplier'] if num_ships_in_queue > 0 else [],
         'priority': np.random.choice(['high', 'medium', 'low'], num_ships_in_queue) if num_ships_in_queue > 0 else []
     }
     
+    # Generate enhanced ship characteristics for all ships in queue
+    if num_ships_in_queue > 0:
+        # Generate ship profile with enhanced characteristics for all ships at once
+        ship_profile = calculator.generate_ship_profile(scenario_type, num_ships_in_queue)
+        
+        # Extract enhanced characteristics from the profile structure
+        characteristics = ship_profile.get('characteristics', {})
+        ship_queue_data['containers'] = characteristics.get('containers', [0] * num_ships_in_queue)
+        ship_queue_data['size_teu'] = characteristics.get('teu_capacity', [1000] * num_ships_in_queue)
+        ship_queue_data['cargo_volume'] = characteristics.get('cargo_volume', [500] * num_ships_in_queue)
+        ship_queue_data['processing_time'] = characteristics.get('processing_time', [4] * num_ships_in_queue)
+        
+        # Generate ship length and draft using individual value generation since they're not in ship_profile
+        ship_queue_data['ship_length'] = calculator.generate_value(scenario_type, ValueType.SHIP_LENGTH, num_ships_in_queue)
+        ship_queue_data['ship_draft'] = calculator.generate_value(scenario_type, ValueType.SHIP_DRAFT, num_ships_in_queue)
+        
+        # Generate enhanced waiting times using new calculator if available
+        if calculate_wait_time:
+            # Use new threshold-based calculator
+            scenario_name = get_wait_time_scenario_name(scenario)
+            waiting_times = [calculate_wait_time(scenario_name) for _ in range(num_ships_in_queue)]
+        else:
+            # Fallback to existing calculator
+            waiting_times = []
+            for i in range(num_ships_in_queue):
+                wait_stats = calculator.get_wait_time_statistics(scenario_type, sample_size=1)
+                # Use the mean waiting time as a representative value
+                base_wait_time = wait_stats['statistics']['mean']
+                waiting_times.append(base_wait_time)
+        ship_queue_data['waiting_time'] = waiting_times
+    else:
+        # Empty lists for no ships
+        ship_queue_data.update({
+            'containers': [],
+            'size_teu': [],
+            'cargo_volume': [],
+            'processing_time': [],
+            'ship_length': [],
+            'ship_draft': [],
+            'waiting_time': []
+        })
+    
     # Sample waiting time data
+    if calculate_wait_time:
+        # Use new threshold-based calculator
+        scenario_name = get_wait_time_scenario_name(scenario)
+        waiting_times = [calculate_wait_time(scenario_name) for _ in range(20)]
+    else:
+        # Fallback to exponential distribution
+        waiting_times = np.random.exponential(2, 20)
+    
     waiting_data = {
         'ship_id': [f'SHIP_{i:03d}' for i in range(1, 21)],
-        'waiting_time': np.random.exponential(2, 20) * params['waiting_time_multiplier'],
+        'waiting_time': waiting_times,
         'ship_type': np.random.choice(['container', 'bulk', 'mixed'], 20)
     }
 
-    # Sample KPI data
+    # Enhanced KPI data using processing rate statistics
+    processing_stats = calculator.get_processing_rate_statistics(scenario_type, num_samples=50)
+    
+    # Calculate enhanced KPI values
+
+    berth_utilization = np.mean(params['utilization_range'])
+    throughput_rate = processing_stats['containers_processed']['mean']
+    queue_length = 3 * params['queue_multiplier']
+    processing_rate = processing_stats['processing_rate']['mean']
+    ships_processed = processing_stats['ships_processed']['mean']
+    
     kpi_data = {
-        'metric': ['Average Waiting Time', 'Berth Utilization', 'Throughput Rate', 'Queue Length'],
-        'value': [2.5 * params['waiting_time_multiplier'], np.mean(params['utilization_range']), 85, 3 * params['queue_multiplier']],
-        'unit': ['hours', '%', 'containers/hour', 'ships'],
-        'target': [2.0, 80, 90, 2],
-        'status': ['warning', 'good', 'good', 'warning']
+        'metric': ['Berth Utilization', 'Throughput Rate', 'Queue Length', 'Processing Rate', 'Ships Processed/Day'],
+        'value': [berth_utilization, throughput_rate, queue_length, processing_rate, ships_processed],
+        'unit': ['%', 'containers/hour', 'ships', 'containers/hour', 'ships/day'],
+        'target': [80, 90, 2, 75, 15],
+        'status': [
+            'good' if berth_utilization >= 70 else 'warning',
+            'good' if throughput_rate >= 80 else 'warning',
+            'warning' if queue_length > 2 else 'good',
+            'good' if processing_rate >= 70 else 'warning',
+            'good' if ships_processed >= 12 else 'warning'
+        ]
     }
 
     return {
@@ -501,6 +630,10 @@ def initialize_session_state():
     if 'scenario_manager' not in st.session_state:
         st.session_state.scenario_manager = ScenarioManager()
     
+    # Initialize debug mode
+    if 'debug_mode' not in st.session_state:
+        st.session_state.debug_mode = True  # Enable debug mode by default for troubleshooting
+    
     # Vessel data scheduler disabled to prevent frequent XML downloads
     # The scheduler was causing downloads every minute due to Streamlit app restarts
     # Manual vessel data fetching is still available when needed
@@ -634,8 +767,24 @@ def main():
                 create_kpi_summary_chart(kpi_dict)
             else:
                 # Fallback to sample data if no forecasts available
+                # Calculate dynamic wait time based on current scenario
+                current_scenario = scenario if scenario else 'normal'
+                wait_time_scenario = get_wait_time_scenario_name(current_scenario)
+                
+                if calculate_wait_time:
+                    try:
+                        # Calculate a representative average by sampling multiple times
+                        num_samples = 100  # Number of samples for a stable average
+                        wait_times = [calculate_wait_time(wait_time_scenario) for _ in range(num_samples)]
+                        fallback_wait_time = np.mean(wait_times) if wait_times else 8.0
+                    except Exception as e:
+                        logging.warning(f"Error calculating wait time for KPI fallback: {e}")
+                        fallback_wait_time = 8.0  # Default fallback
+                else:
+                    fallback_wait_time = 8.0  # Fallback when calculator not available
+                
                 kpi_dict = {
-                    'average_waiting_time': 2.5,
+                    'average_waiting_time': fallback_wait_time,
                     'average_berth_utilization': 0.75,
                     'total_ships_processed': 85,
                     'total_containers_processed': 1200,
@@ -671,7 +820,8 @@ def main():
                 arrivals_24h = vessel_analysis['recent_activity'].get('arrivals_last_24h', 0)
                 st.metric("24h Arrivals", arrivals_24h)
             else:
-                st.metric("Avg Waiting Time", "2.5 hrs")
+                # Show port efficiency metric instead of wait time
+                st.metric("Port Efficiency", "85%")
 
         with col4:
             st.metric("Utilization Rate", "75%")

@@ -4,6 +4,7 @@
       "step": "Sequential Execution",
       "description": [
         "Go through the proposed steps in order, one at a time.",
+        "Think through the process step by step, and share out loud the current step and the next step to be taken.",
         "For each step:",
         "- Check if it is already complete based on current directory state.",
         "- If complete, skip to the next step.",

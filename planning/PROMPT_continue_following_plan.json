@@ -6,7 +6,9 @@
     },
     {
       "step": "Iterative Progress",
-      "description": "After every step, stop and ask if the user wants to continue before moving on."
+      "description": ["After every step, stop and ask if the user wants to continue before moving on.",
+      "Think through the process step by step, and share out loud the current step and the next step to be taken."
+    ]
     },
     {
       "step": "Code Existence Check",
