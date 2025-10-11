@@ -291,7 +291,8 @@ def forecast_cargo_throughput(time_series_data: Dict[str, pd.DataFrame], forecas
                 
                 # Generate forecasts
                 last_year = series.index.max()
-                future_years = np.array(range(last_year + 1, last_year + forecast_years + 1)).reshape(-1, 1)
+                # Start forecasts from the last year of data (2023) instead of the year after
+                future_years = np.array(range(last_year, last_year + forecast_years)).reshape(-1, 1)
                 predictions = model.predict(future_years)
                 
                 # Calculate model metrics

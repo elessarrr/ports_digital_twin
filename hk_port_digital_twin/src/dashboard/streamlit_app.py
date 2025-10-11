@@ -895,8 +895,8 @@ def main():
             ''', unsafe_allow_html=True)
 
         # Create tabs for different analysis sections
-        cargo_tab1, cargo_tab2, cargo_tab3, cargo_tab4 = st.tabs([
-            "📊 Shipment Types", "🚢 Transport Modes", "📈 Time Series", "🏗️ Port Analytics"
+        cargo_tab1, cargo_tab2, cargo_tab3, cargo_tab4, cargo_tab5 = st.tabs([
+            "📊 Shipment Types", "🚢 Transport Modes", "📈 Time Series", "🔮 Forecasting", "🏗️ Port Analytics"
         ])
 
         with cargo_tab1:
@@ -964,6 +964,7 @@ def main():
                         yaxis_title="Throughput (000 tonnes)",
                         height=400,
                         xaxis=dict(tickmode='linear', dtick=1),  # Force integer years
+                        yaxis=dict(rangemode='tozero'),
                         margin=dict(l=50, r=50, t=50, b=50)  # Center the chart
                     )
                     
@@ -1047,6 +1048,7 @@ def main():
                     yaxis_title="Throughput (000 tonnes)",
                     height=400,
                     xaxis=dict(tickmode='linear', dtick=1),  # Force integer years
+                    yaxis=dict(rangemode='tozero'),
                     margin=dict(l=50, r=50, t=50, b=50)  # Center the chart
                 )
                 
@@ -1146,6 +1148,172 @@ def main():
                     st.plotly_chart(fig, use_container_width=True, key="time_series_chart")
 
         with cargo_tab4:
+            st.subheader("🔮 Cargo Volume Forecasting")
+            st.markdown("*The current implementation is conservative and only uses the data range that's consistently available across all datasets (2014-2023)*")
+            
+            # Get forecasting data from cargo analysis
+            forecasting_data = cargo_analysis.get('forecasts', {})
+            
+            if forecasting_data:
+                st.write("**Forecast Summary**")
+                
+                # Calculate overall metrics from all forecasts
+                total_forecasts = 0
+                avg_r2 = 0
+                trend_directions = []
+                
+                for category, category_data in forecasting_data.items():
+                    for column, forecast_info in category_data.items():
+                        if 'model_metrics' in forecast_info:
+                            total_forecasts += 1
+                            avg_r2 += forecast_info['model_metrics'].get('r2', 0)
+                            
+                            # Determine trend direction from slope
+                            slope = forecast_info.get('trend_slope', 0)
+                            if slope > 0.1:
+                                trend_directions.append('increasing')
+                            elif slope < -0.1:
+                                trend_directions.append('decreasing')
+                            else:
+                                trend_directions.append('stable')
+                
+                # Display overall metrics
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.metric("Forecast Categories", len(forecasting_data))
+                
+                with col2:
+                    if total_forecasts > 0:
+                        avg_accuracy = (avg_r2 / total_forecasts) * 100
+                        st.metric("Avg Model Accuracy", f"{avg_accuracy:.1f}%")
+                    else:
+                        st.metric("Avg Model Accuracy", "N/A")
+                
+                with col3:
+                    if trend_directions:
+                        most_common_trend = max(set(trend_directions), key=trend_directions.count)
+                        st.metric("Dominant Trend", most_common_trend.title())
+                    else:
+                        st.metric("Dominant Trend", "N/A")
+                
+                # Display forecasts by category
+                for category, category_data in forecasting_data.items():
+                    if category_data:  # Only show categories with data
+                        st.write(f"**{category.replace('_', ' ').title()} Forecasts**")
+                        
+                        for column, forecast_info in category_data.items():
+                            if 'forecast_years' in forecast_info and 'forecast_values' in forecast_info:
+                                # Create forecast chart
+                                historical_data = forecast_info.get('historical_data', {})
+                                forecast_years = forecast_info.get('forecast_years', [])
+                                forecast_values = forecast_info.get('forecast_values', [])
+                                
+                                if historical_data and forecast_years and forecast_values:
+                                    # Combine historical and forecast data
+                                    hist_years = list(historical_data.keys())
+                                    hist_values = list(historical_data.values())
+                                    
+                                    # Create DataFrame for plotting
+                                    all_years = hist_years + forecast_years
+                                    all_values = hist_values + [None] * len(forecast_years)
+                                    forecast_line = [None] * len(hist_years) + forecast_values
+                                    
+                                    # Create DataFrame for plotting
+                                    chart_df = pd.DataFrame({
+                                        'Year': all_years,
+                                        'Historical': all_values,
+                                        'Forecast': forecast_line
+                                    })
+                                    
+                                    st.write(f"*{column.replace('_', ' ').title()}*")
+                                    
+                                    # Create Plotly chart with proper axis labels
+                                    import plotly.graph_objects as go
+                                    from plotly.subplots import make_subplots
+                                    
+                                    fig = go.Figure()
+                                    
+                                    # Add historical data line
+                                    historical_mask = chart_df['Historical'].notna()
+                                    if historical_mask.any():
+                                        fig.add_trace(go.Scatter(
+                                            x=chart_df.loc[historical_mask, 'Year'],
+                                            y=chart_df.loc[historical_mask, 'Historical'],
+                                            mode='lines+markers',
+                                            name='Historical Data',
+                                            line=dict(color='#1f77b4', width=2),
+                                            marker=dict(size=4)
+                                        ))
+                                    
+                                    # Add forecast data line
+                                    forecast_mask = chart_df['Forecast'].notna()
+                                    if forecast_mask.any():
+                                        fig.add_trace(go.Scatter(
+                                            x=chart_df.loc[forecast_mask, 'Year'],
+                                            y=chart_df.loc[forecast_mask, 'Forecast'],
+                                            mode='lines+markers',
+                                            name='Forecast',
+                                            line=dict(color='#ff7f0e', width=2, dash='dash'),
+                                            marker=dict(size=4)
+                                        ))
+                                    
+                                    # Determine appropriate Y-axis label based on category and column
+                                    y_axis_label = "Volume"
+                                    if 'container' in column.lower() or 'teu' in column.lower():
+                                        y_axis_label = "Volume (TEU)"
+                                    elif 'tonnage' in column.lower() or 'tonnes' in column.lower():
+                                        y_axis_label = "Volume (Tonnes)"
+                                    elif 'shipment' in category.lower():
+                                        y_axis_label = "Shipment Volume (Tonnes)"
+                                    elif 'transport' in category.lower():
+                                        y_axis_label = "Transport Volume (Tonnes)"
+                                    elif 'cargo' in category.lower():
+                                        y_axis_label = "Cargo Volume (Tonnes)"
+                                    else:
+                                        y_axis_label = "Volume (Units)"
+                                    
+                                    # Update layout with proper axis labels
+                                    fig.update_layout(
+                                        title=f"{column.replace('_', ' ').title()} - Historical Data & Forecast",
+                                        xaxis_title="Year",
+                                        yaxis_title=y_axis_label,
+                                        hovermode='x unified',
+                                        showlegend=True,
+                                        height=400,
+                                        margin=dict(l=0, r=0, t=40, b=0),
+                                        xaxis=dict(
+                                            showgrid=True,
+                                            gridwidth=1,
+                                            gridcolor='lightgray'
+                                        ),
+                                        yaxis=dict(
+                                            showgrid=True,
+                                            gridwidth=1,
+                                            gridcolor='lightgray',
+                                            rangemode='tozero'
+                                        )
+                                    )
+                                    
+                                    # Display the chart
+                                    st.plotly_chart(fig, use_container_width=True)
+                                    
+                                    # Show model metrics
+                                    metrics = forecast_info.get('model_metrics', {})
+                                    if metrics:
+                                        metric_col1, metric_col2, metric_col3 = st.columns(3)
+                                        with metric_col1:
+                                            st.caption(f"R² Score: {metrics.get('r2', 0):.3f}")
+                                        with metric_col2:
+                                            st.caption(f"RMSE: {metrics.get('rmse', 0):.1f}")
+                                        with metric_col3:
+                                            slope = forecast_info.get('trend_slope', 0)
+                                            st.caption(f"Trend: {slope:+.1f}/year")
+            else:
+                st.info("No forecasting analysis available")
+                st.warning("Please ensure the cargo analysis module is properly configured.")
+
+        with cargo_tab5:
             st.subheader("🏗️ Port Analytics")
             st.markdown("Throughput and waiting time analysis for port operations")
             

@@ -2765,7 +2765,7 @@ class ConsolidatedScenariosTab:
                 title='TEU Volume Over Time',
                 markers=True
             )
-            fig_teu.update_layout(xaxis_title='Date', yaxis_title='TEU Volume')
+            fig_teu.update_layout(xaxis_title='Date', yaxis_title='TEU Volume', yaxis=dict(rangemode='tozero'))
             st.plotly_chart(fig_teu, use_container_width=True)
         
         with ts_col2:
@@ -2796,6 +2796,7 @@ class ConsolidatedScenariosTab:
     def _render_forecasting_analysis(self) -> None:
         """Render forecasting analysis."""
         st.subheader("🔮 Cargo Volume Forecasting")
+        st.markdown("*The current implementation is conservative and only uses the data range that's consistently available across all datasets (2014-2023)*")
         
         # Generate scenario-aware forecasting data
         import numpy as np
@@ -2868,7 +2869,8 @@ class ConsolidatedScenariosTab:
             title='Cargo Volume Forecast (6 Months)',
             xaxis_title='Date',
             yaxis_title='TEU Volume',
-            hovermode='x unified'
+            hovermode='x unified',
+            yaxis=dict(rangemode='tozero')
         )
         
         st.plotly_chart(fig, use_container_width=True)
@@ -3108,7 +3110,7 @@ class ConsolidatedScenariosTab:
                 title='Import vs Export by Region',
                 barmode='group'
             )
-            fig_trade.update_layout(xaxis_title='Region', yaxis_title='TEU Volume')
+            fig_trade.update_layout(xaxis_title='Region', yaxis_title='TEU Volume', yaxis=dict(rangemode='tozero'))
             st.plotly_chart(fig_trade, use_container_width=True)
         
         with loc_col2:
