@@ -45,9 +45,12 @@ from hk_port_digital_twin.src.utils.data_loader import load_focused_cargo_statis
 from hk_port_digital_twin.src.dashboard.scenario_tab_consolidation import ConsolidatedScenariosTab
 from hk_port_digital_twin.src.dashboard.vessel_charts import render_vessel_analytics_dashboard
 from hk_port_digital_twin.src.dashboard.executive_dashboard import ExecutiveDashboard
+from hk_port_digital_twin.src.analysis.roi_calculator import render_roi_calculator
+from hk_port_digital_twin.src.dashboard import guided_tour
 from hk_port_digital_twin.src.utils.strategic_visualization import StrategicVisualization, render_strategic_controls
 from hk_port_digital_twin.src.core.strategic_simulation_controller import StrategicSimulationController
 from hk_port_digital_twin.src.utils.scenario_aware_calculator import ScenarioAwareCalculator, ValueType, ScenarioType
+from hk_port_digital_twin.src.analysis.roi_calculator import render_roi_calculator
 from hk_port_digital_twin.src.utils.scenario_helpers import get_wait_time_scenario_name
 
 try:
@@ -709,122 +712,154 @@ def main():
     
     with tab1:
         st.subheader("Port Overview")
-        
-        # KPI Summary
-        # Center the forecast chart
-        col1, col2, col3 = st.columns([0.5, 2, 0.5])
-        
-        with col2:
-            # Load real forecast data if available
-            try:
-                if get_enhanced_cargo_analysis is not None:
-                    cargo_analysis = get_enhanced_cargo_analysis()
-                    forecasts = cargo_analysis.get('forecasts', {})
-                else:
-                    forecasts = {}
-            except Exception:
-                forecasts = {}
-            if forecasts:
-                # Convert forecast data to expected format for create_kpi_summary_chart
-                kpi_dict = {}
-                forecast_categories = ['direct_shipment', 'transhipment', 'seaborne', 'river']
+
+        # Placeholders for the guided tour
+        kpi_summary_placeholder = st.empty()
+        key_metrics_placeholder = st.empty()
+        roi_calculator_placeholder = st.empty()
+
+        if st.session_state.get('show_tour', False):
+            guided_tour.show_tour(kpi_summary_placeholder, key_metrics_placeholder, roi_calculator_placeholder)
+        else:
+            # Render the normal content inside the placeholders
+            with kpi_summary_placeholder.container():
+                with st.expander("ℹ️ About this section"):
+                    st.info("""
+                    This section provides a high-level overview of the port's performance, including key performance indicators (KPIs) and real-time metrics. 
+                    The KPI summary chart visualizes historical trends and future forecasts for critical aspects of port operations, offering insights into long-term performance.
+                    The key metrics provide a real-time snapshot of vessel activity and port status, enabling quick assessment of the current situation.
+                    """)
                 
-                for category in forecast_categories:
-                    if category in forecasts:
-                        # Get the first forecast data (assuming it's the main metric)
-                        category_data = forecasts[category]
-                        if category_data:
-                            first_metric = list(category_data.keys())[0]
-                            forecast_info = category_data[first_metric]
-                            
-                            # Ensure years are integers
-                            hist_years = [int(year) for year in forecast_info.get('historical_data', {}).keys()]
-                            hist_values = list(forecast_info.get('historical_data', {}).values())
-                            forecast_years = [int(year) for year in forecast_info.get('forecast_years', [])]
-                            forecast_values = forecast_info.get('forecast_values', [])
-                            
-                            kpi_dict[category] = {
-                                'historical_years': hist_years,
-                                'historical_values': hist_values,
-                                'forecast_years': forecast_years,
-                                'forecast_values': forecast_values
-                            }
+                # KPI Summary
+                # Center the forecast chart
+                col1, col2, col3 = st.columns([0.5, 2, 0.5])
                 
-                # Add model performance data
-                model_performance = {}
-                for category in forecast_categories:
-                    if category in forecasts:
-                        category_data = forecasts[category]
-                        if category_data:
-                            first_metric = list(category_data.keys())[0]
-                            metrics = category_data[first_metric].get('model_metrics', {})
-                            model_performance[category] = {
-                                'r2_score': metrics.get('r2', 0),
-                                'mae': metrics.get('mae', 0)
-                            }
-                
-                kpi_dict['model_performance'] = model_performance
-                create_kpi_summary_chart(kpi_dict)
-            else:
-                # Fallback to sample data if no forecasts available
-                # Calculate dynamic wait time based on current scenario
-                current_scenario = scenario if scenario else 'normal'
-                wait_time_scenario = get_wait_time_scenario_name(current_scenario)
-                
-                if calculate_wait_time:
+                with col2:
+                    # Load real forecast data if available
                     try:
-                        # Calculate a representative average by sampling multiple times
-                        num_samples = 100  # Number of samples for a stable average
-                        wait_times = [calculate_wait_time(wait_time_scenario) for _ in range(num_samples)]
-                        fallback_wait_time = np.mean(wait_times) if wait_times else 8.0
-                    except Exception as e:
-                        logging.warning(f"Error calculating wait time for KPI fallback: {e}")
-                        fallback_wait_time = 8.0  # Default fallback
-                else:
-                    fallback_wait_time = 8.0  # Fallback when calculator not available
+                        if get_enhanced_cargo_analysis is not None:
+                            cargo_analysis = get_enhanced_cargo_analysis()
+                            forecasts = cargo_analysis.get('forecasts', {})
+                        else:
+                            forecasts = {}
+                    except Exception:
+                        forecasts = {}
+                    if forecasts:
+                        # Convert forecast data to expected format for create_kpi_summary_chart
+                        kpi_dict = {}
+                        forecast_categories = ['direct_shipment', 'transhipment', 'seaborne', 'river']
+                        
+                        for category in forecast_categories:
+                            if category in forecasts:
+                                # Get the first forecast data (assuming it's the main metric)
+                                category_data = forecasts[category]
+                                if category_data:
+                                    first_metric = list(category_data.keys())[0]
+                                    forecast_info = category_data[first_metric]
+                                    
+                                    # Ensure years are integers
+                                    hist_years = [int(year) for year in forecast_info.get('historical_data', {}).keys()]
+                                    hist_values = list(forecast_info.get('historical_data', {}).values())
+                                    forecast_years = [int(year) for year in forecast_info.get('forecast_years', [])]
+                                    forecast_values = forecast_info.get('forecast_values', [])
+                                    
+                                    kpi_dict[category] = {
+                                        'historical_years': hist_years,
+                                        'historical_values': hist_values,
+                                        'forecast_years': forecast_years,
+                                        'forecast_values': forecast_values
+                                    }
+                        
+                        # Add model performance data
+                        model_performance = {}
+                        for category in forecast_categories:
+                            if category in forecasts:
+                                category_data = forecasts[category]
+                                if category_data:
+                                    first_metric = list(category_data.keys())[0]
+                                    metrics = category_data[first_metric].get('model_metrics', {})
+                                    model_performance[category] = {
+                                        'r2_score': metrics.get('r2', 0),
+                                        'mae': metrics.get('mae', 0)
+                                    }
+                        
+                        kpi_dict['model_performance'] = model_performance
+                        create_kpi_summary_chart(kpi_dict)
+                    else:
+                        # Fallback to sample data if no forecasts available
+                        # Calculate dynamic wait time based on current scenario
+                        current_scenario = scenario if scenario else 'normal'
+                        wait_time_scenario = get_wait_time_scenario_name(current_scenario)
+                        
+                        if calculate_wait_time:
+                            try:
+                                # Calculate a representative average by sampling multiple times
+                                num_samples = 100  # Number of samples for a stable average
+                                wait_times = [calculate_wait_time(wait_time_scenario) for _ in range(num_samples)]
+                                fallback_wait_time = np.mean(wait_times) if wait_times else 8.0
+                            except Exception as e:
+                                logging.warning(f"Error calculating wait time for KPI fallback: {e}")
+                                fallback_wait_time = 8.0  # Default fallback
+                        else:
+                            fallback_wait_time = 8.0  # Fallback when calculator not available
+                        
+                        kpi_dict = {
+                            'average_waiting_time': fallback_wait_time,
+                            'average_berth_utilization': 0.75,
+                            'total_ships_processed': 85,
+                            'total_containers_processed': 1200,
+                            'average_queue_length': 3
+                        }
+                        create_kpi_summary_chart(kpi_dict)
+
+            with key_metrics_placeholder.container():
+                # Metrics section
+                st.subheader("📊 Key Metrics")
+
+                with st.expander("ℹ️ About this section"):
+                    st.info("""
+                    This section provides a real-time snapshot of the port's key operational metrics. 
+                    These metrics offer immediate insights into vessel traffic, berth availability, and overall port activity, helping to monitor the port's pulse.
+                    """)
                 
-                kpi_dict = {
-                    'average_waiting_time': fallback_wait_time,
-                    'average_berth_utilization': 0.75,
-                    'total_ships_processed': 85,
-                    'total_containers_processed': 1200,
-                    'average_queue_length': 3
-                }
-                create_kpi_summary_chart(kpi_dict)
-        
-        # Metrics section
-        st.subheader("📊 Key Metrics")
-        
-        vessel_analysis = data.get('vessel_queue_analysis', {})
-        col1, col2, col3, col4 = st.columns(4)
+                vessel_analysis = data.get('vessel_queue_analysis', {})
+                col1, col2, col3, col4 = st.columns(4)
 
-        with col1:
-            # Get recent vessel counts for the most recent day with data
-            vessel_counts = get_recent_vessel_counts()
-            st.metric("🚢 Arriving", vessel_counts['arriving'])
-            st.metric("⚓ In Port", vessel_counts['in_port'])
-            st.metric("🛳️ Departing", vessel_counts['departing'])
+                with col1:
+                    # Get recent vessel counts for the most recent day with data
+                    vessel_counts = get_recent_vessel_counts()
+                    st.metric("🚢 Arriving", vessel_counts['arriving'], help="Total number of vessels scheduled to arrive.")
+                    st.metric("⚓ In Port", vessel_counts['in_port'], help="Total number of vessels currently at the port.")
+                    st.metric("🛳️ Departing", vessel_counts['departing'], help="Total number of vessels that have departed.")
 
-        with col2:
-            # Safe access to berths data with fallback
-            berths_df = data.get('berths', pd.DataFrame())
-            if not berths_df.empty and 'status' in berths_df.columns:
-                available_berths = len(berths_df[berths_df['status'] == 'available'])
-            else:
-                available_berths = 0
-            st.metric("Available Berths", available_berths)
+                with col2:
+                    # Safe access to berths data with fallback
+                    berths_df = data.get('berths', pd.DataFrame())
+                    if not berths_df.empty and 'status' in berths_df.columns:
+                        available_berths = len(berths_df[berths_df['status'] == 'available'])
+                    else:
+                        available_berths = 0
+                    st.metric("Available Berths", available_berths, help="Total number of berths currently available.")
 
-        with col3:
-            # Show recent arrivals if available
-            if vessel_analysis and 'recent_activity' in vessel_analysis:
-                arrivals_24h = vessel_analysis['recent_activity'].get('arrivals_last_24h', 0)
-                st.metric("24h Arrivals", arrivals_24h)
-            else:
-                # Show port efficiency metric instead of wait time
-                st.metric("Port Efficiency", "85%")
+                with col3:
+                    # Show recent arrivals if available
+                    if vessel_analysis and 'recent_activity' in vessel_analysis:
+                        arrivals_24h = vessel_analysis['recent_activity'].get('arrivals_last_24h', 0)
+                        st.metric("24h Arrivals", arrivals_24h, help="Total number of vessels that have arrived in the last 24 hours.")
+                    else:
+                        # Show port efficiency metric instead of wait time
+                        st.metric("Port Efficiency", "85%", help="A measure of the port's overall operational effectiveness.")
 
-        with col4:
-            st.metric("Utilization Rate", "75%")
+                with col4:
+                    st.metric("Utilization Rate", "75%", help="The percentage of time that berths are occupied.")
+
+            with roi_calculator_placeholder.container():
+                with st.expander("ℹ️ About the ROI Calculator"):
+                    st.info("""
+                    The ROI Calculator helps you quantify the financial benefits of operational improvements. 
+                    By inputting cost factors and simulating different scenarios, you can estimate potential savings and efficiency gains.
+                    """)
+                render_roi_calculator()
         
  
     
@@ -2168,7 +2203,11 @@ def main():
             st.metric("Last Update", datetime.now().strftime("%H:%M:%S"))
         
         # Reset options
-        st.subheader("🔄 Reset Options")
+        st.subheader("🔄 Reset & Guided Tour")
+
+        if st.button("🚀 Start Guided Tour"):
+            st.session_state.show_tour = True
+            st.experimental_rerun()
         
         reset_col1, reset_col2, reset_col3, reset_col4 = st.columns(4)
         
