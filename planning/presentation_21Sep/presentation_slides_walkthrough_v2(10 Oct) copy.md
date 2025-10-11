@@ -125,24 +125,30 @@ Demonstrate real-time capabilities and the practical application of vibe coding 
 
 ---
 
-### Slide 7: AI-Powered Predictions
-**"Beyond Reporting: Predictive Intelligence"**
+### Slide 7: AI-Powered Strategic Forecasting
+**"From Historical Data to Predictive Strategy"**
 
 **Visual Design:**
-- Split view: Traditional BI chart (simple line graph) vs. AI predictions (complex multi-variable forecast)
-- Predictive charts showing:
-  - Ship arrival forecasts with confidence intervals
-  - Queue length predictions
-  - Processing time estimates
-- AI/ML icons and neural network graphics
-- Color coding: Historical data in gray, predictions in vibrant blue/green
-- Include accuracy metrics ("94% prediction accuracy")
+- Feature the "Cargo Volume Forecasting" chart prominently.
+- Use callouts or animations to highlight key areas of the chart during the presentation:
+  - The clear distinction between "Historical" data and the "Forecast" line.
+  - The "Avg Model Accuracy" metric (e.g., 77.6%), demonstrating a commitment to quantitative validation.
+  - The "Dominant Trend" insight ("Decreasing"), showing the model's ability to provide actionable strategic guidance.
+- Keep AI/ML iconography to reinforce the technical foundation.
 
 **Key Message:**
-AI transforms reactive reporting into proactive intelligence with statistical rigor and business impact.
+Leveraging machine learning to translate historical data into forward-looking, data-driven strategy.
 
 **Script:**
-"Here's where we move beyond traditional BI tools. [Show forecasting section] The system uses machine learning to predict ship arrival patterns, estimate processing times based on vessel characteristics, and forecast queue lengths. These aren't simple trend lines—they're statistical models that account for seasonal patterns, ship types, and historical performance. This predictive capability enables proactive decision-making rather than reactive responses."
+"A key capability of the digital twin is its ability to forecast future trends. This moves us beyond simply looking at historical data and into the realm of predictive strategy.
+
+Here, we see a strategic forecast of cargo volume. We're using time-series models to predict throughput for the coming years based on a decade of historical data. This isn't just a simple trend line; it's a model that has been trained and validated, achieving an average accuracy of nearly 78%. More importantly, it allows us to quantify the dominant trend—in this case, a projected decrease. This is a critical insight for long-term port strategy and investment planning.
+
+**(For the hiring managers and recruiters in the audience):** This demonstrates an end-to-end capability: from data ingestion and cleaning, to model selection and training, to quantitative evaluation, and finally, to the extraction of actionable business insights. It’s the core skillset required to build and deploy data-driven products.
+
+**(For the academics and professors):** While this example shows a high-level strategic forecast, the underlying framework is designed to be extensible. The same methodologies can be applied to create more granular, operational forecasts—such as predicting vessel queue lengths or berth waiting times, which opens up fascinating areas for further research and collaboration.
+
+Ultimately, this predictive capability is what allows a digital twin to become a powerful tool for proactive decision-making, enabling stakeholders to anticipate challenges and opportunities rather than just reacting to them."
 
 ---
 
