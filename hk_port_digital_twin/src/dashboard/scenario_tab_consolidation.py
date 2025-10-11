@@ -2818,13 +2818,25 @@ class ConsolidatedScenariosTab:
             hist_volumes.append(max(0, volume))
         
         # Forecast data (6 months ahead) - scenario-aware
-        forecast_dates = [datetime.now() + timedelta(days=30*i) for i in range(1, 7)]
+        # Start forecast from the last historical date for seamless connection
+        if hist_dates and hist_volumes:
+            last_hist_date = hist_dates[-1]
+            last_hist_volume = hist_volumes[-1]
+        else:
+            last_hist_date = datetime.now()
+            last_hist_volume = base_volume
+        
+        # Create forecast dates starting from the last historical date
+        forecast_dates = [last_hist_date + timedelta(days=30*i) for i in range(0, 7)]
         forecast_volumes = []
+        
+        # Start with the last historical value for seamless connection
+        forecast_volumes.append(last_hist_volume)
         
         # Growth rate based on scenario efficiency
         monthly_growth = 0.01 + (efficiency_factor - 0.75) * 0.02  # Higher efficiency = higher growth
         
-        for i, _ in enumerate(forecast_dates):
+        for i in range(1, 7):  # Start from 1 since we already added the connection point
             trend = base_volume * (1 + monthly_growth * i)
             seasonal = np.sin(i * np.pi / 6) * base_volume * 0.05  # Seasonal variation
             noise = np.random.normal(0, base_volume * 0.02)  # Scenario-aware noise
@@ -2832,29 +2844,47 @@ class ConsolidatedScenariosTab:
         
         # Create forecasting chart
         fig = go.Figure()
-        
-        # Historical data
+
+        # Add historical part of the trace
         fig.add_trace(go.Scatter(
             x=hist_dates,
             y=hist_volumes,
             mode='lines+markers',
-            name='Historical Data',
-            line=dict(color='blue', width=2)
+            line=dict(color='blue', width=2),
+            name='Historical'
         ))
-        
-        # Forecast data
+
+        # Prepare forecast data, avoiding vertical lines
+        plot_forecast_dates = forecast_dates
+        plot_forecast_volumes = forecast_volumes
+
+        # If the forecast starts on the same date as the last historical point,
+        # we skip the first forecast point to avoid a vertical line.
+        if forecast_dates and hist_dates and forecast_dates[0] == hist_dates[-1]:
+            plot_forecast_dates = forecast_dates[1:]
+            plot_forecast_volumes = forecast_volumes[1:]
+
+        # The forecast trace should start from the last historical point for a continuous line
+        if hist_dates:
+            forecast_plot_x = [hist_dates[-1]] + plot_forecast_dates
+            forecast_plot_y = [hist_volumes[-1]] + plot_forecast_volumes
+        else:
+            forecast_plot_x = plot_forecast_dates
+            forecast_plot_y = plot_forecast_volumes
+
+        # Add the forecast data trace
         fig.add_trace(go.Scatter(
-            x=forecast_dates,
-            y=forecast_volumes,
+            x=forecast_plot_x,
+            y=forecast_plot_y,
             mode='lines+markers',
-            name='Forecast',
-            line=dict(color='red', dash='dash', width=2)
+            line=dict(color='red', dash='dash', width=2),
+            name='Forecast'
         ))
-        
-        # Confidence interval (simplified)
+
+        # Confidence interval (simplified) - use continuous forecast data
         upper_bound = [v * 1.1 for v in forecast_volumes]
         lower_bound = [v * 0.9 for v in forecast_volumes]
-        
+
         fig.add_trace(go.Scatter(
             x=forecast_dates + forecast_dates[::-1],
             y=upper_bound + lower_bound[::-1],

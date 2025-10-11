@@ -1210,53 +1210,47 @@ def main():
                                 forecast_values = forecast_info.get('forecast_values', [])
                                 
                                 if historical_data and forecast_years and forecast_values:
-                                    # Combine historical and forecast data
                                     hist_years = list(historical_data.keys())
                                     hist_values = list(historical_data.values())
-                                    
-                                    # Create DataFrame for plotting
-                                    all_years = hist_years + forecast_years
-                                    all_values = hist_values + [None] * len(forecast_years)
-                                    forecast_line = [None] * len(hist_years) + forecast_values
-                                    
-                                    # Create DataFrame for plotting
-                                    chart_df = pd.DataFrame({
-                                        'Year': all_years,
-                                        'Historical': all_values,
-                                        'Forecast': forecast_line
-                                    })
-                                    
-                                    st.write(f"*{column.replace('_', ' ').title()}*")
-                                    
-                                    # Create Plotly chart with proper axis labels
-                                    import plotly.graph_objects as go
-                                    from plotly.subplots import make_subplots
-                                    
+
+                                    # Create a new figure
                                     fig = go.Figure()
+
+                                    # Add the historical data trace
+                                    fig.add_trace(go.Scatter(
+                                        x=hist_years,
+                                        y=hist_values,
+                                        mode='lines+markers',
+                                        line=dict(color='#1f77b4', width=2),
+                                        name='Historical'
+                                    ))
+
+                                    # Prepare forecast data, avoiding vertical lines
+                                    plot_forecast_years = forecast_years
+                                    plot_forecast_values = forecast_values
+
+                                    # If the forecast starts on the same year as the last historical point,
+                                    # we skip the first forecast point to avoid a vertical line.
+                                    if forecast_years and hist_years and forecast_years[0] == hist_years[-1]:
+                                        plot_forecast_years = forecast_years[1:]
+                                        plot_forecast_values = forecast_values[1:]
+
+                                    # The forecast trace should start from the last historical point for a continuous line
+                                    if hist_years:
+                                        forecast_plot_x = [hist_years[-1]] + plot_forecast_years
+                                        forecast_plot_y = [hist_values[-1]] + plot_forecast_values
+                                    else:
+                                        forecast_plot_x = plot_forecast_years
+                                        forecast_plot_y = plot_forecast_values
                                     
-                                    # Add historical data line
-                                    historical_mask = chart_df['Historical'].notna()
-                                    if historical_mask.any():
-                                        fig.add_trace(go.Scatter(
-                                            x=chart_df.loc[historical_mask, 'Year'],
-                                            y=chart_df.loc[historical_mask, 'Historical'],
-                                            mode='lines+markers',
-                                            name='Historical Data',
-                                            line=dict(color='#1f77b4', width=2),
-                                            marker=dict(size=4)
-                                        ))
-                                    
-                                    # Add forecast data line
-                                    forecast_mask = chart_df['Forecast'].notna()
-                                    if forecast_mask.any():
-                                        fig.add_trace(go.Scatter(
-                                            x=chart_df.loc[forecast_mask, 'Year'],
-                                            y=chart_df.loc[forecast_mask, 'Forecast'],
-                                            mode='lines+markers',
-                                            name='Forecast',
-                                            line=dict(color='#ff7f0e', width=2, dash='dash'),
-                                            marker=dict(size=4)
-                                        ))
+                                    # Add the forecast data trace
+                                    fig.add_trace(go.Scatter(
+                                        x=forecast_plot_x,
+                                        y=forecast_plot_y,
+                                        mode='lines+markers',
+                                        line=dict(color='#ff7f0e', dash='dash', width=2),
+                                        name='Forecast'
+                                    ))
                                     
                                     # Determine appropriate Y-axis label based on category and column
                                     y_axis_label = "Volume"
