@@ -4,7 +4,9 @@
       "step": "Understand the Goal",
       "description": [
         "Review the new logic to be implemented and the business or technical reason for it.",
-        "Ask clarifying questions if any part of the request is unclear.",
+        "Ask clarifying questions if you need to, if any part of the request is unclear.",
+        "Look at how the current code works, then propose a solution.",
+        "What could go wrong with your approach? What am I missing?",         
         "Confirm understanding before starting any planning."
       ]
     },

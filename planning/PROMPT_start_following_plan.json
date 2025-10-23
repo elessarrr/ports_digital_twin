@@ -16,6 +16,9 @@
       "description": [
         "Before writing code, inspect the directory and files to check if the intended logic/code already exists.",
         "If the code exists, review to verify it meets current expectations.",
+        "Ask clarifying questions if you need to, if any part of the request is unclear.",
+        "Look at how the current code works, then propose a solution.",
+        "What could go wrong with your approach? What am I missing?",
         "If deficient, update/enhance as needed."
       ]
     },
