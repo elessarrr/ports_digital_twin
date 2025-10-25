@@ -2943,7 +2943,7 @@ class ConsolidatedScenariosTab:
             # Delta based on scenario efficiency
             delta_volume = (scenario_values['efficiency'] - 75) / 5  # Convert efficiency to percentage change
             st.metric(
-                "Total Cargo Volume",
+                "Total Cargo Volume (monthly)",
                 f"{total_volume:,.0f} TEU",
                 delta=f"{delta_volume:.1f}%"
             )
@@ -2953,7 +2953,7 @@ class ConsolidatedScenariosTab:
             total_revenue = total_volume * scenario_values['efficiency'] * 2.5  # Revenue factor
             delta_revenue = (scenario_values['efficiency'] - 75) / 4
             st.metric(
-                "Total Revenue",
+                "Total Revenue (monthly)",
                 f"${total_revenue:,.0f}",
                 delta=f"{delta_revenue:.1f}%"
             )

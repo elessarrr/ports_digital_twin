@@ -33,7 +33,7 @@ The presentation is designed for potential employers and industry professionals,
 Ports can transform from reactive to predictive operations through digital twin technology.
 
 **Script:**
-"Good morning everyone. Ports handle a majority of global trade, which means any improvments would have a compelling impact. 
+"Good morning everyone. Ports handle a majority of global trade, which means any improvments in their operations would have a compelling impact. 
 
 I've built a working digital twin of Hong Kong Port that analyzes vessel patterns and identifies optimization opportunities in real-time. This isn't a concept or prototype—it's a functioning system processing real port data right now.
 
@@ -91,11 +91,11 @@ This represents personal exploration of digital twin technology and demonstrates
 Hong Kong Port faces operational challenges that create optimization opportunities.
 
 **Script:**
-"Hong Kong Port handled 13.7 million containers in 2024, making it one of the world's top ten busiest container ports. Despite being historically efficient, the port faces operational challenges including vessel coordination and berth allocation during peak periods.
+"Hong Kong Port handled 13.7 million containers in 2024, making it one of the world's top ten busiest container ports. However, like every port, there are opportunities for improvement, including vessel waiting times and berth allocation inefficiencies during peak periods.
 
-The port has been facing increased competition, with throughput declining from over 22 million containers a decade ago. Vessel arrival clustering, berth allocation inefficiencies, and cargo handling coordination create operational challenges.
+These aren't random problems—they're predictable patterns. Industry studies show that even highly efficient ports experience delays during peak periods due to the complexity of coordinating thousands of vessel movements, cargo operations, and resource allocations.
 
-But here's the opportunity: these patterns are predictable, which means they can be optimized through better data analysis. That's where digital twins becomes transformative."
+Here's the opportunity: these patterns are predictable, which means they can be optimized through better data analysis. That's where digital twins becomes transformative."
 
 **Design Notes:**
 - **CRITICAL**: Use ONLY these numbers: "13.7M TEU in 2024" and "22M+ a decade ago"
@@ -151,11 +151,12 @@ The dashboard transforms complex port data into actionable insights for operator
 **Script:**
 [Live demonstration of the dashboard, highlighting:]
 
-"Here you can see vessel positions and movements around Hong Kong Port, processed from publicly available Marine Department data that updates every 20 minutes. The system tracks arrival patterns and berth utilization.
+"Here you can see vessel positions at Hong Kong Port, processed from publicly available Marine Department data that updates every 36 hours. 
+
+The scenario simulation feature allows testing different operational strategies—for example, what happens if we prioritize larger vessels or adjust berth allocation algorithms? This is where the digital twin becomes a decision support tool, not just a monitoring system.
 
 The predictive models identify vessels that may experience delays based on current traffic patterns and historical data. Port operators could use this information to proactively adjust berth assignments and optimize vessel scheduling.
-
-The scenario simulation feature allows testing different operational strategies—for example, what happens if we prioritize larger vessels or adjust berth allocation algorithms? This is where the digital twin becomes a decision support tool, not just a monitoring system."
+"
 
 **Design Notes:**
 - Ensure backup screenshots are ready and easily accessible
@@ -247,7 +248,7 @@ The system reveals actionable patterns that enable operational improvements.
 **Script:**
 "The analysis reveals several actionable patterns. Vessel arrivals cluster predictably around specific time windows, creating preventable congestion. The predictive models can forecast potential delays several hours in advance—providing sufficient lead time for meaningful operational adjustments.
 
-The system identifies optimization opportunities in berth allocation and vessel scheduling. These represent tangible improvement potential based on analyzing actual port operational data and identifying inefficiency patterns."
+The system can identify optimization opportunities in berth allocation and vessel scheduling. These represent tangible improvement potential based on analyzing actual port operational data and identifying inefficiency patterns."
 
 **Design Notes:**
 - **CRITICAL**: Do NOT show "75-80% accuracy", specific savings amounts, or exact hour predictions
@@ -316,7 +317,7 @@ These aren't theoretical benefits—they represent identifiable inefficiencies i
 The solution is designed for practical implementation with clear scaling pathways.
 
 **Script:**
-"This isn't just a proof of concept—it's designed with practical implementation in mind. The modular architecture allows phased deployment, starting with existing data sources and gradually integrating real-time sensors and automated systems.
+"This tool was designed with practical implementation in mind. The modular architecture allows phased deployment, starting with existing data sources and gradually integrating real-time sensors and automated systems.
 
 The technology stack is proven and widely used in industry, the algorithms are tested with real data, and the approach is replicable. A port authority interested in this methodology could adapt it to their specific operational context."
 
@@ -345,11 +346,11 @@ The technology stack is proven and widely used in industry, the algorithms are t
 Digital transformation in ports isn't optional—it's essential for competitive advantage.
 
 **Script:**
-"The maritime industry is at an inflection point. Global trade volumes continue growing while port infrastructure remains constrained. Traditional reactive management approaches struggle to keep pace with increasing complexity.
+"Global trade volumes continue growing while port infrastructure remains constrained. It is becoming more challenging to keep pace with the increasing complexity.
 
-Digital twins represent an evolution in port operations—enabling predictive rather than reactive management, optimizing existing infrastructure rather than requiring massive capital investment, and providing competitive advantages through operational intelligence.
+Digital twins represent an evolution in port operations—enabling predictive rather than reactive management, optimizing existing infrastructure rather than requiring massive capital investment, and providing competitive advantages through operational intelligence. 
 
-The question isn't whether ports will adopt digital twin technology, but which organizations will lead this transformation and capture the advantages of data-driven optimization."
+The question isn't whether digital twins technology will be adopted, but rather which organizations will lead this transformation and capture the advantages of data-driven optimization."
 
 **Design Notes:**
 - Clear visual contrast between "old way" and "new way"
@@ -381,11 +382,11 @@ The question isn't whether ports will adopt digital twin technology, but which o
 What we've built demonstrates the complete technical foundation for a true digital twin - the remaining steps are infrastructure access, not capability gaps.
 
 **Script:**
-"Let me be transparent about what we've accomplished versus what constitutes a comprehensive digital twin. What you've seen today includes real-time data integration, predictive modeling, optimization algorithms, and scenario testing capabilities.
+"Let me be also be clear about what we've accomplished versus what constitutes a comprehensive digital twin. What you've seen today includes real-time data integration, predictive modeling, optimization algorithms, and scenario testing capabilities.
 
 To make this a complete digital twin, we'd need two additions: direct sensor integration from vessels and port equipment, and bi-directional control capabilities for automated optimization.
 
-Unfortunately, Hong Kong Port Authority declined my request to install sensors on all incoming ships and grant me operational control.
+Unfortunately, Hong Kong Port Authority declined my request to install sensors on all incoming ships and grant me operational control of their facilities.
 
 But here's what matters: we've solved the complex technical challenges. The sensor integration and control interfaces would be straightforward additions to this proven architecture. Anyone with operational access could follow this framework to implement a comprehensive digital twin solution."
 
