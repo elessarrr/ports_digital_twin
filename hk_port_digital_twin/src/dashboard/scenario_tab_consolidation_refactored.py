@@ -8,6 +8,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from typing import Dict, Any, Optional, List
+import asyncio
 
 # Fallback for missing modules
 try:
@@ -32,10 +33,25 @@ class ScenarioData:
         """
         return _self._generate_all_scenario_values()
 
+    @st.cache_data
+    async def get_all_scenario_values_async(_self) -> Dict[str, Any]:
+        """
+        Retrieves all scenario values asynchronously.
+        """
+        return await _self._generate_all_scenario_values_async()
+
     def _generate_all_scenario_values(self) -> Dict[str, Any]:
         """
         Generates a dictionary of all scenario values based on the current scenario.
         """
+        return self._generate_scenario_values(self.scenario_name, list(self.params.keys()))
+
+    async def _generate_all_scenario_values_async(self) -> Dict[str, Any]:
+        """
+        Generates a dictionary of all scenario values asynchronously.
+        """
+        # Simulate an async operation
+        await asyncio.sleep(0.1)
         return self._generate_scenario_values(self.scenario_name, list(self.params.keys()))
 
     def _get_scenario_performance_params(self, scenario_key: str) -> Dict[str, Any]:
@@ -97,55 +113,49 @@ class ScenarioRenderer:
     def __init__(self, scenario_data: ScenarioData):
         self.scenario_data = scenario_data
 
-    def render(self) -> None:
+    async def render(self) -> None:
         """
         Renders the entire consolidated scenarios tab.
         """
-        self._render_key_metrics()
-        self._render_throughput_analysis()
-        self._render_waiting_time_analysis()
-        self._render_performance_metrics()
+        scenario_values = await self.scenario_data.get_all_scenario_values_async()
 
-    def _render_key_metrics(self) -> None:
+        with st.expander("Key Metrics", expanded=True):
+            self._render_key_metrics(scenario_values)
+        with st.expander("Throughput Analysis"):
+            self._render_throughput_analysis(scenario_values)
+        with st.expander("Waiting Time Analysis"):
+            self._render_waiting_time_analysis(scenario_values)
+        with st.expander("Performance Metrics"):
+            self._render_performance_metrics(scenario_values)
+
+    def _render_key_metrics(self, scenario_values: Dict[str, Any]) -> None:
         """
         Renders the key metrics section.
         """
         st.markdown("#### Key Metrics")
-        scenario_values = self.scenario_data.get_all_scenario_values()
 
-        self._render_key_metrics(scenario_values)
-        self._render_throughput_analysis(scenario_values)
-        self._render_waiting_time_analysis(scenario_values)
-        self._render_performance_metrics(scenario_values)
-
-    def _render_key_metrics(self, scenario_values: Dict[str, Any]):
-        """Renders the key metrics section."""
         col1, col2 = st.columns(2)
         col1.metric("Throughput", f"{scenario_values.get('throughput', 0):.2f}")
         col2.metric("Utilization", f"{scenario_values.get('utilization', 0):.2f}")
 
-    def _render_throughput_analysis(self) -> None:
+    def _render_throughput_analysis(self, scenario_values: Dict[str, Any]) -> None:
         """
         Renders the throughput analysis section.
         """
         st.markdown("#### Throughput Analysis")
-        throughput_data = self.scenario_data._generate_scenario_values(
-            self.scenario_data.scenario_name, ["throughput"], count=30
-        )["throughput"]
+        throughput_data = scenario_values.get("throughput", np.random.rand(30) * 1.2)
 
         df = pd.DataFrame({"Day": range(30), "Throughput": throughput_data})
 
         fig = px.line(df, x="Day", y="Throughput", title="Throughput Over Time")
         st.plotly_chart(fig, use_container_width=True)
 
-    def _render_waiting_time_analysis(self) -> None:
+    def _render_waiting_time_analysis(self, scenario_values: Dict[str, Any]) -> None:
         """
         Renders the waiting time analysis section.
         """
         st.markdown("#### Waiting Time Analysis")
-        waiting_time_data = self.scenario_data._generate_scenario_values(
-            self.scenario_data.scenario_name, ["waiting_time"], count=100
-        ).get("waiting_time", np.random.rand(100) * 30)
+        waiting_time_data = scenario_values.get("waiting_time", np.random.rand(100) * 30)
 
         fig = px.histogram(waiting_time_data, nbins=20, title="Waiting Time Distribution")
         st.plotly_chart(fig, use_container_width=True)
@@ -154,6 +164,12 @@ class ScenarioRenderer:
         """Renders a radar chart for consolidated performance indicators."""
         st.subheader("Consolidated Performance Indicators")
 
+        fig = self._create_performance_radar_chart(scenario_values)
+        st.plotly_chart(fig, use_container_width=True)
+
+    @st.cache_data
+    def _create_performance_radar_chart(_self, scenario_values: Dict[str, Any]) -> go.Figure:
+        """Creates a radar chart for consolidated performance indicators."""
         # Define the categories for the radar chart
         categories = [
             'throughput', 'utilization', 'revenue', 'handling_time', 'queue_length'
@@ -182,7 +198,7 @@ class ScenarioRenderer:
             showlegend=False
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        return fig
 
 
 class ConsolidatedScenariosTab:
@@ -193,16 +209,16 @@ class ConsolidatedScenariosTab:
     def __init__(self):
         pass
 
-    def render(self, scenario_data: Optional[Dict[str, Any]] = None) -> None:
+    async def render(self, scenario_data: Optional[Dict[str, Any]] = None) -> None:
         st.markdown("### 📊 Consolidated Scenarios Dashboard")
         scenario_name = st.selectbox("Select Scenario", ["Normal Operations", "Peak Season", "Low Season"])
 
         if scenario_name:
             data_provider = ScenarioData(scenario_name)
             renderer = ScenarioRenderer(data_provider)
-            renderer.render()
+            await renderer.render()
 
 def render_consolidated_scenarios_tab(scenario_data: Optional[Dict[str, Any]] = None) -> None:
     """Convenience function to render the consolidated scenarios tab."""
     tab = ConsolidatedScenariosTab()
-    tab.render(scenario_data)
+    asyncio.run(tab.render(scenario_data))
