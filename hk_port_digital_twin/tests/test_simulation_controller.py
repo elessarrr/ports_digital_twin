@@ -5,12 +5,12 @@ import time
 import threading
 from unittest.mock import Mock, patch, MagicMock
 
-from src.core.simulation_controller import SimulationController, SimulationState
-from src.core.port_simulation import PortSimulation
-from src.utils.metrics_collector import MetricsCollector
-from src.core.ship_manager import Ship, ShipState
-from src.core.berth_manager import BerthManager
-from src.core.container_handler import ContainerHandler
+from hk_port_digital_twin.src.core.simulation_controller import SimulationController, SimulationState
+from hk_port_digital_twin.src.core.port_simulation import PortSimulation
+from hk_port_digital_twin.src.utils.metrics_collector import MetricsCollector
+from hk_port_digital_twin.src.core.ship_manager import Ship, ShipState
+from hk_port_digital_twin.src.core.berth_manager import BerthManager
+from hk_port_digital_twin.src.core.container_handler import ContainerHandler
 
 
 class TestSimulationController(unittest.TestCase):

@@ -23,15 +23,8 @@ from unittest.mock import patch, MagicMock
 import importlib.util
 
 # Add the src directory to the path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-
-try:
-    from utils.wait_time_calculator import WaitTimeCalculator, calculate_wait_time
-    WAIT_TIME_AVAILABLE = True
-except ImportError:
-    WAIT_TIME_AVAILABLE = False
-    WaitTimeCalculator = None
-    calculate_wait_time = None
+from hk_port_digital_twin.src.utils.wait_time_calculator import WaitTimeCalculator, calculate_wait_time
+WAIT_TIME_AVAILABLE = True
 
 
 class TestWaitTimeCalculatorIntegration(unittest.TestCase):
@@ -46,7 +39,7 @@ class TestWaitTimeCalculatorIntegration(unittest.TestCase):
     def test_dashboard_integration_import(self):
         """Test that the dashboard can import wait time calculator components."""
         # Test importing from dashboard context
-        dashboard_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'dashboard', 'streamlit_app.py')
+        dashboard_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'dashboard', 'streamlit_app_v2.py')
         
         if os.path.exists(dashboard_path):
             # Verify the import statements work

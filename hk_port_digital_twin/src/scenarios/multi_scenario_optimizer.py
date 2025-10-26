@@ -66,6 +66,7 @@ sys.path.insert(0, str(current_dir))
 try:
     from optimization import BerthAllocationOptimizer, Ship, Berth, OptimizationResult
     from data_loader import load_port_cargo_statistics, get_time_series_data
+    from src.dashboard.utils.rendering_optimization import efficient_groupby
     from scenario_parameters import (
         ScenarioParameters, ALL_SCENARIOS, get_scenario_parameters,
         PEAK_SEASON_PARAMETERS, NORMAL_OPERATIONS_PARAMETERS, LOW_SEASON_PARAMETERS
@@ -197,7 +198,7 @@ class MultiScenarioOptimizer:
         try:
             # Extract monthly statistics
             cargo_data['month'] = pd.to_datetime(cargo_data['date']).dt.month
-            monthly_stats = cargo_data.groupby('month').agg({
+            monthly_stats = efficient_groupby(cargo_data, 'month', {
                 'throughput': ['mean', 'std', 'count']
             }).to_dict()
             

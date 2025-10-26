@@ -8,7 +8,8 @@ def get_wait_time_scenario_name(scenario_key: str) -> str:
     Returns:
         The corresponding wait time scenario name ('Peak Season', 'Normal Operations', 'Low Season').
     """
-    # Normalize by removing emojis and stripping whitespace
+    if not isinstance(scenario_key, str):
+        raise TypeError("scenario_key must be a string")
     normalized_key = scenario_key.split(' ')[0].strip().lower()
     
     mapping = {

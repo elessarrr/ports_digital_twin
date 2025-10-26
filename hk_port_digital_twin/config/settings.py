@@ -94,12 +94,15 @@ SIMULATION_CONFIG = {
     'use_historical_parameters': True,  # Enable historical data-driven parameters
 }
 
-def get_enhanced_simulation_config():
+def get_enhanced_simulation_config(scenario_name: str = "Normal Operations"):
     """Get simulation configuration enhanced with historical data patterns.
     
     This function combines the base SIMULATION_CONFIG with parameters extracted
     from 14+ years of historical Hong Kong port data to create more realistic
     simulation scenarios.
+    
+    Args:
+        scenario_name (str): The name of the scenario to load historical data for.
     
     Returns:
         Dict: Enhanced simulation configuration with historical patterns
@@ -115,7 +118,7 @@ def get_enhanced_simulation_config():
         from hk_port_digital_twin.src.utils.data_loader import extract_historical_simulation_parameters
         
         # Extract historical parameters
-        historical_params = extract_historical_simulation_parameters()
+        historical_params = extract_historical_simulation_parameters(scenario_name)
         
         if historical_params:
             # Update ship arrival rate with historical data

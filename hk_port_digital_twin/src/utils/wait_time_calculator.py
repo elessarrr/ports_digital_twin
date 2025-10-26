@@ -127,16 +127,25 @@ class WaitTimeCalculator:
             ScenarioType.PEAK.value: {
                 "min_hours": 12,
                 "max_hours": 24,
+                "mean_hours": 18,
+                "std_hours": 4,
+                "distribution": "lognormal",
                 "description": "High congestion, long wait times (e.g., holiday season)",
             },
             ScenarioType.NORMAL.value: {
                 "min_hours": 6,
-                "max_hours": 11,
+                "max_hours": 12,  # Corrected value
+                "mean_hours": 8.5,
+                "std_hours": 2,
+                "distribution": "lognormal",
                 "description": "Standard operational conditions",
             },
             ScenarioType.LOW.value: {
                 "min_hours": 1,
                 "max_hours": 5,
+                "mean_hours": 3,
+                "std_hours": 1,
+                "distribution": "lognormal",
                 "description": "Low congestion, minimal wait times (e.g., off-season)",
             }
         }
@@ -160,7 +169,8 @@ class WaitTimeCalculator:
     
     def calculate_wait_time(self,
                           scenario: str,
-                          num_samples: int = 1) -> Union[float, np.ndarray]:
+                          num_samples: int = 1,
+                          multiplier: float = 1.0) -> Union[float, np.ndarray]:
         """
         Calculate wait time(s) for a given scenario.
 
@@ -175,6 +185,8 @@ class WaitTimeCalculator:
             raise ValueError("scenario must be a non-empty string")
         if not isinstance(num_samples, int) or num_samples < 1:
             raise ValueError("num_samples must be a positive integer")
+        if not isinstance(multiplier, (int, float)) or multiplier < 0:
+            raise ValueError("multiplier must be a non-negative number")
         if scenario not in [s.value for s in ScenarioType]:
             raise ValueError(f"Unknown scenario: {scenario}")
 
@@ -187,6 +199,7 @@ class WaitTimeCalculator:
             logger.error(f"Error in calculation: {e}, falling back to default.")
             wait_times = np.random.uniform(4, 12, num_samples)
 
+        wait_times *= multiplier
         wait_times = np.clip(wait_times, 0.1, 100.0)
 
         result = float(wait_times[0]) if num_samples == 1 else wait_times

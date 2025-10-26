@@ -1,6 +1,6 @@
-# Last updated: 2025-08-23 - Force refresh for simpy dependency
 streamlit
 pandas
+simpy==4.1.1
 plotly
 watchdog
 requests

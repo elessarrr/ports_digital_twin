@@ -7,6 +7,7 @@ This module provides functions to load and process various data sources includin
 - Port berth configurations
 """
 
+import streamlit as st
 import pandas as pd
 import numpy as np
 import os
@@ -19,6 +20,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import xml.etree.ElementTree as ET
 import warnings
+
 import threading
 import time
 from dataclasses import dataclass
@@ -65,6 +67,9 @@ VESSEL_XML_FILES = [
     'Expected_departures.xml'
 ]
 
+import streamlit as st
+
+@st.cache_data
 def load_container_throughput() -> pd.DataFrame:
     """Load and process container throughput time series data.
     
@@ -116,6 +121,7 @@ def load_container_throughput() -> pd.DataFrame:
         logger.error(f"Error loading container throughput data: {e}")
         return pd.DataFrame()
 
+@st.cache_data
 def load_annual_container_throughput() -> pd.DataFrame:
     """Load annual container throughput summary data.
     
@@ -150,6 +156,7 @@ def load_annual_container_throughput() -> pd.DataFrame:
         logger.error(f"Error loading annual container throughput data: {e}")
         return pd.DataFrame()
 
+@st.cache_data
 def load_port_cargo_statistics(focus_tables: Optional[List[str]] = None) -> Dict[str, pd.DataFrame]:
     """Load port cargo statistics from multiple CSV files.
     
@@ -193,6 +200,7 @@ def load_port_cargo_statistics(focus_tables: Optional[List[str]] = None) -> Dict
         logger.error(f"Error loading port cargo statistics: {e}")
         return {}
 
+@st.cache_data
 def load_focused_cargo_statistics() -> Dict[str, pd.DataFrame]:
     """Load only Tables 1 & 2 for focused time series analysis.
     
@@ -201,6 +209,7 @@ def load_focused_cargo_statistics() -> Dict[str, pd.DataFrame]:
     """
     return load_port_cargo_statistics(focus_tables=['Table_1_Eng', 'Table_2_Eng'])
 
+@st.cache_data
 def get_time_series_data(cargo_stats: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
     """Extract and format time series data from Tables 1 & 2.
     
@@ -258,6 +267,7 @@ def get_time_series_data(cargo_stats: Dict[str, pd.DataFrame]) -> Dict[str, pd.D
         logger.error(f"Error generating time series data: {e}")
         return {}
 
+@st.cache_data
 def forecast_cargo_throughput(time_series_data: Dict[str, pd.DataFrame], forecast_years: int = 3) -> Dict[str, Dict]:
     """Generate forecasts for cargo throughput using linear regression.
     
@@ -325,6 +335,9 @@ def forecast_cargo_throughput(time_series_data: Dict[str, pd.DataFrame], forecas
         logger.error(f"Error generating forecasts: {e}")
         return {}
 
+from hk_port_digital_twin.src.dashboard.utils.rendering_optimization import optimized_computation
+
+@optimized_computation(key="enhanced_cargo_analysis")
 def get_enhanced_cargo_analysis() -> Dict[str, any]:
     """Enhanced cargo analysis focusing on Tables 1 & 2 with time series insights.
     
@@ -1323,132 +1336,100 @@ def load_all_vessel_data_with_backups(include_backups: bool = True, max_backup_f
     """
     vessel_data = {}
     
-    # First, load current data from main directory
-    current_data = load_all_vessel_data()
-    vessel_data.update(current_data)
-    
-    if not include_backups:
-        return vessel_data
-    
-    # Load backup files for comprehensive historical analysis
-    backup_dir = VESSEL_DATA_DIR / 'vessel_data' / 'backups'
-    
-    if not backup_dir.exists():
-        logger.warning(f"Backup directory not found: {backup_dir}")
-        return vessel_data
-    
-    try:
-        # Group backup files by type
-        backup_files_by_type = {}
-        for backup_file in backup_dir.glob('*.xml'):
-            # Extract base file name (e.g., "Arrived_in_last_36_hours" from "Arrived_in_last_36_hours_20251004_162316.xml")
-            file_name = backup_file.name
-            for base_file in VESSEL_XML_FILES:
-                base_name = base_file.replace('.xml', '')
-                if file_name.startswith(base_name + '_'):
-                    if base_name not in backup_files_by_type:
-                        backup_files_by_type[base_name] = []
-                    backup_files_by_type[base_name].append(backup_file)
-                    break
+    # Consolidate all file paths (main and backup)
+    all_files = []
+    for xml_file in VESSEL_XML_FILES:
+        file_path = VESSEL_DATA_DIR / xml_file
+        if file_path.exists():
+            all_files.append(file_path)
+
+    if include_backups:
+        backup_dir = VESSEL_DATA_DIR / 'vessel_data' / 'backups'
+        if backup_dir.exists():
+            all_files.extend(backup_dir.glob('*.xml'))
+        else:
+            logger.warning(f"Backup directory not found: {backup_dir}")
+
+    # Group files by their base name to process them together
+    files_by_type = {}
+    for f in all_files:
+        file_name = f.name
+        base_name_found = False
+        for base_file in VESSEL_XML_FILES:
+            base_name = base_file.replace('.xml', '')
+            if file_name.startswith(base_name):
+                if base_name not in files_by_type:
+                    files_by_type[base_name] = []
+                files_by_type[base_name].append(f)
+                base_name_found = True
+                break
+        if not base_name_found:
+            # This can happen for files that are not part of the main vessel data types, like temp files.
+            # Let's log it but not as a warning unless we expect it to be processed.
+            pass
+
+    total_records_loaded = 0
+    # Process each file type
+    for base_name, file_list in files_by_type.items():
+        # Sort files by modification time (newest first) to prioritize recent data
+        file_list.sort(key=lambda x: x.stat().st_mtime, reverse=True)
+
+        # Limit the number of files if max_backup_files is specified
+        files_to_process = file_list
+        if max_backup_files is not None:
+            files_to_process = file_list[:max_backup_files]
+            logger.info(f"Processing {len(files_to_process)} files for {base_name} (limited to {max_backup_files})")
+        else:
+            logger.info(f"Processing {len(files_to_process)} files for {base_name} (unlimited)")
+
+        # Load dataframes from files
+        dataframes = []
+        for file_path in files_to_process:
+            try:
+                df = load_vessel_data_from_xml(file_path)
+                if not df.empty:
+                    # Add metadata for context
+                    df['source_file'] = file_path.name
+                    df['backup_timestamp'] = pd.to_datetime(file_path.stat().st_mtime, unit='s')
+                    dataframes.append(df)
+            except Exception as e:
+                logger.warning(f"Error loading backup file {file_path.name}: {e}")
+                continue
         
-        # Load backup files (most recent first, limited by max_backup_files if specified)
-        total_backup_records = 0
-        for base_name, backup_files in backup_files_by_type.items():
-            # Sort by modification time (newest first) and limit if specified
-            backup_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
-            if max_backup_files is not None:
-                backup_files = backup_files[:max_backup_files]
-                logger.info(f"Loading {len(backup_files)} most recent backup files for {base_name} (limited to {max_backup_files})")
-            else:
-                logger.info(f"Loading all {len(backup_files)} backup files for {base_name} (unlimited mode)")
-            
-            backup_dataframes = []
-            processed_files = 0
-            
-            for backup_file in backup_files:
-                try:
-                    df = load_vessel_data_from_xml(backup_file)
-                    if not df.empty:
-                        # Add metadata about the backup file
-                        df['backup_file'] = backup_file.name
-                        df['backup_timestamp'] = pd.to_datetime(backup_file.stat().st_mtime, unit='s')
-                        backup_dataframes.append(df)
-                        processed_files += 1
-                        total_backup_records += len(df)
-                        
-                        # Memory management: periodically combine and deduplicate to prevent memory buildup
-                        if len(backup_dataframes) >= 20:  # Process in batches of 20 files
-                            logger.info(f"Processing batch of {len(backup_dataframes)} files for {base_name} "
-                                      f"({processed_files}/{len(backup_files)} files processed)")
-                            
-                            # Combine current batch
-                            batch_df = pd.concat(backup_dataframes, ignore_index=True)
-                            
-                            # Quick deduplication within batch to reduce memory usage
-                            if 'call_sign' in batch_df.columns:
-                                batch_df = batch_df.drop_duplicates(subset=['call_sign'], keep='first')
-                            
-                            # Replace the list with the combined batch
-                            backup_dataframes = [batch_df]
-                        
-                except Exception as e:
-                    logger.warning(f"Error loading backup file {backup_file.name}: {e}")
-                    continue
-            
-            if backup_dataframes:
-                # Combine all backup data for this file type
-                combined_backup_df = pd.concat(backup_dataframes, ignore_index=True)
-                
-                # Enhanced deduplication logic to handle overlapping vessel records
-                # Build comprehensive deduplication columns based on available data
-                duplicate_columns = []
-                
-                # Primary vessel identifiers (in order of preference)
-                for col in ['call_sign', 'vessel_name', 'imo_number']:
-                    if col in combined_backup_df.columns and not combined_backup_df[col].isna().all():
-                        duplicate_columns.append(col)
-                        break  # Use the first available primary identifier
-                
-                # Add temporal identifiers to distinguish different visits
-                for col in ['arrival_time', 'departure_time', 'timestamp']:
-                    if col in combined_backup_df.columns and not combined_backup_df[col].isna().all():
-                        duplicate_columns.append(col)
-                        break  # Use the first available temporal identifier
-                
-                # Add location/status to further distinguish records
-                for col in ['current_location', 'location', 'status']:
-                    if col in combined_backup_df.columns and not combined_backup_df[col].isna().all():
-                        duplicate_columns.append(col)
-                        break
-                
-                # Fallback: if no good identifiers found, use all available columns
-                if not duplicate_columns:
-                    duplicate_columns = [col for col in combined_backup_df.columns 
-                                       if col not in ['backup_file', 'backup_timestamp']]
-                
-                # Remove duplicates, keeping the most recent record (first after sorting by backup_timestamp)
-                combined_backup_df = combined_backup_df.sort_values('backup_timestamp', ascending=False)
-                initial_count = len(combined_backup_df)
-                combined_backup_df = combined_backup_df.drop_duplicates(
-                    subset=duplicate_columns, 
-                    keep='first'
-                )
-                final_count = len(combined_backup_df)
-                
-                logger.info(f"Deduplication for {base_name}: {initial_count} -> {final_count} records "
-                          f"(removed {initial_count - final_count} duplicates using columns: {duplicate_columns})")
-                
-                backup_key = f"{base_name}_with_backups.xml"
-                vessel_data[backup_key] = combined_backup_df
-                total_backup_records += len(combined_backup_df)
-                
-                logger.info(f"Loaded {len(combined_backup_df)} unique vessels from {len(backup_files)} backup files for {base_name}")
+        if not dataframes:
+            logger.info(f"No data loaded for {base_name}. Skipping.")
+            continue
+
+        # Combine all dataframes for this type
+        combined_df = pd.concat(dataframes, ignore_index=True)
+        initial_count = len(combined_df)
+
+        # Simplified and more robust deduplication
+        # Sort by timestamp to ensure we keep the most recent record
+        combined_df = combined_df.sort_values('backup_timestamp', ascending=False)
         
-        logger.info(f"Successfully loaded {total_backup_records} total records from backup files")
-        
-    except Exception as e:
-        logger.error(f"Error loading backup vessel data: {e}")
-    
+        # Use 'call_sign' as the primary key for deduplication if available
+        dedup_subset = ['call_sign']
+        if 'call_sign' not in combined_df.columns or combined_df['call_sign'].isna().all():
+            # Fallback to a combination of other columns if call_sign is not reliable
+            dedup_subset = ['vessel_name', 'arrival_time', 'departure_time']
+            # Ensure fallback columns exist
+            dedup_subset = [col for col in dedup_subset if col in combined_df.columns]
+
+        if dedup_subset:
+            # drop_duplicates is slow on large dataframes. Let's make sure we have a key.
+            combined_df = combined_df.drop_duplicates(subset=dedup_subset, keep='first')
+            final_count = len(combined_df)
+            logger.info(f"Deduplication for {base_name}: {initial_count} -> {final_count} records (removed {initial_count - final_count})")
+        else:
+            logger.warning(f"Could not find suitable columns for deduplication for {base_name}")
+            final_count = initial_count
+
+        vessel_data[f"{base_name}.xml"] = combined_df
+        total_records_loaded += final_count
+        logger.info(f"Loaded {final_count} unique vessels for {base_name}")
+
+    logger.info(f"Successfully loaded a total of {total_records_loaded} unique records from all sources.")
     return vessel_data
 
 
@@ -2832,6 +2813,7 @@ def _analyze_modal_split_trends(data: pd.DataFrame) -> Dict[str, any]:
         data_copy = data.copy()
         data_copy['seaborne_pct'] = (data_copy['seaborne_teus'] / data_copy['total_teus']) * 100
         data_copy['river_pct'] = (data_copy['river_teus'] / data_copy['total_teus']) * 100
+        data_copy.fillna(0, inplace=True)
         
         # Trend analysis for modal split
         seaborne_trend = _analyze_time_series_trends(data_copy['seaborne_pct'].dropna())
@@ -3378,18 +3360,22 @@ def load_berth_configurations() -> List[Dict]:
             return []
 
 
-def extract_historical_simulation_parameters() -> Dict[str, any]:
+def extract_historical_simulation_parameters(scenario_name: str = "Normal Operations") -> Dict[str, any]:
     """Extract realistic simulation parameters from 14+ years of historical data.
     
     This function analyzes historical container throughput and cargo statistics
     to derive realistic simulation parameters that reflect actual Hong Kong port
     operational patterns and seasonal variations.
     
+    Args:
+        scenario_name (str): The name of the scenario to tailor parameters for.
+                             (Currently a placeholder for future enhancement).
+
     Returns:
         Dict containing enhanced simulation parameters based on historical data
     """
     try:
-        logger.info("Extracting simulation parameters from historical data...")
+        logger.info(f"Extracting simulation parameters for scenario: {scenario_name}...")
         
         # Load historical data
         throughput_data = load_container_throughput()

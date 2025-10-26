@@ -6,7 +6,7 @@ including ship creation, state transitions, and queue management.
 
 import pytest
 import simpy
-from src.core.ship_manager import Ship, ShipManager, ShipState
+from hk_port_digital_twin.src.core.ship_manager import Ship, ShipManager, ShipState
 
 
 class TestShip:

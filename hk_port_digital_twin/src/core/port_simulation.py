@@ -17,67 +17,51 @@ import os
 from typing import Dict, List, Optional
 from datetime import datetime
 
-# Add project root to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-from config.settings import SIMULATION_CONFIG, SHIP_TYPES, BERTH_CONFIGS, get_enhanced_simulation_config
-from src.core.ship_manager import ShipManager, Ship
-from src.core.berth_manager import BerthManager
-from src.core.container_handler import ContainerHandler
+from hk_port_digital_twin.config.settings import SIMULATION_CONFIG, SHIP_TYPES, BERTH_CONFIGS, get_enhanced_simulation_config
+from .ship_manager import ShipManager, Ship
+from .berth_manager import BerthManager
+from .container_handler import ContainerHandler
 
 # AI Optimization imports
-from src.ai.optimization import (
+from ..ai.optimization import (
     BerthAllocationOptimizer, ResourceAllocationOptimizer,
     Ship as AIShip, Berth as AIBerth
 )
-from src.ai.decision_support import DecisionSupportEngine
-from src.scenarios import ScenarioManager, ScenarioAwareBerthOptimizer
-from src.analysis.performance_benchmarking import PerformanceBenchmarking
+from ..scenarios.scenario_manager import ScenarioManager
+from ..scenarios.scenario_optimizer import ScenarioAwareBerthOptimizer
+from ..analysis.performance_benchmarking import PerformanceBenchmarking
 
 
 class PortSimulation:
     """Main simulation controller that orchestrates all port operations
     
     This class manages the entire port simulation, coordinating ship arrivals,
-    berth allocation, and container processing operations.
+    berth allocation, and container handling.
     """
     
-    @classmethod
-    def create_with_historical_parameters(cls, base_config: Dict = None):
-        """Create a PortSimulation instance with historical data-driven parameters.
+    def __init__(self, config: Optional[Dict] = None, scenario_name: str = "Normal Operations"):
+        """Initialize the port simulation environment."""
+        from ..ai.decision_support import DecisionSupportEngine
         
-        Args:
-            base_config: Optional base configuration to override defaults
-            
-        Returns:
-            PortSimulation: Instance configured with historical parameters
-        """
-        # Get enhanced configuration with historical data
-        enhanced_config = get_enhanced_simulation_config()
-        
-        # Merge with any provided base configuration
-        if base_config:
-            enhanced_config.update(base_config)
-        
-        return cls(enhanced_config)
-    
-    def __init__(self, config: Dict):
-        """Initialize the port simulation
-        
-        Args:
-            config: Configuration dictionary containing simulation parameters
-        """
         self.env = simpy.Environment()
-        self.config = config
+        self.scenario_name = scenario_name
+        
+        # If a config is provided, use it; otherwise, get the enhanced config
+        if config:
+            self.config = config
+        else:
+            self.config = get_enhanced_simulation_config(scenario_name)
         
         # Initialize all managers
         self.ship_manager = ShipManager(self.env)
+        
         # Use berth config from parameter if provided, otherwise use settings
-        berth_config = config.get('berths', BERTH_CONFIGS)
+        berth_config = self.config.get('berths', BERTH_CONFIGS)
         self.berth_manager = BerthManager(self.env, berth_config)
         self.container_handler = ContainerHandler(self.env)
         
         # Initialize AI optimization components
-        self.ai_optimization_enabled = config.get('ai_optimization', True)
+        self.ai_optimization_enabled = self.config.get('ai_optimization', True)
         self.berth_optimizer = BerthAllocationOptimizer()
         self.resource_optimizer = ResourceAllocationOptimizer()
         self.decision_engine = DecisionSupportEngine()
@@ -91,7 +75,7 @@ class PortSimulation:
         
         # Ship queue for batch optimization
         self.pending_ships = []
-        self.optimization_interval = config.get('optimization_interval', 1.0)  # hours
+        self.optimization_interval = self.config.get('optimization_interval', 1.0)  # hours
         
         # Simulation state
         self.running = False

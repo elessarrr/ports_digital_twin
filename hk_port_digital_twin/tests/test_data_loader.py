@@ -10,11 +10,9 @@ import sys
 import os
 from pathlib import Path
 from unittest.mock import patch, MagicMock
+import streamlit as st
 
-# Add src to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
-
-from utils.data_loader import (
+from hk_port_digital_twin.src.utils.data_loader import (
     load_container_throughput,
     load_annual_container_throughput,
     load_port_cargo_statistics,
@@ -163,7 +161,7 @@ class TestDataLoader(unittest.TestCase):
     def test_get_throughput_trends_with_sample_data(self):
         """Test enhanced throughput trend analysis with sample data"""
         # Mock the load_container_throughput function to return sample data
-        with patch('utils.data_loader.load_container_throughput') as mock_load:
+        with patch('hk_port_digital_twin.src.utils.data_loader.load_container_throughput') as mock_load:
             sample_df = load_sample_data()
             mock_load.return_value = sample_df
             
@@ -239,12 +237,13 @@ class TestDataLoader(unittest.TestCase):
     
     def test_get_throughput_trends_with_empty_data(self):
         """Test throughput trend analysis with empty data"""
+        st.cache_data.clear()
         # Mock the load_container_throughput function to return empty DataFrame
-        with patch('utils.data_loader.load_container_throughput') as mock_load:
+        with patch('hk_port_digital_twin.src.utils.data_loader.load_container_throughput') as mock_load:
             mock_load.return_value = pd.DataFrame()
-            
+    
             trends = get_throughput_trends()
-            
+    
             # Should return empty dict for empty data
             self.assertEqual(trends, {})
     
@@ -285,13 +284,15 @@ class TestDataLoader(unittest.TestCase):
     def test_validate_data_quality_with_no_data(self):
         """Test data quality validation with no data available"""
         # Mock all data loading functions to return empty data
-        with patch('utils.data_loader.load_container_throughput') as mock_throughput, \
-             patch('utils.data_loader.load_port_cargo_statistics') as mock_cargo, \
-             patch('utils.data_loader.load_vessel_arrivals') as mock_vessel:
+        with patch('hk_port_digital_twin.src.utils.data_loader.load_container_throughput') as mock_throughput, \
+             patch('hk_port_digital_twin.src.utils.data_loader.load_port_cargo_statistics') as mock_cargo, \
+             patch('hk_port_digital_twin.src.utils.data_loader.load_vessel_arrivals') as mock_vessel, \
+             patch('hk_port_digital_twin.src.utils.data_loader.HKObservatoryIntegration') as mock_weather:
             
             mock_throughput.return_value = pd.DataFrame()
             mock_cargo.return_value = {}
             mock_vessel.return_value = pd.DataFrame()
+            mock_weather.return_value.get_current_weather.return_value = None
             
             validation = validate_data_quality()
             
@@ -316,8 +317,9 @@ class TestDataLoader(unittest.TestCase):
     
     def test_error_handling_in_functions(self):
         """Test that functions handle errors gracefully"""
+        st.cache_data.clear()
         # Test with invalid file paths by mocking Path operations
-        with patch('utils.data_loader.CONTAINER_THROUGHPUT_FILE', Path('/nonexistent/file.csv')):
+        with patch('hk_port_digital_twin.src.utils.data_loader.CONTAINER_THROUGHPUT_FILE', Path('/nonexistent/file.csv')):
             # Should return empty DataFrame, not raise exception
             df = load_container_throughput()
             self.assertIsInstance(df, pd.DataFrame)
@@ -329,7 +331,7 @@ class TestDataLoader(unittest.TestCase):
             self.assertTrue(annual_df.empty)
         
         # Test cargo statistics with invalid directory
-        with patch('utils.data_loader.PORT_CARGO_STATS_DIR', Path('/nonexistent/directory')):
+        with patch('hk_port_digital_twin.src.utils.data_loader.PORT_CARGO_STATS_DIR', Path('/nonexistent/directory')):
             cargo_stats = load_port_cargo_statistics()
             self.assertIsInstance(cargo_stats, dict)
             self.assertEqual(len(cargo_stats), 0)
@@ -572,7 +574,7 @@ class TestDataLoader(unittest.TestCase):
             'river_teus': values * 0.2
         }, index=dates)
         
-        with patch('utils.data_loader.load_container_throughput') as mock_load:
+        with patch('hk_port_digital_twin.src.utils.data_loader.load_container_throughput') as mock_load:
             mock_load.return_value = sample_df
             
             trends = get_throughput_trends()
@@ -631,7 +633,7 @@ class TestDataLoader(unittest.TestCase):
             'river_teus': values * 0.2
         }, index=dates)
         
-        with patch('utils.data_loader.load_container_throughput') as mock_load:
+        with patch('hk_port_digital_twin.src.utils.data_loader.load_container_throughput') as mock_load:
             mock_load.return_value = sample_df
             
             trends = get_throughput_trends()
@@ -683,7 +685,7 @@ class TestDataLoader(unittest.TestCase):
             'river_teus': values * 0.2
         }, index=dates)
         
-        with patch('utils.data_loader.load_container_throughput') as mock_load:
+        with patch('hk_port_digital_twin.src.utils.data_loader.load_container_throughput') as mock_load:
             mock_load.return_value = sample_df
             
             trends = get_throughput_trends()
@@ -734,7 +736,7 @@ class TestDataLoader(unittest.TestCase):
             'river_teus': river_values
         }, index=dates)
         
-        with patch('utils.data_loader.load_container_throughput') as mock_load:
+        with patch('hk_port_digital_twin.src.utils.data_loader.load_container_throughput') as mock_load:
             mock_load.return_value = sample_df
             
             trends = get_throughput_trends()
@@ -786,7 +788,7 @@ class TestDataLoader(unittest.TestCase):
             'river_teus': np.array(values) * 0.2
         }, index=dates)
         
-        with patch('utils.data_loader.load_container_throughput') as mock_load:
+        with patch('hk_port_digital_twin.src.utils.data_loader.load_container_throughput') as mock_load:
             mock_load.return_value = sample_df
             
             trends = get_throughput_trends()
@@ -812,6 +814,7 @@ class TestDataLoader(unittest.TestCase):
 
     def test_enhanced_trends_integration(self):
         """Test integration of all enhanced trend analysis components."""
+        st.cache_data.clear()
         # Create comprehensive sample data
         dates = pd.date_range('2020-01-01', '2023-12-01', freq='MS')
         
@@ -830,7 +833,7 @@ class TestDataLoader(unittest.TestCase):
             'river_yoy_change': np.random.normal(6, 3, len(dates))
         }, index=dates)
         
-        with patch('utils.data_loader.load_container_throughput') as mock_load:
+        with patch('hk_port_digital_twin.src.utils.data_loader.load_container_throughput') as mock_load:
             mock_load.return_value = sample_df
             
             # Test the complete enhanced function
@@ -962,9 +965,11 @@ class TestDataLoader(unittest.TestCase):
         except Exception as e:
             self.skipTest(f"Could not test vessel arrivals loading: {e}")
 
-    @patch('utils.data_loader.load_vessel_arrivals')
+
+    @patch('hk_port_digital_twin.src.utils.data_loader.load_vessel_arrivals')
     def test_get_vessel_queue_analysis_with_mock_data(self, mock_load_vessels):
         """Test vessel queue analysis with mock data."""
+        st.cache_data.clear()
         # Create mock vessel data
         mock_data = pd.DataFrame({
             'call_sign': ['VESSEL1', 'VESSEL2', 'VESSEL3', 'VESSEL4'],
@@ -973,18 +978,18 @@ class TestDataLoader(unittest.TestCase):
             'location_type': ['berth', 'anchorage', 'berth', 'anchorage'],
             'status': ['in_port', 'in_port', 'departed', 'in_port'],
             'arrival_time': pd.to_datetime([
-                '2024-01-01 10:00', '2024-01-01 12:00', 
+                '2024-01-01 10:00', '2024-01-01 12:00',
                 '2024-01-01 08:00', '2024-01-01 14:00'
             ])
         })
-        
+    
         mock_load_vessels.return_value = mock_data
-        
+    
         analysis = get_vessel_queue_analysis()
-        
+    
         # Check analysis structure
         self.assertIsInstance(analysis, dict)
-        
+    
         # Check main sections
         expected_sections = [
             'current_status', 'location_breakdown', 'ship_category_breakdown',
@@ -992,7 +997,7 @@ class TestDataLoader(unittest.TestCase):
         ]
         for section in expected_sections:
             self.assertIn(section, analysis)
-        
+    
         # Check current status
         current_status = analysis['current_status']
         self.assertEqual(current_status['total_vessels_in_port'], 3)  # Excluding departed vessel
@@ -1013,20 +1018,22 @@ class TestDataLoader(unittest.TestCase):
         # Check data freshness
         self.assertEqual(analysis['data_freshness'], 'real_time')
 
-    @patch('utils.data_loader.load_vessel_arrivals')
+    @patch('hk_port_digital_twin.src.utils.data_loader.load_vessel_arrivals')
     def test_get_vessel_queue_analysis_empty_data(self, mock_load_vessels):
         """Test vessel queue analysis with empty data."""
+        st.cache_data.clear()
         mock_load_vessels.return_value = pd.DataFrame()
-        
+    
         analysis = get_vessel_queue_analysis()
-        
+    
         # Should return empty dict when no data available
         self.assertEqual(analysis, {})
 
     def test_load_vessel_arrivals_file_not_found(self):
         """Test vessel arrivals loading when XML file doesn't exist."""
+        st.cache_data.clear()
         # Mock the file path to point to non-existent file
-        with patch('utils.data_loader.VESSEL_ARRIVALS_XML') as mock_path:
+        with patch('hk_port_digital_twin.src.utils.data_loader.VESSEL_ARRIVALS_XML') as mock_path:
             mock_path.exists.return_value = False
             
             df = load_vessel_arrivals()
@@ -1329,12 +1336,12 @@ class TestEnhancedDataProcessingPipeline(unittest.TestCase):
     def test_enhanced_validate_data_quality_integration(self):
         """Test enhanced validate_data_quality function with all data types"""
         # Mock all data loading functions
-        with patch('utils.data_loader.load_container_throughput') as mock_container, \
+        with patch('hk_port_digital_twin.src.utils.data_loader.load_container_throughput') as mock_load, \
              patch('utils.data_loader.load_port_cargo_statistics') as mock_cargo, \
              patch('utils.data_loader.load_vessel_arrivals') as mock_vessel:
             
             # Set up mock returns
-            mock_container.return_value = load_sample_data()
+            mock_load.return_value = load_sample_data()
             mock_cargo.return_value = {'Table_1': pd.DataFrame({'col1': [1, 2, 3]})}
             mock_vessel.return_value = pd.DataFrame({
                 'call_sign': ['VESSEL1'],

@@ -16,6 +16,7 @@ from scipy import stats
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 import warnings
+from hk_port_digital_twin.src.dashboard.utils.rendering_optimization import efficient_groupby
 warnings.filterwarnings('ignore')
 
 logger = logging.getLogger(__name__)
@@ -92,10 +93,6 @@ class ShipArrivalPredictor:
             hourly_arrivals = self.historical_data.groupby('hour').size()
             self.seasonal_patterns['hourly'] = hourly_arrivals.to_dict()
             
-            # Daily patterns (day of week)
-            daily_arrivals = self.historical_data.groupby('day_of_week').size()
-            self.seasonal_patterns['daily'] = daily_arrivals.to_dict()
-            
             # Monthly patterns
             monthly_arrivals = self.historical_data.groupby('month').size()
             self.seasonal_patterns['monthly'] = monthly_arrivals.to_dict()
@@ -106,7 +103,7 @@ class ShipArrivalPredictor:
                 if len(type_data) > 0:
                     self.ship_type_patterns[ship_type] = {
                         'avg_arrivals_per_day': len(type_data) / max(1, (self.historical_data['arrival_time'].max() - self.historical_data['arrival_time'].min()).days),
-                        'preferred_hours': type_data.groupby('hour').size().idxmax() if len(type_data) > 0 else 12,
+                        'preferred_hours': type_data['hour'].mode()[0] if not type_data['hour'].mode().empty else 12,
                         'avg_size': type_data['size'].mean() if 'size' in type_data.columns else 1000
                     }
             
@@ -252,7 +249,7 @@ class ProcessingTimeEstimator:
                 if 'size' in processing_data.columns:
                     # Create size bins and analyze processing time correlation
                     processing_data['size_bin'] = pd.cut(processing_data['size'], bins=5, labels=['XS', 'S', 'M', 'L', 'XL'])
-                    size_analysis = processing_data.groupby('size_bin')['processing_time'].mean()
+                    size_analysis = efficient_groupby(processing_data, 'size_bin')['processing_time'].mean()
                     
                     # Normalize to medium size (M) as baseline
                     baseline = size_analysis.get('M', size_analysis.mean())

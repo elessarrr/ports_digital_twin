@@ -8,12 +8,8 @@ import pytest
 import sys
 import os
 
-# Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
-from src.core.port_simulation import PortSimulation
-from config.settings import SIMULATION_CONFIG
+from hk_port_digital_twin.src.core.port_simulation import PortSimulation
+from hk_port_digital_twin.config.settings import SIMULATION_CONFIG
 
 
 class TestPortSimulation:

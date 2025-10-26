@@ -6,7 +6,7 @@ to ensure proper data collection and KPI calculation functionality.
 
 import pytest
 import pandas as pd
-from src.utils.metrics_collector import MetricsCollector, SimulationMetrics
+from hk_port_digital_twin.src.utils.metrics_collector import MetricsCollector, SimulationMetrics
 
 
 class TestSimulationMetrics:

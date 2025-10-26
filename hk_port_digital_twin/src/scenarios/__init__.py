@@ -40,9 +40,7 @@ from .scenario_library import (
     ScenarioStatus as LibraryScenarioStatus
 )
 
-from .scenario_optimizer import (
-    ScenarioAwareBerthOptimizer
-)
+
 
 __all__ = [
     # Scenario Parameters
@@ -57,8 +55,7 @@ __all__ = [
     'ScenarioType',
     'ScenarioStatus',
     
-    # Scenario Optimizer
-    'ScenarioAwareBerthOptimizer',
+
     
     # Multi-Scenario Optimizer
     'MultiScenarioOptimizer',

@@ -13,11 +13,9 @@ import sys
 import os
 
 # Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-
-from core.container_handler import ContainerHandler
-from core.ship_manager import Ship, ShipState
-from core.berth_manager import Berth
+from hk_port_digital_twin.src.core.container_handler import ContainerHandler
+from hk_port_digital_twin.src.core.ship_manager import Ship, ShipState
+from hk_port_digital_twin.src.core.berth_manager import Berth
 
 
 class TestContainerHandler:

@@ -23,7 +23,7 @@ Key features:
 
 import logging
 from typing import Dict, List, Optional, Tuple, Any
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, is_dataclass
 from copy import deepcopy
 import random
 
@@ -167,14 +167,12 @@ class ScenarioAwareBerthOptimizer:
         self._apply_scenario_optimization_settings(scenario_params)
         
         # Perform base optimization
-        base_result = self.base_optimizer.optimize_berth_allocation()
+        result = self.base_optimizer.optimize()
+
+        # Create scenario-specific result
+        scenario_result = self._create_scenario_result(result, self.scenario_manager.get_current_scenario(), self.scenario_manager.get_current_parameters())
         
-        # Create enhanced result
-        scenario_result = self._create_scenario_result(
-            base_result, current_scenario, scenario_params
-        )
-        
-        # Add to history
+        # Store result in history
         self.optimization_history.append(scenario_result)
         
         logger.info(f"Optimization completed for scenario: {current_scenario}")
@@ -349,85 +347,28 @@ class ScenarioAwareBerthOptimizer:
         
         logger.debug(f"Applied scenario optimization settings: {list(scenario_params.keys())}")
     
-    def _create_scenario_result(self, base_result: OptimizationResult, 
-                              scenario_name: str, scenario_params: Dict[str, Any]) -> ScenarioOptimizationResult:
-        """Create a ScenarioOptimizationResult from base result.
+    def _create_scenario_result(
+        self, 
+        base_result: OptimizationResult, 
+        scenario_name: str, 
+        scenario_params: ScenarioParameters
+    ) -> ScenarioOptimizationResult:
+        """Create an enhanced optimization result with scenario context."""
         
-        Args:
-            base_result: Original optimization result
-            scenario_name: Name of the scenario
-            scenario_params: Scenario parameters used
-            
-        Returns:
-            Enhanced optimization result with scenario context
-        """
-        # Calculate scenario-adjusted metrics
-        adjusted_metrics = self._calculate_adjusted_metrics(base_result, scenario_params)
-        
-        # Calculate parameter impacts
-        parameter_impacts = self._calculate_parameter_impacts(scenario_params)
-        
+        # Ensure scenario_params is a dataclass instance before calling asdict
+        if is_dataclass(scenario_params):
+            params_dict = asdict(scenario_params)
+        else:
+            params_dict = scenario_params if isinstance(scenario_params, dict) else {}
+
         return ScenarioOptimizationResult(
             base_result=base_result,
             scenario_name=scenario_name,
-            scenario_parameters=scenario_params,
-            scenario_adjusted_metrics=adjusted_metrics,
-            parameter_impacts=parameter_impacts
+            scenario_parameters=params_dict,
+            scenario_adjusted_metrics={},
+            parameter_impacts={}
         )
-    
-    def _calculate_adjusted_metrics(self, result: OptimizationResult, 
-                                  params: Dict[str, Any]) -> Dict[str, float]:
-        """Calculate scenario-adjusted performance metrics.
-        
-        Args:
-            result: Base optimization result
-            params: Scenario parameters
-            
-        Returns:
-            Dictionary of adjusted metrics
-        """
-        adjusted_metrics = {}
-        
-        # Adjust waiting time based on processing efficiency
-        if 'processing_rate_multiplier' in params:
-            adjusted_waiting_time = result.total_waiting_time / params['processing_rate_multiplier']
-            adjusted_metrics['adjusted_total_waiting_time'] = adjusted_waiting_time
-            adjusted_metrics['adjusted_average_waiting_time'] = (
-                adjusted_waiting_time / max(1, len(result.ship_berth_assignments))
-            )
-        
-        # Adjust berth utilization based on target utilization
-        if 'target_berth_utilization' in params:
-            avg_utilization = sum(result.berth_utilization.values()) / max(1, len(result.berth_utilization))
-            utilization_efficiency = avg_utilization / params['target_berth_utilization']
-            adjusted_metrics['utilization_efficiency'] = min(1.0, utilization_efficiency)
-        
-        # Calculate throughput efficiency
-        if 'arrival_rate_multiplier' in params:
-            throughput_factor = params['arrival_rate_multiplier']
-            adjusted_metrics['throughput_efficiency'] = result.optimization_score * throughput_factor
-        
-        return adjusted_metrics
-    
-    def _calculate_parameter_impacts(self, params: Dict[str, Any]) -> Dict[str, float]:
-        """Calculate the impact of each parameter on optimization.
-        
-        Args:
-            params: Scenario parameters
-            
-        Returns:
-            Dictionary of parameter impact scores
-        """
-        impacts = {}
-        
-        # Calculate impact scores based on deviation from baseline (1.0)
-        for param_name, value in params.items():
-            if isinstance(value, (int, float)) and param_name.endswith('_multiplier'):
-                # Impact is the absolute deviation from 1.0
-                impacts[param_name] = abs(value - 1.0)
-        
-        return impacts
-    
+
     def _add_comparison_metrics(self, results: Dict[str, ScenarioOptimizationResult], 
                               baseline: ScenarioOptimizationResult) -> None:
         """Add relative performance metrics to comparison results.

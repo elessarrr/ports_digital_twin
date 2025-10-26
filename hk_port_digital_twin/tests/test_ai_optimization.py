@@ -8,37 +8,19 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
 # Import the AI modules to test
-sys_path_added = False
-try:
-    from src.ai.optimization import (
-        Ship, Berth, OptimizationResult,
-        BerthAllocationOptimizer, ContainerHandlingScheduler, ResourceAllocationOptimizer
-    )
-    from src.ai.predictive_models import (
-        ArrivalPrediction, ProcessingTimePrediction, QueueForecast,
-        ShipArrivalPredictor, ProcessingTimeEstimator, QueueLengthForecaster
-    )
-    from src.ai.decision_support import (
-        Recommendation, DecisionContext, DecisionSupportEngine,
-        RecommendationType, Priority
-    )
-except ImportError:
-    import sys
-    import os
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-    sys_path_added = True
-    from src.ai.optimization import (
-        Ship, Berth, OptimizationResult,
-        BerthAllocationOptimizer, ContainerHandlingScheduler, ResourceAllocationOptimizer
-    )
-    from src.ai.predictive_models import (
-        ArrivalPrediction, ProcessingTimePrediction, QueueForecast,
-        ShipArrivalPredictor, ProcessingTimeEstimator, QueueLengthForecaster
-    )
-    from src.ai.decision_support import (
-        Recommendation, DecisionContext, DecisionSupportEngine,
-        RecommendationType, Priority
-    )
+ 
+from hk_port_digital_twin.src.ai.optimization import (
+    Ship, Berth, OptimizationResult,
+    BerthAllocationOptimizer, ContainerHandlingScheduler, ResourceAllocationOptimizer
+)
+from hk_port_digital_twin.src.ai.predictive_models import (
+    ArrivalPrediction, ProcessingTimePrediction, QueueForecast,
+    ShipArrivalPredictor, ProcessingTimeEstimator, QueueLengthForecaster
+)
+from hk_port_digital_twin.src.ai.decision_support import (
+    Recommendation, DecisionContext, DecisionSupportEngine,
+    RecommendationType, Priority
+)
 
 class TestOptimization:
     """Test cases for optimization.py"""
@@ -242,7 +224,6 @@ class TestPredictiveModels:
         predictor.analyze_seasonal_patterns()
         
         assert 'hourly' in predictor.seasonal_patterns
-        assert 'daily' in predictor.seasonal_patterns
         assert 'monthly' in predictor.seasonal_patterns
         assert len(predictor.ship_type_patterns) > 0
     

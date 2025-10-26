@@ -10,6 +10,7 @@ import pandas as pd
 from typing import Dict, Any, Optional
 from datetime import datetime
 from hk_port_digital_twin.src.utils.data_loader import load_vessel_arrivals
+from hk_port_digital_twin.src.dashboard.utils.rendering_optimization import efficient_groupby
 
 def render_vessel_location_distribution(vessel_analysis: Dict[str, Any]) -> None:
     """
@@ -426,7 +427,7 @@ def render_vessel_analytics_dashboard(vessel_analysis) -> None:
                 
                 # Group by hour for activity trend
                 vessel_analysis['hour'] = vessel_analysis['arrival_time'].dt.floor('H')
-                hourly_counts = vessel_analysis.groupby('hour').size().reset_index(name='count')
+                hourly_counts = efficient_groupby(vessel_analysis, 'hour').size().reset_index(name='count')
                 
                 processed_data['activity_trend'] = [
                     {'time': row['hour'], 'arrivals': row['count']}

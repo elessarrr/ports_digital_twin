@@ -10,10 +10,7 @@ import plotly.graph_objects as go
 import sys
 import os
 
-# Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-
-from utils.visualization import (
+from hk_port_digital_twin.src.utils.visualization import (
     create_port_layout_chart,
     create_ship_queue_chart,
     create_berth_utilization_chart,

@@ -10,7 +10,8 @@ from dataclasses import asdict
 
 # Import existing scenario functionality
 from .multi_scenario_optimizer import MultiScenarioOptimizer
-from .scenario_optimizer import quick_scenario_comparison, ScenarioAwareBerthOptimizer
+from .scenario_optimizer import quick_scenario_comparison
+from .scenario_optimizer import ScenarioAwareBerthOptimizer
 from .scenario_parameters import get_scenario_parameters, ALL_SCENARIOS
 from .scenario_manager import ScenarioManager
 

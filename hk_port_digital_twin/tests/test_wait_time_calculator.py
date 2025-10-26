@@ -12,18 +12,7 @@ scenario-aware wait times for port operations. The tests cover:
 import unittest
 import numpy as np
 from unittest.mock import patch, MagicMock
-import sys
-import os
-
-# Add the src directory to the path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-
-try:
-    from utils.wait_time_calculator import WaitTimeCalculator, calculate_wait_time
-except ImportError:
-    # Fallback for testing environment
-    WaitTimeCalculator = None
-    calculate_wait_time = None
+from hk_port_digital_twin.src.utils.wait_time_calculator import WaitTimeCalculator, calculate_wait_time
 
 
 class TestWaitTimeCalculator(unittest.TestCase):

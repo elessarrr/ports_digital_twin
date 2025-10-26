@@ -1,0 +1,2298 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.8.8, pytest-7.4.3, pluggy-0.13.1
+rootdir: /Users/Bhavesh/Documents/GitHub/ports_digital_twin
+plugins: anyio-2.2.0, cov-4.1.0, dash-2.0.0
+collected 320 items
+
+test_vessel_pipeline.py ....                                             [  1%]
+hk_port_digital_twin/tests/test_ai_optimization.py ..................... [  7%]
+............                                                             [ 11%]
+hk_port_digital_twin/tests/test_berth_manager.py ....................... [ 18%]
+..                                                                       [ 19%]
+hk_port_digital_twin/tests/test_container_handler.py ...............     [ 24%]
+hk_port_digital_twin/tests/test_data_loader.py ......................... [ 31%]
+...................                                                      [ 37%]
+hk_port_digital_twin/tests/test_disruption_simulator.py ..........       [ 40%]
+hk_port_digital_twin/tests/test_integration_wait_time.py .F.........     [ 44%]
+hk_port_digital_twin/tests/test_investment_planner.py .............      [ 48%]
+hk_port_digital_twin/tests/test_metrics_collector.py ................... [ 54%]
+.........                                                                [ 57%]
+hk_port_digital_twin/tests/test_performance_benchmarking.py .F.......... [ 60%]
+....F                                                                    [ 62%]
+hk_port_digital_twin/tests/test_port_simulation.py F.FFFF....FFFFFFFFFF  [ 68%]
+hk_port_digital_twin/tests/test_sample_data_generator.py F               [ 69%]
+hk_port_digital_twin/tests/test_scenario_integration.py ...FF.........F. [ 74%]
+...                                                                      [ 75%]
+hk_port_digital_twin/tests/test_ship_manager.py .....................    [ 81%]
+hk_port_digital_twin/tests/test_simulation_controller.py FFFFFFFFFFFFFFF [ 86%]
+FFFFF                                                                    [ 87%]
+hk_port_digital_twin/tests/test_visualization.py F.FF..FFF.........F     [ 93%]
+hk_port_digital_twin/tests/test_wait_time_calculator.py ...F.........F.. [ 98%]
+F...                                                                     [100%]
+
+=================================== FAILURES ===================================
+_____ TestWaitTimeCalculatorIntegration.test_dashboard_integration_import ______
+
+self = <test_integration_wait_time.TestWaitTimeCalculatorIntegration testMethod=test_dashboard_integration_import>
+
+    def test_dashboard_integration_import(self):
+        """Test that the dashboard can import wait time calculator components."""
+        # Test importing from dashboard context
+        dashboard_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'dashboard', 'streamlit_app.py')
+    
+        if os.path.exists(dashboard_path):
+            # Verify the import statements work
+            with open(dashboard_path, 'r') as f:
+                content = f.read()
+>               self.assertIn('wait_time_calculator', content)
+E               AssertionError: 'wait_time_calculator' not found in 'import sys\nimport os\nimport time\nimport streamlit as st\nimport pandas as pd\nfrom datetime import datetime, timedelta\nimport logging\nimport numpy as np\nimport simpy\n\n# Add the project root to the Python path to allow absolute imports\n# Use Path for more robust path handling in cloud environments\nfrom pathlib import Path\n\ndef find_project_root(marker_file=\'streamlit_app.py\'):\n    """Find the project root by searching for a marker file."""\n    current_path = Path(__file__).resolve()\n    # We are looking for the directory that contains both the marker_file and the \'hk_port_digital_twin\' directory\n    for parent in current_path.parents:\n        if (parent / marker_file).exists() and (parent / \'hk_port_digital_twin\').exists():\n            return str(parent)\n    # Fallback for environments where the structure might be different\n    # This is a bit of a guess, but it\'s better than a hardcoded index.\n    for parent in current_path.parents:\n        if (parent / \'hk_port_digital_twin\').exists():\n            return str(parent)\n    raise FileNotFoundError(f"Project root not found. Could not find a directory containing \'{marker_file}\' or \'hk_port_digital_twin\'.")\n\n\nproject_root = find_project_root()\nif project_root not in sys.path:\n    sys.path.insert(0, project_root)\n\nfrom hk_port_digital_twin.src.utils.data_loader import RealTimeDataConfig, get_real_time_manager, load_container_throughput, load_vessel_arrivals, load_berth_configurations, initialize_vessel_data_pipeline, load_all_vessel_data, get_comprehensive_vessel_analysis, load_combined_vessel_data, load_all_vessel_data_with_backups\nfrom hk_port_digital_twin.config.settings import SIMULATION_CONFIG, get_enhanced_simulation_config\nfrom hk_port_digital_twin.src.core.port_simulation import PortSimulation\nfrom hk_port_digital_twin.src.core.simulation_controller import SimulationController\nfrom hk_port_digital_twin.src.core.berth_manager import BerthManager\nfrom hk_port_digital_twin.src.scenarios import ScenarioManager, list_available_scenarios\nfrom hk_port_digital_twin.src.utils.visualization import create_kpi_summary_chart, create_port_layout_chart, create_ship_queue_chart, create_berth_utilization_chart, create_throughput_timeline, create_waiting_time_distribution\n# Weather integration disabled for feature removal\n# from hk_port_digital_twin.src.utils.weather_integration import HKObservatoryIntegration\nHKObservatoryIntegration = None  # Disabled\nfrom hk_port_digital_twin.src.utils.data_loader import load_focused_cargo_statistics, get_enhanced_cargo_analysis, get_time_series_data\nfrom hk_port_digital_twin.src.dashboard.scenario_tab_consolidation_refactored import render_consolidated_scenarios_tab\nfrom hk_port_digital_twin.src.dashboard.vessel_charts import render_vessel_analytics_dashboard\nfrom hk_port_digital_twin.src.dashboard.executive_dashboard import ExecutiveDashboard\nfrom hk_port_digital_twin.src.analysis.roi_calculator import render_roi_calculator\nfrom hk_port_digital_twin.src.dashboard import guided_tour\nfrom hk_port_digital_twin.src.utils.strategic_visualization import StrategicVisualization, render_strategic_controls\n\n# Tab configuration\nfrom .tabs.berth_tab import render as render_berth_tab\nfrom .tabs.cargo_tab import render as render_cargo_tab\nfrom .tabs.vessel_tab import render as render_vessel_tab\n\ndef render_overview_tab():\n    st.subheader("🚢 Port Overview")\n    \n    with st.expander("KPI Summary", expanded=True):\n        kpi_col1, kpi_col2, kpi_col3, kpi_col4 = st.columns(4)\n        with kpi_col1:\n            st.metric("Vessels in Port", "85", delta="-5%", help="Total vessels currently at berth or anchorage")\n        with kpi_col2:\n            st.metric("Berth Utilization", "92%", delta="3%", help="Percentage of berths currently occupied")\n        with kpi_col3:\n            st.metric("Avg. Turnaround Time", "18h", delta="-1h", help="Average time from arrival to departure")\n        with kpi_col4:\n            st.metric("Cargo Throughput (TEUs)", "1.2M", delta="8%", help="Total Twenty-foot Equivalent Units processed this month")\n\n    # ROI Calculator\n    render_roi_calculator()\n\n\ndef render_cargo_statistics_tab():\n    st.subheader("📊 Cargo Statistics")\n    st.write("Cargo statistics content will be added here.")\n\n\ndef render_vessel_insights_tab():\n    st.subheader("⚓ Vessel Insights")\n    st.write("Vessel insights content will be added here.")\n\n\ndef render_scenarios_tab():\n    """Renders the scenarios tab."""\n    st.subheader("⚙️ Scenarios")\n    st.write("Content for scenarios will be added here.")\n\ndef render_settings_tab():\n    """Renders the settings tab."""\n    st.subheader("🔧 Settings")\n    st.write("Content for settings will be added here.")\n\nTABS = {\n    "Overview": render_overview_tab,\n    "Berth Planning": render_berth_tab,\n    "Cargo Statistics": render_cargo_tab,\n    "Vessel Analytics": render_vessel_tab,\n    "Scenarios": render_consolidated_scenarios_tab,\n}\n\ndef main():\n    """Main function to run the Streamlit application."""\n    st.title("🚢 Hong Kong Port Digital Twin")\n\n    with st.sidebar:\n        st.title("Navigation")\n        selected_tab = st.radio("Go to", list(TABS.keys()))\n\n    # Render the selected tab\n    if selected_tab in TABS:\n        TABS[selected_tab]()\n\nif __name__ == "__main__":\n    main()'
+
+hk_port_digital_twin/tests/test_integration_wait_time.py:48: AssertionError
+____________ TestBenchmarkMetric.test_performance_level_calculation ____________
+
+self = <test_performance_benchmarking.TestBenchmarkMetric object at 0x7f7d410137c0>
+
+    def test_performance_level_calculation(self):
+        """Test performance level calculation"""
+        metric = BenchmarkMetric(
+            metric_id="test_metric",
+            name="Test Metric",
+            category=BenchmarkCategory.THROUGHPUT,
+            unit="units/hour",
+            description="A test metric",
+            historical_baseline=50.0,
+            industry_average=60.0,
+            world_class_target=80.0
+        )
+    
+        # Test excellent performance
+        metric.current_value = 78.0
+        assert metric.calculate_performance_level() == PerformanceLevel.EXCELLENT
+    
+        # Test good performance
+        metric.current_value = 65.0
+>       assert metric.calculate_performance_level() == PerformanceLevel.GOOD
+E       AssertionError: assert <PerformanceLevel.AVERAGE: 'average'> == <PerformanceLevel.GOOD: 'good'>
+E        +  where <PerformanceLevel.AVERAGE: 'average'> = <bound method BenchmarkMetric.calculate_performance_level of BenchmarkMetric(metric_id='test_metric', name='Test Metri...ndustry_average=60.0, world_class_target=80.0, current_value=65.0, performance_level=None, improvement_potential=None)>()
+E        +    where <bound method BenchmarkMetric.calculate_performance_level of BenchmarkMetric(metric_id='test_metric', name='Test Metri...ndustry_average=60.0, world_class_target=80.0, current_value=65.0, performance_level=None, improvement_potential=None)> = BenchmarkMetric(metric_id='test_metric', name='Test Metric', category=<BenchmarkCategory.THROUGHPUT: 'throughput'>, un...industry_average=60.0, world_class_target=80.0, current_value=65.0, performance_level=None, improvement_potential=None).calculate_performance_level
+E        +  and   <PerformanceLevel.GOOD: 'good'> = PerformanceLevel.GOOD
+
+hk_port_digital_twin/tests/test_performance_benchmarking.py:63: AssertionError
+___________ TestIntegrationScenarios.test_poor_performance_scenario ____________
+
+self = <test_performance_benchmarking.TestIntegrationScenarios object at 0x7f7d4101db80>
+benchmarking = <hk_port_digital_twin.src.analysis.performance_benchmarking.PerformanceBenchmarking object at 0x7f7d30d18d30>
+
+    def test_poor_performance_scenario(self, benchmarking):
+        """Test scenario with poor performance"""
+        simulation_results = {
+            'simulation_summary': {
+                'duration': 24.0,
+                'average_waiting_time': 8.0,  # Poor
+                'throughput_rate': 0.2
+            },
+            'berth_statistics': {'average_utilization': 45.0},  # Poor
+            'container_statistics': {
+                'total_operations': 500,  # Low throughput
+                'average_processing_time': 3.0
+            },
+            'performance_metrics': {'berth_utilization': 45.0}
+        }
+    
+        report = benchmarking.analyze_simulation_results(simulation_results)
+    
+>       assert report.overall_score <= 60  # Should be low score
+E       AssertionError: assert 60.351849072962516 <= 60
+E        +  where 60.351849072962516 = BenchmarkReport(report_id='benchmark_20251026_184820', timestamp=datetime.datetime(2025, 10, 26, 18, 48, 20, 210443), ...around_time': -40.665904570700484, 'crane_productivity': -16.866902753844183, 'yard_utilization': -55.61490787366883}}).overall_score
+
+hk_port_digital_twin/tests/test_performance_benchmarking.py:362: AssertionError
+____________________ TestPortSimulation.test_initialization ____________________
+
+self = <test_port_simulation.TestPortSimulation object at 0x7f7d4102a9a0>
+
+    def test_initialization(self):
+        """Test proper initialization of simulation components"""
+        assert self.simulation.env is not None
+>       assert self.simulation.config == self.test_config
+E       AssertionError: assert {'default_dur...er': 1.8, ...} == {'berths': [{...nt': 2, ...}]}
+E         Left contains 10 more items:
+E         {'default_duration': 168,
+E          'enhanced_with_historical_data': False,
+E          'peak_hours': [8, 9, 10, 14, 15, 16],
+E          'peak_multiplier': 1.8,
+E          'random_seed': 42,
+E          'ship_arrival_rate': 1.5,...
+E         
+E         ...Full output truncated (16 lines hidden), use '-vv' to show
+
+hk_port_digital_twin/tests/test_port_simulation.py:43: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+2025-10-26 18:48:20.215 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.215 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.215 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.215 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.215 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.215 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.215 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.215 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.215 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.215 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.215 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.215 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.215 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.216 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.216 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.229 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.229 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.229 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.229 No runtime found, using MemoryCacheStorageManager
+2025-10-26 18:48:20.229 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.229 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.229 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.233 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.233 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.233 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.233 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.233 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.233 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.233 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.233 No runtime found, using MemoryCacheStorageManager
+2025-10-26 18:48:20.237 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.237 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.241 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.241 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.241 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.242 No runtime found, using MemoryCacheStorageManager
+2025-10-26 18:48:20.246 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.246 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.246 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.246 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.246 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.247 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.247 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.247 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.247 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.247 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.250 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.250 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.250 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.250 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.250 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.255 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.255 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log setup ------------------------------
+ERROR    hk_port_digital_twin.src.utils.data_loader:data_loader.py:3478 Error extracting historical simulation parameters: 'dict' object has no attribute 'empty'
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+_________________ TestPortSimulation.test_generate_random_ship _________________
+
+self = <test_port_simulation.TestPortSimulation object at 0x7f7d41013f70>
+
+    def test_generate_random_ship(self):
+        """Test random ship generation"""
+>       ship = self.simulation._generate_random_ship("TEST_SHIP_001")
+
+hk_port_digital_twin/tests/test_port_simulation.py:66: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <hk_port_digital_twin.src.core.port_simulation.PortSimulation object at 0x7f7d30dbf310>
+ship_id = 'TEST_SHIP_001'
+
+    def _generate_random_ship(self, ship_id: str) -> Ship:
+        """Generate a random ship with realistic characteristics
+    
+        Uses probability-based ship type selection and realistic size distributions
+        based on Hong Kong Port's actual vessel characteristics.
+    
+        Args:
+            ship_id: Unique identifier for the ship
+    
+        Returns:
+            Ship object with random but realistic properties
+        """
+        # Select ship type based on arrival probabilities
+        ship_types = list(SHIP_TYPES.keys())
+        probabilities = [SHIP_TYPES[ship_type]['arrival_probability'] for ship_type in ship_types]
+        ship_type = random.choices(ship_types, weights=probabilities)[0]
+    
+        ship_config = SHIP_TYPES[ship_type]
+    
+        # Generate realistic size from typical sizes
+        if 'typical_sizes' in ship_config:
+            size_teu = random.choice(ship_config['typical_sizes'])
+        else:
+            size_teu = random.randint(ship_config['min_size'], ship_config['max_size'])
+    
+        # Generate container counts based on ship type and size
+        if ship_type == 'container':
+            # Container ships: higher container counts, proportional to size
+            base_containers = size_teu // 50  # Rough containers per TEU capacity
+            containers_to_unload = random.randint(int(base_containers * 0.3), int(base_containers * 0.8))
+            containers_to_load = random.randint(int(base_containers * 0.2), int(base_containers * 0.7))
+        elif ship_type == 'bulk':
+            # Bulk carriers: fewer containers, more bulk cargo
+            containers_to_unload = random.randint(10, 100)
+            containers_to_load = random.randint(5, 80)
+        else:  # mixed
+            # Mixed cargo: moderate container counts
+            base_containers = size_teu // 80  # Lower container density for mixed cargo
+            containers_to_unload = random.randint(int(base_containers * 0.2), int(base_containers * 0.6))
+            containers_to_load = random.randint(int(base_containers * 0.1), int(base_containers * 0.5))
+    
+        return Ship(
+            ship_id=ship_id,
+            name=f"Vessel_{ship_id}",
+            ship_type=ship_type,
+            size_teu=size_teu,
+            containers_to_unload=containers_to_unload,
+            containers_to_load=containers_to_load,
+>           arrival_time=self.env.now
+        )
+E       AttributeError: 'dict' object has no attribute 'now'
+
+hk_port_digital_twin/src/core/port_simulation.py:431: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+2025-10-26 18:48:20.285 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.285 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.285 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.285 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.285 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.285 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.285 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.285 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.286 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.286 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.286 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.286 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.286 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.286 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.286 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.296 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.296 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.296 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.296 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.296 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.296 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.296 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.297 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.300 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.300 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.304 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.304 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.304 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.306 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.306 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log setup ------------------------------
+ERROR    hk_port_digital_twin.src.utils.data_loader:data_loader.py:3478 Error extracting historical simulation parameters: 'dict' object has no attribute 'empty'
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+_________ TestPortSimulation.test_generate_random_ship_container_type __________
+
+self = <test_port_simulation.TestPortSimulation object at 0x7f7d41013c40>
+
+    def test_generate_random_ship_container_type(self):
+        """Test container ship generation has appropriate container counts"""
+        # Generate multiple ships to test different types
+>       ships = [self.simulation._generate_random_ship(f"SHIP_{i}") for i in range(20)]
+
+hk_port_digital_twin/tests/test_port_simulation.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+hk_port_digital_twin/tests/test_port_simulation.py:77: in <listcomp>
+    ships = [self.simulation._generate_random_ship(f"SHIP_{i}") for i in range(20)]
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <hk_port_digital_twin.src.core.port_simulation.PortSimulation object at 0x7f7d30d15b20>
+ship_id = 'SHIP_0'
+
+    def _generate_random_ship(self, ship_id: str) -> Ship:
+        """Generate a random ship with realistic characteristics
+    
+        Uses probability-based ship type selection and realistic size distributions
+        based on Hong Kong Port's actual vessel characteristics.
+    
+        Args:
+            ship_id: Unique identifier for the ship
+    
+        Returns:
+            Ship object with random but realistic properties
+        """
+        # Select ship type based on arrival probabilities
+        ship_types = list(SHIP_TYPES.keys())
+        probabilities = [SHIP_TYPES[ship_type]['arrival_probability'] for ship_type in ship_types]
+        ship_type = random.choices(ship_types, weights=probabilities)[0]
+    
+        ship_config = SHIP_TYPES[ship_type]
+    
+        # Generate realistic size from typical sizes
+        if 'typical_sizes' in ship_config:
+            size_teu = random.choice(ship_config['typical_sizes'])
+        else:
+            size_teu = random.randint(ship_config['min_size'], ship_config['max_size'])
+    
+        # Generate container counts based on ship type and size
+        if ship_type == 'container':
+            # Container ships: higher container counts, proportional to size
+            base_containers = size_teu // 50  # Rough containers per TEU capacity
+            containers_to_unload = random.randint(int(base_containers * 0.3), int(base_containers * 0.8))
+            containers_to_load = random.randint(int(base_containers * 0.2), int(base_containers * 0.7))
+        elif ship_type == 'bulk':
+            # Bulk carriers: fewer containers, more bulk cargo
+            containers_to_unload = random.randint(10, 100)
+            containers_to_load = random.randint(5, 80)
+        else:  # mixed
+            # Mixed cargo: moderate container counts
+            base_containers = size_teu // 80  # Lower container density for mixed cargo
+            containers_to_unload = random.randint(int(base_containers * 0.2), int(base_containers * 0.6))
+            containers_to_load = random.randint(int(base_containers * 0.1), int(base_containers * 0.5))
+    
+        return Ship(
+            ship_id=ship_id,
+            name=f"Vessel_{ship_id}",
+            ship_type=ship_type,
+            size_teu=size_teu,
+            containers_to_unload=containers_to_unload,
+            containers_to_load=containers_to_load,
+>           arrival_time=self.env.now
+        )
+E       AttributeError: 'dict' object has no attribute 'now'
+
+hk_port_digital_twin/src/core/port_simulation.py:431: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+2025-10-26 18:48:20.317 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.318 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.318 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.318 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.318 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.318 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.318 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.318 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.318 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.318 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.318 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.318 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.318 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.319 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.319 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.328 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.329 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.329 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.329 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.329 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.329 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.329 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.329 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.333 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.333 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.336 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.336 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.336 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.338 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.338 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log setup ------------------------------
+ERROR    hk_port_digital_twin.src.utils.data_loader:data_loader.py:3478 Error extracting historical simulation parameters: 'dict' object has no attribute 'empty'
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+_________________ TestPortSimulation.test_short_simulation_run _________________
+
+self = <test_port_simulation.TestPortSimulation object at 0x7f7d492ae4f0>
+
+    def test_short_simulation_run(self):
+        """Test running a short simulation"""
+        # Run very short simulation
+>       result = self.simulation.run_simulation(duration=0.1)
+
+hk_port_digital_twin/tests/test_port_simulation.py:97: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <hk_port_digital_twin.src.core.port_simulation.PortSimulation object at 0x7f7d493856d0>
+duration = 0.1
+
+    def run_simulation(self, duration: float) -> Dict:
+        """Run simulation for specified duration
+    
+        Args:
+            duration: Simulation duration in time units (hours)
+    
+        Returns:
+            Dictionary containing simulation results and metrics
+        """
+        print(f"Starting port simulation for {duration} hours...")
+    
+        self.running = True
+>       self.metrics['simulation_start_time'] = self.env.now
+E       AttributeError: 'dict' object has no attribute 'now'
+
+hk_port_digital_twin/src/core/port_simulation.py:101: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+2025-10-26 18:48:20.347 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.347 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.348 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.348 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.348 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.348 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.348 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.348 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.348 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.348 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.348 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.348 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.348 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.349 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.349 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.359 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.359 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.359 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.359 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.359 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.359 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.359 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.359 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.363 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.363 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.366 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.366 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.366 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.368 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.368 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log setup ------------------------------
+ERROR    hk_port_digital_twin.src.utils.data_loader:data_loader.py:3478 Error extracting historical simulation parameters: 'dict' object has no attribute 'empty'
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+----------------------------- Captured stdout call -----------------------------
+Starting port simulation for 0.1 hours...
+_____________ TestPortSimulation.test_simulation_metrics_tracking ______________
+
+self = <test_port_simulation.TestPortSimulation object at 0x7f7d4102a820>
+
+    def test_simulation_metrics_tracking(self):
+        """Test that simulation properly tracks metrics"""
+        # Run short simulation
+>       self.simulation.run_simulation(duration=0.5)
+
+hk_port_digital_twin/tests/test_port_simulation.py:112: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <hk_port_digital_twin.src.core.port_simulation.PortSimulation object at 0x7f7d6171d640>
+duration = 0.5
+
+    def run_simulation(self, duration: float) -> Dict:
+        """Run simulation for specified duration
+    
+        Args:
+            duration: Simulation duration in time units (hours)
+    
+        Returns:
+            Dictionary containing simulation results and metrics
+        """
+        print(f"Starting port simulation for {duration} hours...")
+    
+        self.running = True
+>       self.metrics['simulation_start_time'] = self.env.now
+E       AttributeError: 'dict' object has no attribute 'now'
+
+hk_port_digital_twin/src/core/port_simulation.py:101: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+2025-10-26 18:48:20.410 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.410 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.410 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.410 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.410 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.410 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.410 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.411 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.411 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.411 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.411 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.411 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.411 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.411 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.411 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.422 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.422 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.422 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.425 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.425 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.426 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.426 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.426 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.429 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.429 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.432 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.432 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.432 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.435 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.435 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log setup ------------------------------
+ERROR    hk_port_digital_twin.src.utils.data_loader:data_loader.py:3478 Error extracting historical simulation parameters: 'dict' object has no attribute 'empty'
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+----------------------------- Captured stdout call -----------------------------
+Starting port simulation for 0.5 hours...
+____________________ TestPortSimulation.test_current_status ____________________
+
+self = <test_port_simulation.TestPortSimulation object at 0x7f7d4102afa0>
+
+    def test_current_status(self):
+        """Test getting current simulation status"""
+>       status = self.simulation.get_current_status()
+
+hk_port_digital_twin/tests/test_port_simulation.py:154: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <hk_port_digital_twin.src.core.port_simulation.PortSimulation object at 0x7f7d41343ee0>
+
+    def get_current_status(self) -> Dict:
+        """Get current simulation status and metrics
+    
+        Returns:
+            Dictionary containing current simulation state
+        """
+        return {
+>           'current_time': round(self.env.now, 2),
+            'running': self.running,
+            'ships_in_system': self.metrics['ships_arrived'] - self.metrics['ships_processed'],
+            'ships_processed': self.metrics['ships_processed'],
+            'berth_status': self.berth_manager.get_berth_statistics(),
+            'queue_length': max(0, self.metrics['ships_arrived'] - self.metrics['ships_processed'])
+        }
+E       AttributeError: 'dict' object has no attribute 'now'
+
+hk_port_digital_twin/src/core/port_simulation.py:533: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+2025-10-26 18:48:20.531 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.531 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.531 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.531 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.531 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.531 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.531 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.531 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.532 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.532 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.532 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.532 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.532 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.532 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.532 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.541 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.541 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.541 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.541 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.542 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.542 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.542 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.542 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.545 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.545 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.549 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.549 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.549 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.551 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.551 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log setup ------------------------------
+ERROR    hk_port_digital_twin.src.utils.data_loader:data_loader.py:3478 Error extracting historical simulation parameters: 'dict' object has no attribute 'empty'
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+___________________ TestPortSimulation.test_reset_simulation ___________________
+
+self = <test_port_simulation.TestPortSimulation object at 0x7f7d41030190>
+
+    def test_reset_simulation(self):
+        """Test simulation reset functionality"""
+        # Run simulation briefly
+>       self.simulation.run_simulation(duration=0.1)
+
+hk_port_digital_twin/tests/test_port_simulation.py:173: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <hk_port_digital_twin.src.core.port_simulation.PortSimulation object at 0x7f7d49344160>
+duration = 0.1
+
+    def run_simulation(self, duration: float) -> Dict:
+        """Run simulation for specified duration
+    
+        Args:
+            duration: Simulation duration in time units (hours)
+    
+        Returns:
+            Dictionary containing simulation results and metrics
+        """
+        print(f"Starting port simulation for {duration} hours...")
+    
+        self.running = True
+>       self.metrics['simulation_start_time'] = self.env.now
+E       AttributeError: 'dict' object has no attribute 'now'
+
+hk_port_digital_twin/src/core/port_simulation.py:101: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+2025-10-26 18:48:20.559 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.559 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.560 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.560 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.560 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.560 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.560 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.560 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.560 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.560 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.560 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.560 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.560 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.560 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.561 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.571 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.571 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.571 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.571 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.571 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.571 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.571 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.571 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.575 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.575 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.578 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.578 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.578 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.581 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.581 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log setup ------------------------------
+ERROR    hk_port_digital_twin.src.utils.data_loader:data_loader.py:3478 Error extracting historical simulation parameters: 'dict' object has no attribute 'empty'
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+----------------------------- Captured stdout call -----------------------------
+Starting port simulation for 0.1 hours...
+________________ TestPortSimulation.test_final_report_structure ________________
+
+self = <test_port_simulation.TestPortSimulation object at 0x7f7d410302e0>
+
+    def test_final_report_structure(self):
+        """Test final report contains all required sections"""
+        # Run short simulation
+>       result = self.simulation.run_simulation(duration=0.1)
+
+hk_port_digital_twin/tests/test_port_simulation.py:192: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <hk_port_digital_twin.src.core.port_simulation.PortSimulation object at 0x7f7d4139ba00>
+duration = 0.1
+
+    def run_simulation(self, duration: float) -> Dict:
+        """Run simulation for specified duration
+    
+        Args:
+            duration: Simulation duration in time units (hours)
+    
+        Returns:
+            Dictionary containing simulation results and metrics
+        """
+        print(f"Starting port simulation for {duration} hours...")
+    
+        self.running = True
+>       self.metrics['simulation_start_time'] = self.env.now
+E       AttributeError: 'dict' object has no attribute 'now'
+
+hk_port_digital_twin/src/core/port_simulation.py:101: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+2025-10-26 18:48:20.588 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.588 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.588 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.588 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.588 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.588 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.588 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.588 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.589 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.589 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.589 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.589 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.589 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.589 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.589 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.600 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.600 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.600 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.600 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.600 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.600 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.600 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.600 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.604 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.604 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.607 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.607 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.607 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.610 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.610 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log setup ------------------------------
+ERROR    hk_port_digital_twin.src.utils.data_loader:data_loader.py:3478 Error extracting historical simulation parameters: 'dict' object has no attribute 'empty'
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+----------------------------- Captured stdout call -----------------------------
+Starting port simulation for 0.1 hours...
+____________ TestPortSimulation.test_benchmark_analysis_integration ____________
+
+self = <test_port_simulation.TestPortSimulation object at 0x7f7d41030430>
+
+    def test_benchmark_analysis_integration(self):
+        """Test that benchmark analysis is included in simulation results"""
+        # Run simulation
+>       result = self.simulation.run_simulation(duration=0.5)
+
+hk_port_digital_twin/tests/test_port_simulation.py:220: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <hk_port_digital_twin.src.core.port_simulation.PortSimulation object at 0x7f7d49326f40>
+duration = 0.5
+
+    def run_simulation(self, duration: float) -> Dict:
+        """Run simulation for specified duration
+    
+        Args:
+            duration: Simulation duration in time units (hours)
+    
+        Returns:
+            Dictionary containing simulation results and metrics
+        """
+        print(f"Starting port simulation for {duration} hours...")
+    
+        self.running = True
+>       self.metrics['simulation_start_time'] = self.env.now
+E       AttributeError: 'dict' object has no attribute 'now'
+
+hk_port_digital_twin/src/core/port_simulation.py:101: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+2025-10-26 18:48:20.617 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.617 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.617 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.618 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.618 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.618 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.618 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.618 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.618 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.618 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.618 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.618 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.618 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.618 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.618 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.629 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.629 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.629 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.629 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.629 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.629 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.629 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.629 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.633 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.633 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.636 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.636 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.636 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.638 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.638 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log setup ------------------------------
+ERROR    hk_port_digital_twin.src.utils.data_loader:data_loader.py:3478 Error extracting historical simulation parameters: 'dict' object has no attribute 'empty'
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+----------------------------- Captured stdout call -----------------------------
+Starting port simulation for 0.5 hours...
+____________ TestPortSimulation.test_get_benchmark_analysis_method _____________
+
+self = <test_port_simulation.TestPortSimulation object at 0x7f7d41030580>
+
+    def test_get_benchmark_analysis_method(self):
+        """Test the get_benchmark_analysis method"""
+        # Run simulation first
+>       self.simulation.run_simulation(duration=0.2)
+
+hk_port_digital_twin/tests/test_port_simulation.py:254: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <hk_port_digital_twin.src.core.port_simulation.PortSimulation object at 0x7f7d30d8c6a0>
+duration = 0.2
+
+    def run_simulation(self, duration: float) -> Dict:
+        """Run simulation for specified duration
+    
+        Args:
+            duration: Simulation duration in time units (hours)
+    
+        Returns:
+            Dictionary containing simulation results and metrics
+        """
+        print(f"Starting port simulation for {duration} hours...")
+    
+        self.running = True
+>       self.metrics['simulation_start_time'] = self.env.now
+E       AttributeError: 'dict' object has no attribute 'now'
+
+hk_port_digital_twin/src/core/port_simulation.py:101: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+2025-10-26 18:48:20.646 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.646 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.646 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.647 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.647 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.647 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.647 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.647 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.647 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.647 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.647 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.647 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.647 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.647 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.647 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.657 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.657 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.657 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.658 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.658 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.658 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.658 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.658 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.661 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.661 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.665 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.665 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.665 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.667 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.667 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log setup ------------------------------
+ERROR    hk_port_digital_twin.src.utils.data_loader:data_loader.py:3478 Error extracting historical simulation parameters: 'dict' object has no attribute 'empty'
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+----------------------------- Captured stdout call -----------------------------
+Starting port simulation for 0.2 hours...
+______________ TestPortSimulation.test_simulation_with_no_berths _______________
+
+self = <test_port_simulation.TestPortSimulation object at 0x7f7d410306d0>
+
+    def test_simulation_with_no_berths(self):
+        """Test simulation behavior with no berths configured"""
+        empty_config = {'berths': []}
+        empty_simulation = PortSimulation(empty_config)
+    
+        # Should still initialize without errors
+        assert empty_simulation.berth_manager is not None
+    
+        # Run very short simulation
+>       result = empty_simulation.run_simulation(duration=0.01)
+
+hk_port_digital_twin/tests/test_port_simulation.py:279: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <hk_port_digital_twin.src.core.port_simulation.PortSimulation object at 0x7f7d30df3ca0>
+duration = 0.01
+
+    def run_simulation(self, duration: float) -> Dict:
+        """Run simulation for specified duration
+    
+        Args:
+            duration: Simulation duration in time units (hours)
+    
+        Returns:
+            Dictionary containing simulation results and metrics
+        """
+        print(f"Starting port simulation for {duration} hours...")
+    
+        self.running = True
+>       self.metrics['simulation_start_time'] = self.env.now
+E       AttributeError: 'dict' object has no attribute 'now'
+
+hk_port_digital_twin/src/core/port_simulation.py:101: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+2025-10-26 18:48:20.674 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.674 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.674 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.675 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.675 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.675 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.675 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.675 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.675 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.675 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.675 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.675 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.675 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.675 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.675 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.685 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.685 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.685 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.685 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.685 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.685 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.685 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.685 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.689 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.689 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.692 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.692 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.692 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.694 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.694 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log setup ------------------------------
+ERROR    hk_port_digital_twin.src.utils.data_loader:data_loader.py:3478 Error extracting historical simulation parameters: 'dict' object has no attribute 'empty'
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+----------------------------- Captured stdout call -----------------------------
+Starting port simulation for 0.01 hours...
+----------------------------- Captured stderr call -----------------------------
+2025-10-26 18:48:20.695 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.695 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.695 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.695 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.695 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.695 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.695 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.695 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.695 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.695 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.695 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.695 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.695 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.696 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.696 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.705 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.705 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.705 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.706 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.706 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.706 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.706 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.706 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.709 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.709 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.713 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.713 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.713 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.715 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.715 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log call -------------------------------
+ERROR    hk_port_digital_twin.src.utils.data_loader:data_loader.py:3478 Error extracting historical simulation parameters: 'dict' object has no attribute 'empty'
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+______________ TestPortSimulation.test_simulation_error_handling _______________
+
+self = <test_port_simulation.TestPortSimulation object at 0x7f7d41030820>
+
+    def test_simulation_error_handling(self):
+        """Test simulation handles errors gracefully"""
+        # This test ensures the simulation doesn't crash on errors
+        try:
+>           result = self.simulation.run_simulation(duration=0.1)
+
+hk_port_digital_twin/tests/test_port_simulation.py:288: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <hk_port_digital_twin.src.core.port_simulation.PortSimulation object at 0x7f7d617495b0>
+duration = 0.1
+
+    def run_simulation(self, duration: float) -> Dict:
+        """Run simulation for specified duration
+    
+        Args:
+            duration: Simulation duration in time units (hours)
+    
+        Returns:
+            Dictionary containing simulation results and metrics
+        """
+        print(f"Starting port simulation for {duration} hours...")
+    
+        self.running = True
+>       self.metrics['simulation_start_time'] = self.env.now
+E       AttributeError: 'dict' object has no attribute 'now'
+
+hk_port_digital_twin/src/core/port_simulation.py:101: AttributeError
+
+During handling of the above exception, another exception occurred:
+
+self = <test_port_simulation.TestPortSimulation object at 0x7f7d41030820>
+
+    def test_simulation_error_handling(self):
+        """Test simulation handles errors gracefully"""
+        # This test ensures the simulation doesn't crash on errors
+        try:
+            result = self.simulation.run_simulation(duration=0.1)
+            # If we get here, no exception was raised
+            assert 'simulation_summary' in result
+        except Exception as e:
+            # If an exception occurs, it should be handled gracefully
+>           pytest.fail(f"Simulation should handle errors gracefully, but got: {e}")
+E           Failed: Simulation should handle errors gracefully, but got: 'dict' object has no attribute 'now'
+
+hk_port_digital_twin/tests/test_port_simulation.py:293: Failed
+---------------------------- Captured stderr setup -----------------------------
+2025-10-26 18:48:20.722 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.723 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.723 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.723 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.723 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.723 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.723 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.723 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.723 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.723 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.723 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.723 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.723 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.723 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.724 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.733 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.733 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.733 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.734 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.734 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.734 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.734 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.734 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.737 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.737 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.740 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.740 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.741 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.743 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.743 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log setup ------------------------------
+ERROR    hk_port_digital_twin.src.utils.data_loader:data_loader.py:3478 Error extracting historical simulation parameters: 'dict' object has no attribute 'empty'
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+----------------------------- Captured stdout call -----------------------------
+Starting port simulation for 0.1 hours...
+_______________ TestPortSimulation.test_multiple_simulation_runs _______________
+
+self = <test_port_simulation.TestPortSimulation object at 0x7f7d41030970>
+
+    def test_multiple_simulation_runs(self):
+        """Test running multiple simulations in sequence"""
+        # Run first simulation
+>       result1 = self.simulation.run_simulation(duration=0.1)
+
+hk_port_digital_twin/tests/test_port_simulation.py:298: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <hk_port_digital_twin.src.core.port_simulation.PortSimulation object at 0x7f7d30dc17c0>
+duration = 0.1
+
+    def run_simulation(self, duration: float) -> Dict:
+        """Run simulation for specified duration
+    
+        Args:
+            duration: Simulation duration in time units (hours)
+    
+        Returns:
+            Dictionary containing simulation results and metrics
+        """
+        print(f"Starting port simulation for {duration} hours...")
+    
+        self.running = True
+>       self.metrics['simulation_start_time'] = self.env.now
+E       AttributeError: 'dict' object has no attribute 'now'
+
+hk_port_digital_twin/src/core/port_simulation.py:101: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+2025-10-26 18:48:20.751 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.751 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.751 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.752 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.752 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.752 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.752 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.752 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.752 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.752 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.752 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.752 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.752 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.752 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.752 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.762 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.762 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.762 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.762 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.762 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.762 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.762 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.762 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.766 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.766 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.770 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.770 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.770 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.772 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.772 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log setup ------------------------------
+ERROR    hk_port_digital_twin.src.utils.data_loader:data_loader.py:3478 Error extracting historical simulation parameters: 'dict' object has no attribute 'empty'
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+----------------------------- Captured stdout call -----------------------------
+Starting port simulation for 0.1 hours...
+__________________ TestPortSimulation.test_ship_id_generation __________________
+
+self = <test_port_simulation.TestPortSimulation object at 0x7f7d41030ac0>
+
+    def test_ship_id_generation(self):
+        """Test that ship IDs are generated correctly"""
+>       ship1 = self.simulation._generate_random_ship("SHIP_001")
+
+hk_port_digital_twin/tests/test_port_simulation.py:313: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <hk_port_digital_twin.src.core.port_simulation.PortSimulation object at 0x7f7d30db0460>
+ship_id = 'SHIP_001'
+
+    def _generate_random_ship(self, ship_id: str) -> Ship:
+        """Generate a random ship with realistic characteristics
+    
+        Uses probability-based ship type selection and realistic size distributions
+        based on Hong Kong Port's actual vessel characteristics.
+    
+        Args:
+            ship_id: Unique identifier for the ship
+    
+        Returns:
+            Ship object with random but realistic properties
+        """
+        # Select ship type based on arrival probabilities
+        ship_types = list(SHIP_TYPES.keys())
+        probabilities = [SHIP_TYPES[ship_type]['arrival_probability'] for ship_type in ship_types]
+        ship_type = random.choices(ship_types, weights=probabilities)[0]
+    
+        ship_config = SHIP_TYPES[ship_type]
+    
+        # Generate realistic size from typical sizes
+        if 'typical_sizes' in ship_config:
+            size_teu = random.choice(ship_config['typical_sizes'])
+        else:
+            size_teu = random.randint(ship_config['min_size'], ship_config['max_size'])
+    
+        # Generate container counts based on ship type and size
+        if ship_type == 'container':
+            # Container ships: higher container counts, proportional to size
+            base_containers = size_teu // 50  # Rough containers per TEU capacity
+            containers_to_unload = random.randint(int(base_containers * 0.3), int(base_containers * 0.8))
+            containers_to_load = random.randint(int(base_containers * 0.2), int(base_containers * 0.7))
+        elif ship_type == 'bulk':
+            # Bulk carriers: fewer containers, more bulk cargo
+            containers_to_unload = random.randint(10, 100)
+            containers_to_load = random.randint(5, 80)
+        else:  # mixed
+            # Mixed cargo: moderate container counts
+            base_containers = size_teu // 80  # Lower container density for mixed cargo
+            containers_to_unload = random.randint(int(base_containers * 0.2), int(base_containers * 0.6))
+            containers_to_load = random.randint(int(base_containers * 0.1), int(base_containers * 0.5))
+    
+        return Ship(
+            ship_id=ship_id,
+            name=f"Vessel_{ship_id}",
+            ship_type=ship_type,
+            size_teu=size_teu,
+            containers_to_unload=containers_to_unload,
+            containers_to_load=containers_to_load,
+>           arrival_time=self.env.now
+        )
+E       AttributeError: 'dict' object has no attribute 'now'
+
+hk_port_digital_twin/src/core/port_simulation.py:431: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+2025-10-26 18:48:20.780 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.780 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.780 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.780 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.780 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.780 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.780 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.780 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.781 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.781 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.781 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.781 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.781 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.781 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.781 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.791 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.791 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.792 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.792 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.792 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.792 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.792 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.792 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.795 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.795 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.799 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.799 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.799 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.801 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.802 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log setup ------------------------------
+ERROR    hk_port_digital_twin.src.utils.data_loader:data_loader.py:3478 Error extracting historical simulation parameters: 'dict' object has no attribute 'empty'
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+__________________ TestPortSimulation.test_config_integration __________________
+
+self = <test_port_simulation.TestPortSimulation object at 0x7f7d41030c10>
+
+    def test_config_integration(self):
+        """Test that configuration is properly integrated"""
+        # Check that berth configuration is passed correctly (test config has 2 berths)
+>       assert len(self.simulation.berth_manager.berths) == 2
+E       AssertionError: assert 24 == 2
+E        +  where 24 = len({1: Berth(berth_id=1, name='CT1-North', max_capacity_teu=18000, crane_count=6, berth_type='container', is_occupied=Fal...er', is_occupied=False, current_ship=None, occupation_start_time=None, total_occupation_time=0.0, ships_served=0), ...})
+E        +    where {1: Berth(berth_id=1, name='CT1-North', max_capacity_teu=18000, crane_count=6, berth_type='container', is_occupied=Fal...er', is_occupied=False, current_ship=None, occupation_start_time=None, total_occupation_time=0.0, ships_served=0), ...} = <hk_port_digital_twin.src.core.berth_manager.BerthManager object at 0x7f7d6175af10>.berths
+E        +      where <hk_port_digital_twin.src.core.berth_manager.BerthManager object at 0x7f7d6175af10> = <hk_port_digital_twin.src.core.port_simulation.PortSimulation object at 0x7f7d49330280>.berth_manager
+E        +        where <hk_port_digital_twin.src.core.port_simulation.PortSimulation object at 0x7f7d49330280> = <test_port_simulation.TestPortSimulation object at 0x7f7d41030c10>.simulation
+
+hk_port_digital_twin/tests/test_port_simulation.py:323: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+2025-10-26 18:48:20.810 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.810 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.810 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.810 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.810 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.810 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.810 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.810 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.810 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.810 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.810 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.810 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.811 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.811 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.811 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.821 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.821 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.821 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.821 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.821 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.821 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.821 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.821 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.825 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.825 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.828 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.828 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.828 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.830 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.830 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log setup ------------------------------
+ERROR    hk_port_digital_twin.src.utils.data_loader:data_loader.py:3478 Error extracting historical simulation parameters: 'dict' object has no attribute 'empty'
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+_____________ TestSampleDataGenerator.test_generate_ship_arrivals ______________
+
+self = <test_sample_data_generator.TestSampleDataGenerator testMethod=test_generate_ship_arrivals>
+
+    def test_generate_ship_arrivals(self):
+        """Test ship arrivals generation"""
+        # Test basic functionality
+        ships_df = generate_sample_vessel_data(5)
+    
+        # Check DataFrame structure
+        self.assertIsInstance(ships_df, pd.DataFrame)
+        self.assertEqual(len(ships_df), 5)
+    
+        # Check required columns
+        required_columns = ['ship_id', 'ship_name', 'ship_type', 'size_teu',
+                          'arrival_time', 'containers_to_unload', 'containers_to_load']
+        for col in required_columns:
+>           self.assertIn(col, ships_df.columns)
+E           AssertionError: 'ship_id' not found in Index(['vessel_name', 'arrival_time', 'berth_time', 'departure_time',
+E                  'vessel_type', 'port_of_origin', 'destination_port'],
+E                 dtype='object')
+
+hk_port_digital_twin/tests/test_sample_data_generator.py:30: AssertionError
+_ TestScenarioAwareOptimization.test_optimization_comparison_between_scenarios _
+
+self = <test_scenario_integration.TestScenarioAwareOptimization testMethod=test_optimization_comparison_between_scenarios>
+
+    def test_optimization_comparison_between_scenarios(self):
+        """Test scenario comparison functionality."""
+        # Add ships and berths to optimizer
+        for _ in range(3):
+            ship = Mock(spec=Ship)
+            self.scenario_optimizer.add_ship(ship)
+    
+        for _ in range(2):
+            berth = Mock(spec=Berth)
+            self.scenario_optimizer.add_berth(berth)
+    
+        # Compare peak vs normal scenarios
+>       comparison = self.scenario_optimizer.compare_scenarios(['peak', 'normal'])
+
+hk_port_digital_twin/tests/test_scenario_integration.py:192: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+hk_port_digital_twin/src/scenarios/scenario_optimizer.py:246: in compare_scenarios
+    result = self.optimize()
+hk_port_digital_twin/src/scenarios/scenario_optimizer.py:173: in optimize
+    scenario_result = self._create_scenario_result(
+hk_port_digital_twin/src/scenarios/scenario_optimizer.py:365: in _create_scenario_result
+    adjusted_metrics = self._calculate_adjusted_metrics(base_result, scenario_params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ScenarioAwareBerthOptimizer(scenario='peak', history=0)
+result = <Mock name='mock.optimize_berth_allocation()' id='140175942033808'>
+params = {'arrival_rate_multiplier': 1.4, 'average_ship_size_multiplier': 1.25, 'berth_availability_factor': 0.95, 'container_ship_priority_boost': 1.3, ...}
+
+    def _calculate_adjusted_metrics(self, result: OptimizationResult,
+                                  params: Dict[str, Any]) -> Dict[str, float]:
+        """Calculate scenario-adjusted performance metrics.
+    
+        Args:
+            result: Base optimization result
+            params: Scenario parameters
+    
+        Returns:
+            Dictionary of adjusted metrics
+        """
+        adjusted_metrics = {}
+    
+        # Adjust waiting time based on processing efficiency
+        if 'processing_rate_multiplier' in params:
+>           adjusted_waiting_time = result.total_waiting_time / params['processing_rate_multiplier']
+E           TypeError: unsupported operand type(s) for /: 'Mock' and 'float'
+
+hk_port_digital_twin/src/scenarios/scenario_optimizer.py:393: TypeError
+----------------------------- Captured stderr call -----------------------------
+2025-10-26 18:48:20.838 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.838 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.838 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.839 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.839 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.839 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.839 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.839 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.842 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.842 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.846 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.846 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.846 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.848 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.848 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log call -------------------------------
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+ERROR    hk_port_digital_twin.src.scenarios.scenario_manager:scenario_manager.py:126 Validation errors in scenario normal: ['Ship type distribution sums to 0.800, should be 1.0', 'arrival_rate_multiplier must be positive, got -1.0']
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: peak
+_ TestScenarioAwareOptimization.test_scenario_aware_optimization_produces_different_results _
+
+self = <test_scenario_integration.TestScenarioAwareOptimization testMethod=test_scenario_aware_optimization_produces_different_results>
+
+    def test_scenario_aware_optimization_produces_different_results(self):
+        """Test that different scenarios produce different optimization results."""
+        # Add mock ships and berths to optimizer
+        for _ in range(3):
+            ship = Mock(spec=Ship)
+            self.scenario_optimizer.add_ship(ship)
+    
+        for _ in range(2):
+            berth = Mock(spec=Berth)
+            self.scenario_optimizer.add_berth(berth)
+    
+        # Test optimization with different scenarios
+        self.scenario_optimizer.set_scenario('peak')
+>       peak_result = self.scenario_optimizer.optimize()
+
+hk_port_digital_twin/tests/test_scenario_integration.py:137: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+hk_port_digital_twin/src/scenarios/scenario_optimizer.py:173: in optimize
+    scenario_result = self._create_scenario_result(
+hk_port_digital_twin/src/scenarios/scenario_optimizer.py:365: in _create_scenario_result
+    adjusted_metrics = self._calculate_adjusted_metrics(base_result, scenario_params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ScenarioAwareBerthOptimizer(scenario='peak', history=0)
+result = <Mock name='mock.optimize_berth_allocation()' id='140175117024128'>
+params = {'arrival_rate_multiplier': 1.4, 'average_ship_size_multiplier': 1.25, 'berth_availability_factor': 0.95, 'container_ship_priority_boost': 1.3, ...}
+
+    def _calculate_adjusted_metrics(self, result: OptimizationResult,
+                                  params: Dict[str, Any]) -> Dict[str, float]:
+        """Calculate scenario-adjusted performance metrics.
+    
+        Args:
+            result: Base optimization result
+            params: Scenario parameters
+    
+        Returns:
+            Dictionary of adjusted metrics
+        """
+        adjusted_metrics = {}
+    
+        # Adjust waiting time based on processing efficiency
+        if 'processing_rate_multiplier' in params:
+>           adjusted_waiting_time = result.total_waiting_time / params['processing_rate_multiplier']
+E           TypeError: unsupported operand type(s) for /: 'Mock' and 'float'
+
+hk_port_digital_twin/src/scenarios/scenario_optimizer.py:393: TypeError
+----------------------------- Captured stderr call -----------------------------
+2025-10-26 18:48:20.866 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.866 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.866 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.867 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.867 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.867 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.867 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.867 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.870 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.870 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.874 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.874 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.874 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.876 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:20.876 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log call -------------------------------
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+ERROR    hk_port_digital_twin.src.scenarios.scenario_manager:scenario_manager.py:126 Validation errors in scenario normal: ['Ship type distribution sums to 0.800, should be 1.0', 'arrival_rate_multiplier must be positive, got -1.0']
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: peak
+________ TestPerformanceAndMemory.test_optimization_time_with_scenarios ________
+
+self = <test_scenario_integration.TestPerformanceAndMemory testMethod=test_optimization_time_with_scenarios>
+
+    def test_optimization_time_with_scenarios(self):
+        """Test that scenario-aware optimization doesn't significantly slow down optimization."""
+        # Mock optimization components
+        mock_optimizer = Mock()
+        mock_result = Mock()
+        mock_result.total_waiting_time = 50.0
+        mock_result.berth_utilization = 0.85
+        mock_result.allocation_efficiency = 0.92  # Add allocation efficiency
+        mock_result.average_waiting_time = 10.0  # Add average waiting time
+        mock_result.allocations = [Mock() for _ in range(5)]  # Add proper allocations list
+        mock_result.unallocated_ships = []  # Add unallocated ships list
+        mock_optimizer.optimize = Mock(return_value=mock_result)
+    
+        mock_scenario_manager = Mock(spec=ScenarioManager)
+        mock_scenario_manager.set_scenario.return_value = True
+        # Create a proper mock object that supports mathematical operations
+        class MockParams:
+            def __init__(self):
+                self.arrival_rate_multiplier = 1.2
+                self.processing_rate_multiplier = 0.9
+                self.container_volume_multipliers = {'container': 1.2, 'bulk': 1.0}
+                self.ship_type_distribution = {'container': 0.7, 'bulk': 0.3}
+                self.target_berth_utilization = 0.85
+                self.crane_efficiency_multiplier = 1.1
+                self.weather_impact_multiplier = 1.0
+                self.average_ship_size_multiplier = 1.1
+                self.large_ship_priority_boost = 1.2
+                self.container_ship_priority_boost = 1.15
+                self.peak_hour_multiplier = 1.5
+                self.weekend_multiplier = 0.8
+                self.docking_time_multiplier = 1.0
+                self.berth_availability_factor = 0.95
+                self.scenario_name = 'peak'
+                self.scenario_description = 'Peak traffic scenario'
+    
+        mock_params = MockParams()
+        mock_scenario_manager.get_current_parameters.return_value = mock_params
+        # Return the actual dictionary of parameters for iteration
+        mock_scenario_manager.get_optimization_parameters = Mock(return_value=vars(mock_params))
+    
+        scenario_optimizer = ScenarioAwareBerthOptimizer(
+            scenario_manager=mock_scenario_manager
+        )
+        scenario_optimizer.base_optimizer = mock_optimizer
+    
+        # Create ships with proper attributes (using actual numeric values, not Mocks)
+        ships = []
+        for i in range(5):
+            ship = Mock(spec=Ship)
+            ship.ship_type = 'container'
+            ship.size = 100 + i * 20  # Actual numeric values
+            ship.priority = 1.0
+            ship.container_count = 50 + i * 10
+            ship.container_volume = 1000 + i * 200  # Add container_volume attribute
+            ships.append(ship)
+    
+        # Create berths with proper attributes
+        berths = []
+        for i in range(3):
+            berth = Mock(spec=Berth)
+            berth.berth_id = f'B00{i+1}'
+            berth.crane_count = 2
+            berth.available = True
+            berths.append(berth)
+    
+        start_time = time.time()
+    
+        # Add ships and berths, then run optimization with scenario
+        for ship in ships:
+            scenario_optimizer.add_ship(ship)
+        for berth in berths:
+            scenario_optimizer.add_berth(berth)
+    
+        scenario_optimizer.set_scenario('peak')
+>       scenario_optimizer.optimize()
+
+hk_port_digital_twin/tests/test_scenario_integration.py:465: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+hk_port_digital_twin/src/scenarios/scenario_optimizer.py:173: in optimize
+    scenario_result = self._create_scenario_result(
+hk_port_digital_twin/src/scenarios/scenario_optimizer.py:365: in _create_scenario_result
+    adjusted_metrics = self._calculate_adjusted_metrics(base_result, scenario_params)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ScenarioAwareBerthOptimizer(scenario='<Mock name='mock.get_current_scenario()' id='140175667636400'>', history=0)
+result = <Mock name='mock.optimize_berth_allocation()' id='140175667634240'>
+params = {'arrival_rate_multiplier': 1.2, 'average_ship_size_multiplier': 1.1, 'berth_availability_factor': 0.95, 'container_ship_priority_boost': 1.15, ...}
+
+    def _calculate_adjusted_metrics(self, result: OptimizationResult,
+                                  params: Dict[str, Any]) -> Dict[str, float]:
+        """Calculate scenario-adjusted performance metrics.
+    
+        Args:
+            result: Base optimization result
+            params: Scenario parameters
+    
+        Returns:
+            Dictionary of adjusted metrics
+        """
+        adjusted_metrics = {}
+    
+        # Adjust waiting time based on processing efficiency
+        if 'processing_rate_multiplier' in params:
+>           adjusted_waiting_time = result.total_waiting_time / params['processing_rate_multiplier']
+E           TypeError: unsupported operand type(s) for /: 'Mock' and 'float'
+
+hk_port_digital_twin/src/scenarios/scenario_optimizer.py:393: TypeError
+----------------------------- Captured stderr call -----------------------------
+2025-10-26 18:48:21.043 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:21.043 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:21.043 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:21.043 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:21.043 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:21.043 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:21.043 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:21.043 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:21.046 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:21.046 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:21.050 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:21.050 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:21.050 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:21.052 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-10-26 18:48:21.052 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+------------------------------ Captured log call -------------------------------
+WARNING  hk_port_digital_twin.src.scenarios.historical_extractor:historical_extractor.py:130 Unknown scenario: normal
+ERROR    hk_port_digital_twin.src.scenarios.scenario_manager:scenario_manager.py:126 Validation errors in scenario normal: ['Ship type distribution sums to 0.800, should be 1.0', 'arrival_rate_multiplier must be positive, got -1.0']
+____________ TestSimulationController.test_custom_metrics_collector ____________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_custom_metrics_collector>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+___________ TestSimulationController.test_default_metrics_collector ____________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_default_metrics_collector>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+_________________ TestSimulationController.test_initialization _________________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_initialization>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+______________ TestSimulationController.test_metrics_integration _______________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_metrics_integration>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+____________ TestSimulationController.test_pause_resume_simulation _____________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_pause_resume_simulation>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+_______________ TestSimulationController.test_progress_tracking ________________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_progress_tracking>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+____________ TestSimulationController.test_progress_update_callback ____________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_progress_update_callback>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+________________ TestSimulationController.test_reset_simulation ________________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_reset_simulation>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+__________ TestSimulationController.test_reset_simulation_with_error ___________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_reset_simulation_with_error>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+_____________ TestSimulationController.test_simulation_completion ______________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_simulation_completion>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+___________ TestSimulationController.test_simulation_error_handling ____________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_simulation_error_handling>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+___________ TestSimulationController.test_simulation_step_processing ___________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_simulation_step_processing>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+___________ TestSimulationController.test_simulation_step_with_ships ___________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_simulation_step_with_ships>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+________ TestSimulationController.test_start_simulation_already_running ________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_start_simulation_already_running>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+_______ TestSimulationController.test_start_simulation_invalid_duration ________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_start_simulation_invalid_duration>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+_________ TestSimulationController.test_start_simulation_non_threaded __________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_start_simulation_non_threaded>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+___________ TestSimulationController.test_start_simulation_threaded ____________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_start_simulation_threaded>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+_____________ TestSimulationController.test_state_change_callback ______________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_state_change_callback>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+_________________ TestSimulationController.test_state_queries __________________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_state_queries>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+________________ TestSimulationController.test_stop_simulation _________________
+
+self = <test_simulation_controller.TestSimulationController testMethod=test_stop_simulation>
+
+    def setUp(self):
+        """Set up test fixtures"""
+        # Create test configuration
+        self.config = {
+            'berths': [
+                {'berth_id': 1, 'berth_name': 'Berth 1', 'berth_type': 'container', 'max_capacity_teu': 50000, 'crane_count': 2},
+                 {'berth_id': 2, 'berth_name': 'Berth 2', 'berth_type': 'container', 'max_capacity_teu': 60000, 'crane_count': 3}
+            ]
+        }
+    
+        self.metrics_collector = MetricsCollector()
+    
+        # Create port simulation
+>       self.port_simulation = PortSimulation(config=self.config)
+E       TypeError: __init__() got an unexpected keyword argument 'config'
+
+hk_port_digital_twin/tests/test_simulation_controller.py:32: TypeError
+___________ TestPortLayoutChart.test_create_port_layout_chart_basic ____________
+
+self = <test_visualization.TestPortLayoutChart object at 0x7f7d615fc670>
+
+    def test_create_port_layout_chart_basic(self):
+        """Test basic port layout chart creation"""
+        berths_data = pd.DataFrame({
+            'berth_id': [1, 2, 3],
+            'name': ['Berth A1', 'Berth A2', 'Berth B1'],
+            'max_capacity_teu': [20000, 20000, 30000],
+            'crane_count': [4, 4, 2],
+            'berth_type': ['container', 'container', 'bulk'],
+            'is_occupied': [True, False, True]
+        })
+    
+        fig = create_port_layout_chart(berths_data)
+    
+        assert isinstance(fig, go.Figure)
+>       assert len(fig.data) == 3  # One trace per berth
+E       AssertionError: assert 0 == 3
+E        +  where 0 = len(())
+E        +    where () = Figure({\n    'data': [], 'layout': {'template': '...'}\n}).data
+
+hk_port_digital_twin/tests/test_visualization.py:40: AssertionError
+______ TestPortLayoutChart.test_create_port_layout_chart_different_types _______
+
+self = <test_visualization.TestPortLayoutChart object at 0x7f7d615fc8b0>
+
+    def test_create_port_layout_chart_different_types(self):
+        """Test port layout chart with different berth types"""
+        berths_data = pd.DataFrame({
+            'berth_id': [1, 2, 3],
+            'name': ['Container', 'Bulk', 'Mixed'],
+            'max_capacity_teu': [20000, 30000, 25000],
+            'crane_count': [4, 2, 3],
+            'berth_type': ['container', 'bulk', 'mixed'],
+            'is_occupied': [False, False, False]
+        })
+    
+        fig = create_port_layout_chart(berths_data)
+    
+        assert isinstance(fig, go.Figure)
+>       assert len(fig.data) == 3
+E       AssertionError: assert 0 == 3
+E        +  where 0 = len(())
+E        +    where () = Figure({\n    'data': [], 'layout': {'template': '...'}\n}).data
+
+hk_port_digital_twin/tests/test_visualization.py:73: AssertionError
+____________ TestShipQueueChart.test_create_ship_queue_chart_basic _____________
+
+self = <test_visualization.TestShipQueueChart object at 0x7f7d615fca30>
+
+    def test_create_ship_queue_chart_basic(self):
+        """Test basic ship queue chart creation"""
+        queue_data = [
+            {
+                'ship_id': '1',
+                'name': 'Ship A',
+                'ship_type': 'container',
+                'size_teu': 15000,
+                'waiting_time': 2.5
+            },
+            {
+                'ship_id': '2',
+                'name': 'Ship B',
+                'ship_type': 'bulk',
+                'size_teu': 25000,
+                'waiting_time': 1.0
+            }
+        ]
+    
+        fig = create_ship_queue_chart(queue_data)
+    
+        assert isinstance(fig, go.Figure)
+>       assert len(fig.data) == 1  # One bar chart
+E       AssertionError: assert 2 == 1
+E        +  where 2 = len((Bar({\n    'customdata': [['container', 15000]],\n    'hovertemplate': ('<b>%{y}</b><br>Type: %{customd' ... ' %{x:.1f}... 'text': [25,000 TEU],\n    'textposition': 'inside',\n    'x': array([1.]),\n    'y': array(['Ship B'], dtype=object)\n})))
+E        +    where (Bar({\n    'customdata': [['container', 15000]],\n    'hovertemplate': ('<b>%{y}</b><br>Type: %{customd' ... ' %{x:.1f}... 'text': [25,000 TEU],\n    'textposition': 'inside',\n    'x': array([1.]),\n    'y': array(['Ship B'], dtype=object)\n})) = Figure({\n    'data': [{'customdata': [['container', 15000]],\n              'hovertemplate': ('<b>%{y}</b><br>Type: %{c...': {'text': 'Waiting Time (hours)'}},\n               'yaxis': {'autorange': 'reversed', 'title': {'text': 'Ships'}}}\n}).data
+
+hk_port_digital_twin/tests/test_visualization.py:107: AssertionError
+_____ TestBerthUtilizationChart.test_create_berth_utilization_chart_basic ______
+
+self = <test_visualization.TestBerthUtilizationChart object at 0x7f7d615fcdf0>
+
+    def test_create_berth_utilization_chart_basic(self):
+        """Test basic berth utilization chart creation"""
+        utilization_data = {
+            1: 85.5,
+            2: 45.2,
+            3: 92.1,
+            4: 67.8
+        }
+    
+        fig = create_berth_utilization_chart(utilization_data)
+    
+        assert isinstance(fig, go.Figure)
+>       assert len(fig.data) == 1  # One bar chart
+E       AssertionError: assert 3 == 1
+E        +  where 3 = len((Bar({\n    'marker': {'color': 'red'},\n    'name': 'High (> 80%)',\n    'text': [85.5%, 92.1%],\n    'textposition': 'ou...ame': 'Low (< 60%)',\n    'text': [45.2%],\n    'textposition': 'outside',\n    'x': [Berth 2],\n    'y': array([45.2])\n})))
+E        +    where (Bar({\n    'marker': {'color': 'red'},\n    'name': 'High (> 80%)',\n    'text': [85.5%, 92.1%],\n    'textposition': 'ou...ame': 'Low (< 60%)',\n    'text': [45.2%],\n    'textposition': 'outside',\n    'x': [Berth 2],\n    'y': array([45.2])\n})) = Figure({\n    'data': [{'marker': {'color': 'red'},\n              'name': 'High (> 80%)',\n              'text': [85.5%,...': {'title': {'text': 'Berths'}},\n               'yaxis': {'range': [0, 100], 'title': {'text': 'Utilization (%)'}}}\n}).data
+
+hk_port_digital_twin/tests/test_visualization.py:153: AssertionError
+_____ TestBerthUtilizationChart.test_create_berth_utilization_chart_empty ______
+
+self = <test_visualization.TestBerthUtilizationChart object at 0x7f7d615fcf10>
+
+    def test_create_berth_utilization_chart_empty(self):
+        """Test berth utilization chart with empty data"""
+        utilization_data = {}
+    
+        fig = create_berth_utilization_chart(utilization_data)
+    
+        assert isinstance(fig, go.Figure)
+>       assert len(fig.data) == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = len(())
+E        +    where () = Figure({\n    'data': [],\n    'layout': {'height': 400,\n               'legend': {'title': {'text': 'Utilization Level'...': {'title': {'text': 'Berths'}},\n               'yaxis': {'range': [0, 100], 'title': {'text': 'Utilization (%)'}}}\n}).data
+
+hk_port_digital_twin/tests/test_visualization.py:164: AssertionError
+__ TestBerthUtilizationChart.test_create_berth_utilization_chart_color_coding __
+
+self = <test_visualization.TestBerthUtilizationChart object at 0x7f7d615fce80>
+
+    def test_create_berth_utilization_chart_color_coding(self):
+        """Test berth utilization chart color coding"""
+        utilization_data = {
+            1: 90.0,  # Should be red (>80%)
+            2: 70.0,  # Should be orange (60-80%)
+            3: 50.0   # Should be green (<60%)
+        }
+    
+        fig = create_berth_utilization_chart(utilization_data)
+    
+        assert isinstance(fig, go.Figure)
+        colors = fig.data[0].marker.color
+        assert 'red' in colors
+>       assert 'orange' in colors
+E       AssertionError: assert 'orange' in 'red'
+
+hk_port_digital_twin/tests/test_visualization.py:180: AssertionError
+___________ TestVisualizationIntegration.test_figure_titles_are_set ____________
+
+self = <test_visualization.TestVisualizationIntegration object at 0x7f7d61620a60>
+
+    def test_figure_titles_are_set(self):
+        """Test that all figures have appropriate titles"""
+        # Create minimal test data
+        berths_data = pd.DataFrame({
+            'berth_id': [1],
+            'name': ['Test'],
+            'max_capacity_teu': [20000],
+            'crane_count': [4],
+            'berth_type': ['container'],
+            'is_occupied': [False]
+        })
+    
+        expected_titles = [
+            (create_port_layout_chart(berths_data), "Hong Kong Port - Berth Layout"),
+            (create_ship_queue_chart([]), "Ship Waiting Queue"),
+            (create_berth_utilization_chart({1: 50.0}), "Berth Utilization"),
+            (create_throughput_timeline(pd.DataFrame({'time': [0], 'containers_processed': [0]})), "Container Throughput Over Time"),
+            (create_waiting_time_distribution([]), "Ship Waiting Time Distribution"),
+            (create_kpi_summary_chart({}), "Key Performance Indicators")
+        ]
+    
+        for fig, expected_title in expected_titles:
+>           assert expected_title in fig.layout.title.text, f"Figure missing expected title: {expected_title}"
+E           TypeError: argument of type 'NoneType' is not iterable
+
+hk_port_digital_twin/tests/test_visualization.py:364: TypeError
+_________ TestWaitTimeCalculator.test_calculate_wait_time_none_inputs __________
+
+self = <test_wait_time_calculator.TestWaitTimeCalculator testMethod=test_calculate_wait_time_none_inputs>
+
+    def test_calculate_wait_time_none_inputs(self):
+        """Test wait time calculation with None inputs."""
+        # Test None scenario - should raise TypeError
+        with self.assertRaises(TypeError):
+>           self.calculator.calculate_wait_time(None)
+
+hk_port_digital_twin/tests/test_wait_time_calculator.py:116: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def calculate_wait_time(self,
+                          scenario: str,
+                          num_samples: int = 1,
+                          multiplier: float = 1.0) -> Union[float, np.ndarray]:
+        """
+        Calculate wait time(s) for a given scenario.
+    
+        Args:
+            scenario (str): Scenario name ('Peak Season', 'Normal Operations', 'Low Season').
+            num_samples (int, optional): Number of samples. Defaults to 1.
+    
+        Returns:
+            Union[float, np.ndarray]: Single wait time or array of wait times.
+        """
+        if not isinstance(scenario, str) or not scenario.strip():
+>           raise ValueError("scenario must be a non-empty string")
+E           ValueError: scenario must be a non-empty string
+
+hk_port_digital_twin/src/utils/wait_time_calculator.py:185: ValueError
+_ TestCalculateWaitTimeFunction.test_calculate_wait_time_function_invalid_inputs _
+
+self = <test_wait_time_calculator.TestCalculateWaitTimeFunction testMethod=test_calculate_wait_time_function_invalid_inputs>
+
+    def test_calculate_wait_time_function_invalid_inputs(self):
+        """Test the function with invalid inputs."""
+        # Test with None - should raise TypeError
+        with self.assertRaises(TypeError):
+>           calculate_wait_time(None)
+
+hk_port_digital_twin/tests/test_wait_time_calculator.py:212: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def calculate_wait_time(scenario_name: str, use_legacy: bool = False) -> float:
+        """
+        Calculate wait time based on scenario.
+    
+        Args:
+            scenario_name (str): Name of the scenario key (e.g., 'peak', 'normal', 'low') or full scenario name.
+            use_legacy (bool, optional): Use legacy method. Defaults to False.
+    
+        Returns:
+            float: Wait time in hours.
+        """
+        if not isinstance(scenario_name, str) or not scenario_name.strip():
+>           raise ValueError("scenario_name must be a non-empty string")
+E           ValueError: scenario_name must be a non-empty string
+
+hk_port_digital_twin/src/utils/wait_time_calculator.py:334: ValueError
+_____________ TestWaitTimeCalculatorIntegration.test_error_logging _____________
+
+self = <test_wait_time_calculator.TestWaitTimeCalculatorIntegration testMethod=test_error_logging>
+
+    def test_error_logging(self):
+        """Test that errors are properly logged."""
+        with self.assertLogs('utils.wait_time_calculator', level='ERROR') as cm:
+            # This should trigger an error for unknown scenario in the standalone function
+            result = calculate_wait_time('unknown_scenario')
+            self.assertIsInstance(result, (int, float))
+>           self.assertIn('Error calculating wait time', cm.output[0])
+E           IndexError: list index out of range
+
+hk_port_digital_twin/tests/test_wait_time_calculator.py:278: IndexError
+=============================== warnings summary ===============================
+test_vessel_pipeline.py::test_vessel_data_fetcher
+  /Users/Bhavesh/opt/anaconda3/lib/python3.8/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_vessel_pipeline.py::test_vessel_data_fetcher returned True, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_vessel_pipeline.py::test_vessel_data_scheduler
+  /Users/Bhavesh/opt/anaconda3/lib/python3.8/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_vessel_pipeline.py::test_vessel_data_scheduler returned True, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_vessel_pipeline.py::test_data_loader_functions
+  /Users/Bhavesh/opt/anaconda3/lib/python3.8/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_vessel_pipeline.py::test_data_loader_functions returned True, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_vessel_pipeline.py::test_environment_configuration
+  /Users/Bhavesh/opt/anaconda3/lib/python3.8/site-packages/_pytest/python.py:198: PytestReturnNotNoneWarning: Expected None, but test_vessel_pipeline.py::test_environment_configuration returned True, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED hk_port_digital_twin/tests/test_integration_wait_time.py::TestWaitTimeCalculatorIntegration::test_dashboard_integration_import
+FAILED hk_port_digital_twin/tests/test_performance_benchmarking.py::TestBenchmarkMetric::test_performance_level_calculation
+FAILED hk_port_digital_twin/tests/test_performance_benchmarking.py::TestIntegrationScenarios::test_poor_performance_scenario
+FAILED hk_port_digital_twin/tests/test_port_simulation.py::TestPortSimulation::test_initialization
+FAILED hk_port_digital_twin/tests/test_port_simulation.py::TestPortSimulation::test_generate_random_ship
+FAILED hk_port_digital_twin/tests/test_port_simulation.py::TestPortSimulation::test_generate_random_ship_container_type
+FAILED hk_port_digital_twin/tests/test_port_simulation.py::TestPortSimulation::test_short_simulation_run
+FAILED hk_port_digital_twin/tests/test_port_simulation.py::TestPortSimulation::test_simulation_metrics_tracking
+FAILED hk_port_digital_twin/tests/test_port_simulation.py::TestPortSimulation::test_current_status
+FAILED hk_port_digital_twin/tests/test_port_simulation.py::TestPortSimulation::test_reset_simulation
+FAILED hk_port_digital_twin/tests/test_port_simulation.py::TestPortSimulation::test_final_report_structure
+FAILED hk_port_digital_twin/tests/test_port_simulation.py::TestPortSimulation::test_benchmark_analysis_integration
+FAILED hk_port_digital_twin/tests/test_port_simulation.py::TestPortSimulation::test_get_benchmark_analysis_method
+FAILED hk_port_digital_twin/tests/test_port_simulation.py::TestPortSimulation::test_simulation_with_no_berths
+FAILED hk_port_digital_twin/tests/test_port_simulation.py::TestPortSimulation::test_simulation_error_handling
+FAILED hk_port_digital_twin/tests/test_port_simulation.py::TestPortSimulation::test_multiple_simulation_runs
+FAILED hk_port_digital_twin/tests/test_port_simulation.py::TestPortSimulation::test_ship_id_generation
+FAILED hk_port_digital_twin/tests/test_port_simulation.py::TestPortSimulation::test_config_integration
+FAILED hk_port_digital_twin/tests/test_sample_data_generator.py::TestSampleDataGenerator::test_generate_ship_arrivals
+FAILED hk_port_digital_twin/tests/test_scenario_integration.py::TestScenarioAwareOptimization::test_optimization_comparison_between_scenarios
+FAILED hk_port_digital_twin/tests/test_scenario_integration.py::TestScenarioAwareOptimization::test_scenario_aware_optimization_produces_different_results
+FAILED hk_port_digital_twin/tests/test_scenario_integration.py::TestPerformanceAndMemory::test_optimization_time_with_scenarios
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_custom_metrics_collector
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_default_metrics_collector
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_initialization
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_metrics_integration
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_pause_resume_simulation
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_progress_tracking
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_progress_update_callback
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_reset_simulation
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_reset_simulation_with_error
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_simulation_completion
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_simulation_error_handling
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_simulation_step_processing
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_simulation_step_with_ships
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_start_simulation_already_running
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_start_simulation_invalid_duration
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_start_simulation_non_threaded
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_start_simulation_threaded
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_state_change_callback
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_state_queries
+FAILED hk_port_digital_twin/tests/test_simulation_controller.py::TestSimulationController::test_stop_simulation
+FAILED hk_port_digital_twin/tests/test_visualization.py::TestPortLayoutChart::test_create_port_layout_chart_basic
+FAILED hk_port_digital_twin/tests/test_visualization.py::TestPortLayoutChart::test_create_port_layout_chart_different_types
+FAILED hk_port_digital_twin/tests/test_visualization.py::TestShipQueueChart::test_create_ship_queue_chart_basic
+FAILED hk_port_digital_twin/tests/test_visualization.py::TestBerthUtilizationChart::test_create_berth_utilization_chart_basic
+FAILED hk_port_digital_twin/tests/test_visualization.py::TestBerthUtilizationChart::test_create_berth_utilization_chart_empty
+FAILED hk_port_digital_twin/tests/test_visualization.py::TestBerthUtilizationChart::test_create_berth_utilization_chart_color_coding
+FAILED hk_port_digital_twin/tests/test_visualization.py::TestVisualizationIntegration::test_figure_titles_are_set
+FAILED hk_port_digital_twin/tests/test_wait_time_calculator.py::TestWaitTimeCalculator::test_calculate_wait_time_none_inputs
+FAILED hk_port_digital_twin/tests/test_wait_time_calculator.py::TestCalculateWaitTimeFunction::test_calculate_wait_time_function_invalid_inputs
+FAILED hk_port_digital_twin/tests/test_wait_time_calculator.py::TestWaitTimeCalculatorIntegration::test_error_logging
+================= 52 failed, 268 passed, 4 warnings in 51.17s ==================

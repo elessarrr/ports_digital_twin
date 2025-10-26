@@ -19,28 +19,23 @@ from datetime import datetime, date
 from typing import Dict, List, Any
 
 # Import scenario components
-from src.scenarios.scenario_parameters import (
+from hk_port_digital_twin.src.scenarios.scenario_parameters import (
     ScenarioParameters,
     get_scenario_parameters,
     validate_scenario_parameters,
     ALL_SCENARIOS
 )
-from src.scenarios.scenario_manager import ScenarioManager
-from src.scenarios.scenario_optimizer import ScenarioAwareBerthOptimizer
-from src.scenarios.historical_extractor import HistoricalParameterExtractor
+from hk_port_digital_twin.src.scenarios.scenario_manager import ScenarioManager
+from hk_port_digital_twin.src.scenarios.scenario_optimizer import ScenarioAwareBerthOptimizer
+from hk_port_digital_twin.src.scenarios.historical_extractor import HistoricalParameterExtractor
 
 # Import core simulation components
-from src.core.port_simulation import PortSimulation
-from src.core.ship_manager import Ship, ShipState
-from src.core.berth_manager import Berth, BerthManager
+from hk_port_digital_twin.src.core.port_simulation import PortSimulation
+from hk_port_digital_twin.src.core.ship_manager import Ship, ShipState
+from hk_port_digital_twin.src.core.berth_manager import Berth, BerthManager
 
 # Import optimization components
-try:
-    from src.ai.optimization import BerthAllocationOptimizer, OptimizationResult
-except ImportError:
-    # Mock if optimization module not available
-    BerthAllocationOptimizer = Mock
-    OptimizationResult = Mock
+from hk_port_digital_twin.src.ai.optimization import BerthAllocationOptimizer, OptimizationResult
 
 
 class TestScenarioParameterIntegration(unittest.TestCase):
@@ -108,11 +103,12 @@ class TestScenarioAwareOptimization(unittest.TestCase):
         
         # Mock the base optimizer with proper method
         self.mock_base_optimizer = Mock()
-        mock_result = Mock()
+        mock_result = MagicMock(spec=OptimizationResult)
         mock_result.total_waiting_time = 100.0
         mock_result.average_waiting_time = 20.0
         mock_result.berth_utilization = 0.8
         mock_result.allocation_efficiency = 0.9
+        mock_result.optimization_score = 95.0
         # Create mock allocations that behave like a list with length
         mock_allocations = [Mock() for _ in range(5)]  # 5 mock allocations
         mock_result.allocations = mock_allocations
