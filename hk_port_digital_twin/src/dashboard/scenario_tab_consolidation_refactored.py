@@ -12,6 +12,7 @@ import asyncio
 
 from hk_port_digital_twin.src.dashboard.utils.performance_monitor import timing_decorator
 from hk_port_digital_twin.src.dashboard.utils.ux_metrics import track_time_on_page, get_user_feedback
+from hk_port_digital_twin.src.utils.scenario_caching import cache_scenario_result, get_cached_scenario_result, clear_scenario_cache
 
 # Fallback for missing modules
 try:
@@ -29,19 +30,29 @@ class ScenarioData:
         self.scenario_name = scenario_name
         self.params = self._get_scenario_performance_params(scenario_name)
 
-    @st.cache_data
-    def get_all_scenario_values(_self) -> Dict[str, Any]:
+    def get_all_scenario_values(self) -> Dict[str, Any]:
         """
         Retrieves all scenario values, using caching to avoid re-computation.
         """
-        return _self._generate_all_scenario_values()
+        cached_results = get_cached_scenario_results(self.scenario_name)
+        if cached_results:
+            return cached_results
+        
+        results = self._generate_all_scenario_values()
+        cache_scenario_results(self.scenario_name, results)
+        return results
 
-    @st.cache_data
-    async def get_all_scenario_values_async(_self) -> Dict[str, Any]:
+    async def get_all_scenario_values_async(self) -> Dict[str, Any]:
         """
         Retrieves all scenario values asynchronously.
         """
-        return await _self._generate_all_scenario_values_async()
+        cached_results = get_cached_scenario_results(self.scenario_name)
+        if cached_results:
+            return cached_results
+
+        results = await self._generate_all_scenario_values_async()
+        cache_scenario_results(self.scenario_name, results)
+        return results
 
     def _generate_all_scenario_values(self) -> Dict[str, Any]:
         """
@@ -120,19 +131,34 @@ class ScenarioRenderer:
         """
         Renders the entire consolidated scenarios tab.
         """
-        scenario_values = await self.scenario_data.get_all_scenario_values_async()
+        col1, col2 = st.columns(2)
 
+        with col1:
+            st.header("Baseline Scenario")
+            baseline_scenario_data = ScenarioData("Normal Operations")
+            baseline_scenario_values = await baseline_scenario_data.get_all_scenario_values_async()
+            await self._render_scenario_details(baseline_scenario_values)
+
+        with col2:
+            st.header("Custom Scenario")
+            scenario_values = await self.scenario_data.get_all_scenario_values_async()
+            await self._render_scenario_details(scenario_values)
+
+    async def _render_scenario_details(self, scenario_values: Dict[str, Any]) -> None:
+        """
+        Renders the details of a single scenario.
+        """
         with st.expander("Key Metrics", expanded=True):
-            self._render_key_metrics(scenario_values)
+            await self._render_key_metrics(scenario_values)
         with st.expander("Throughput Analysis"):
-            self._render_throughput_analysis(scenario_values)
+            await self._render_throughput_analysis(scenario_values)
         with st.expander("Waiting Time Analysis"):
-            self._render_waiting_time_analysis(scenario_values)
+            await self._render_waiting_time_analysis(scenario_values)
         with st.expander("Performance Metrics"):
-            self._render_performance_metrics(scenario_values)
+            await self._render_performance_metrics(scenario_values)
 
     @timing_decorator
-    def _render_key_metrics(self, scenario_values: Dict[str, Any]) -> None:
+    async def _render_key_metrics(self, scenario_values: Dict[str, Any]) -> None:
         """
         Renders the key metrics section.
         """
@@ -143,7 +169,7 @@ class ScenarioRenderer:
         col2.metric("Utilization", f"{scenario_values.get('utilization', 0):.2f}")
 
     @timing_decorator
-    def _render_throughput_analysis(self, scenario_values: Dict[str, Any]) -> None:
+    async def _render_throughput_analysis(self, scenario_values: Dict[str, Any]) -> None:
         """
         Renders the throughput analysis section.
         """
@@ -156,7 +182,7 @@ class ScenarioRenderer:
         st.plotly_chart(fig, use_container_width=True)
 
     @timing_decorator
-    def _render_waiting_time_analysis(self, scenario_values: Dict[str, Any]) -> None:
+    async def _render_waiting_time_analysis(self, scenario_values: Dict[str, Any]) -> None:
         """
         Renders the waiting time analysis section.
         """
@@ -167,7 +193,7 @@ class ScenarioRenderer:
         st.plotly_chart(fig, use_container_width=True)
 
     @timing_decorator
-    def _render_performance_metrics(self, scenario_values: Dict[str, Any]):
+    async def _render_performance_metrics(self, scenario_values: Dict[str, Any]):
         """Renders a radar chart for consolidated performance indicators."""
         st.subheader("Consolidated Performance Indicators")
 
@@ -218,10 +244,29 @@ class ConsolidatedScenariosTab:
 
     async def render(self, scenario_data: Optional[Dict[str, Any]] = None) -> None:
         st.markdown("### 📊 Consolidated Scenarios Dashboard")
-        scenario_name = st.selectbox("Select Scenario", ["Normal Operations", "Peak Season", "Low Season"])
+        scenario_options = ["Normal Operations", "Peak Season", "Low Season", "Custom Scenario"]
+        scenario_name = st.selectbox("Select Scenario", scenario_options)
 
         if scenario_name:
-            data_provider = ScenarioData(scenario_name)
+            if scenario_name == "Custom Scenario":
+                st.sidebar.subheader("Custom Scenario Parameters")
+                custom_throughput = st.sidebar.slider("Throughput Multiplier", 0.5, 2.0, 1.0, 0.1)
+                custom_utilization = st.sidebar.slider("Utilization Multiplier", 0.5, 1.5, 1.0, 0.1)
+                custom_revenue = st.sidebar.slider("Revenue Multiplier", 0.5, 3.0, 1.0, 0.1)
+
+                custom_params = {
+                    "throughput": (custom_throughput, custom_throughput * 1.2),
+                    "utilization": (custom_utilization, custom_utilization * 1.1),
+                    "revenue": (custom_revenue, custom_revenue * 1.5),
+                    "handling_time": (1.0, 1.1),
+                    "queue_length": (0.9, 1.1),
+                    "waiting_time": (10, 25),
+                }
+                data_provider = ScenarioData("Custom Scenario")
+                data_provider.params = custom_params
+            else:
+                data_provider = ScenarioData(scenario_name)
+
             renderer = ScenarioRenderer(data_provider)
             await renderer.render()
 

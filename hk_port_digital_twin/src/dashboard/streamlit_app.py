@@ -1,15 +1,5 @@
 import sys
 import os
-import time
-import streamlit as st
-import pandas as pd
-from datetime import datetime, timedelta
-import logging
-import numpy as np
-import simpy
-
-# Add the project root to the Python path to allow absolute imports
-# Use Path for more robust path handling in cloud environments
 from pathlib import Path
 
 def find_project_root(marker_file='streamlit_app.py'):
@@ -26,12 +16,23 @@ def find_project_root(marker_file='streamlit_app.py'):
             return str(parent)
     raise FileNotFoundError(f"Project root not found. Could not find a directory containing '{marker_file}' or 'hk_port_digital_twin'.")
 
-
 project_root = find_project_root()
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from hk_port_digital_twin.src.utils.data_loader import RealTimeDataConfig, get_real_time_manager, load_container_throughput, load_vessel_arrivals, load_berth_configurations, initialize_vessel_data_pipeline, load_all_vessel_data, get_comprehensive_vessel_analysis, load_combined_vessel_data, load_all_vessel_data_with_backups
+import time
+import streamlit as st
+import pandas as pd
+from datetime import datetime, timedelta
+import logging
+import numpy as np
+import simpy
+import threading
+
+from hk_port_digital_twin.src.utils.file_watcher import start_file_watcher
+from hk_port_digital_twin.src.utils.redis_utils import get_redis_connection
+
+from hk_port_digital_twin.src.utils.data_pipeline import DataPipeline
 from hk_port_digital_twin.config.settings import SIMULATION_CONFIG, get_enhanced_simulation_config
 from hk_port_digital_twin.src.core.port_simulation import PortSimulation
 from hk_port_digital_twin.src.core.simulation_controller import SimulationController
@@ -50,28 +51,31 @@ from hk_port_digital_twin.src.dashboard import guided_tour
 from hk_port_digital_twin.src.utils.strategic_visualization import StrategicVisualization, render_strategic_controls
 from hk_port_digital_twin.src.dashboard.performance_dashboard import render_performance_dashboard
 from hk_port_digital_twin.src.dashboard.utils.performance_monitor import PerformanceMonitor
+from hk_port_digital_twin.src.dashboard.quick_demo import run_quick_demo
 
 # Tab configuration
-from .tabs.berth_tab import render as render_berth_tab
-from .tabs.cargo_tab import render as render_cargo_tab
-from .tabs.vessel_tab import render as render_vessel_tab
+from hk_port_digital_twin.src.dashboard.tabs.berth_tab import render as render_berth_tab
+from hk_port_digital_twin.src.dashboard.tabs.cargo_tab import render as render_cargo_tab
+from hk_port_digital_twin.src.dashboard.tabs.vessel_tab import render as render_vessel_tab
 
 def render_overview_tab():
     st.subheader("🚢 Port Overview")
     
-    with st.expander("KPI Summary", expanded=True):
-        kpi_col1, kpi_col2, kpi_col3, kpi_col4 = st.columns(4)
-        with kpi_col1:
-            st.metric("Vessels in Port", "85", delta="-5%", help="Total vessels currently at berth or anchorage")
-        with kpi_col2:
-            st.metric("Berth Utilization", "92%", delta="3%", help="Percentage of berths currently occupied")
-        with kpi_col3:
-            st.metric("Avg. Turnaround Time", "18h", delta="-1h", help="Average time from arrival to departure")
-        with kpi_col4:
-            st.metric("Cargo Throughput (TEUs)", "1.2M", delta="8%", help="Total Twenty-foot Equivalent Units processed this month")
+    col1, col2 = st.columns(2)
 
-    # ROI Calculator
-    render_roi_calculator()
+    with col1:
+        with st.expander("KPI Summary", expanded=True):
+            kpi_col1, kpi_col2 = st.columns(2)
+            with kpi_col1:
+                st.metric("Vessels in Port", "85", delta="-5%", help="Total number of vessels currently within the port area, including those at berth and at anchorage.")
+                st.metric("Avg. Turnaround Time", "18h", delta="-1h", help="The average time it takes for a vessel to arrive, unload/load, and depart from the port.")
+            with kpi_col2:
+                st.metric("Berth Utilization", "92%", delta="3%", help="The percentage of berths that are currently occupied by vessels.")
+                st.metric("Cargo Throughput (TEUs)", "1.2M", delta="8%", help="The total volume of cargo, measured in Twenty-foot Equivalent Units (TEUs), that has been processed this month.")
+
+    with col2:
+        # ROI Calculator
+        render_roi_calculator()
 
 
 def render_cargo_statistics_tab():
@@ -94,6 +98,8 @@ def render_settings_tab():
     st.subheader("🔧 Settings")
     st.write("Content for settings will be added here.")
 
+from hk_port_digital_twin.src.dashboard.documentation_tab import render_documentation_tab
+
 TABS = {
     "Overview": render_overview_tab,
     "Berth Planning": render_berth_tab,
@@ -101,18 +107,53 @@ TABS = {
     "Vessel Analytics": render_vessel_tab,
     "Scenarios": render_consolidated_scenarios_tab,
     "Performance Dashboard": render_performance_dashboard,
+    "Documentation": render_documentation_tab,
 }
+
+@st.cache_data
+def load_data():
+    """Loads all the data needed for the app."""
+    data_pipeline = DataPipeline(data_path="./data")
+    return data_pipeline.run()
 
 def main():
     """Main function to run the Streamlit application."""
-    st.title("🚢 Hong Kong Port Digital Twin")
+    st.set_page_config(layout="wide")
+
+    # --- HEADER ---
+    # st.image(os.path.join(os.path.dirname(__file__), "logo.png"), width=100)
+    st.title("Hong Kong Port Digital Twin")
+    st.subheader("A Real-Time Simulation and Analytics Platform")
+
+    # Load data
+    data = load_data()
 
     with st.sidebar:
-        st.title("Navigation")
-        selected_tab = st.radio("Go to", list(TABS.keys()))
+        st.title("MENU")
+        selected_tab = st.radio(
+            " ",
+            [
+                "Overview",
+                "Berth Planning",
+                "Vessel Analytics",
+                "Cargo Statistics",
+                "Scenarios",
+                "Performance Dashboard",
+                "Documentation",
+            ],
+            help="Select a tab to view different aspects of the port digital twin."
+        )
+
+        if st.button("🚀 Quick Demo"):
+            run_quick_demo()
 
         st.title("Settings")
-        debug_mode = st.checkbox("Enable Debug Mode")
+        debug_mode = st.checkbox("Enable Debug Mode", help="Enable this to see performance metrics and other debugging information.")
+
+    # Get tab from query params
+    query_params = st.experimental_get_query_params()
+    if "tab" in query_params:
+        selected_tab = query_params["tab"][0]
 
     # Render the selected tab
     if selected_tab in TABS:
@@ -124,5 +165,29 @@ def main():
         else:
             TABS[selected_tab]()
 
+    # Add a placeholder for real-time updates
+    # st.toast("New vessel data arrived!", icon="🚢")
+
+
+def subscribe_to_vessel_updates():
+    redis_conn = get_redis_connection()
+    pubsub = redis_conn.pubsub()
+    pubsub.subscribe("vessel_updates")
+    logging.info("Subscribed to vessel_updates channel.")
+    for message in pubsub.listen():
+        if message['type'] == 'message':
+            logging.info(f"Received message: {message['data']}")
+            st.toast("New vessel data arrived!", icon="🚢")
+            st.experimental_rerun()
+
+@st.cache_resource
+def start_background_watcher():
+    data_directory = Path(project_root) / "data" / "vessel_arrivals"
+    thread = threading.Thread(target=start_file_watcher, args=(data_directory,), daemon=True)
+    thread.start()
+    return thread
+
 if __name__ == "__main__":
+    start_background_watcher()
     main()
+    subscribe_to_vessel_updates() # This will block and listen for messages

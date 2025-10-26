@@ -34,9 +34,10 @@ logger = logging.getLogger(__name__)
 try:
     # Weather integration temporarily disabled for removal
     # from .weather_integration import HKObservatoryIntegration, get_weather_impact_for_simulation
-    from .file_monitor import PortDataFileMonitor, create_default_port_monitor
-    from .vessel_data_fetcher import VesselDataFetcher
-    from .vessel_data_scheduler import VesselDataScheduler
+    from hk_port_digital_twin.src.utils.file_monitor import PortDataFileMonitor, create_default_port_monitor
+    from hk_port_digital_twin.src.utils.vessel_data_fetcher import VesselDataFetcher
+    from hk_port_digital_twin.src.utils.vessel_data_scheduler import VesselDataScheduler
+    from hk_port_digital_twin.src.utils.background_loader import BackgroundLoader
     
     # Set weather integration to None (disabled)
     HKObservatoryIntegration = None
@@ -51,6 +52,12 @@ except ImportError:
     create_default_port_monitor = None
     VesselDataFetcher = None
     VesselDataScheduler = None
+
+try:
+    from hk_port_digital_twin.src.dashboard.data.vessel_data_loader import VesselDataLoader
+except ImportError:
+    logger.warning("VesselDataLoader not found.")
+    VesselDataLoader = None
 
 # Data file paths
 RAW_DATA_DIR = (Path(__file__).parent.parent.parent / ".." / "raw_data").resolve()
@@ -266,6 +273,23 @@ def get_time_series_data(cargo_stats: Dict[str, pd.DataFrame]) -> Dict[str, pd.D
     except Exception as e:
         logger.error(f"Error generating time series data: {e}")
         return {}
+
+@st.cache_data
+def load_vessel_data() -> pd.DataFrame:
+    """Load vessel data using the new VesselDataLoader."""
+    if VesselDataLoader is None:
+        logger.error("VesselDataLoader is not available.")
+        return pd.DataFrame()
+
+    vessel_data_dir = RAW_DATA_DIR
+    loader = VesselDataLoader(vessel_data_dir)
+    return loader.load_vessel_data()
+
+def start_background_vessel_data_load() -> BackgroundLoader:
+    """Starts loading vessel data in the background."""
+    loader = BackgroundLoader(load_vessel_data)
+    loader.start()
+    return loader
 
 @st.cache_data
 def forecast_cargo_throughput(time_series_data: Dict[str, pd.DataFrame], forecast_years: int = 3) -> Dict[str, Dict]:

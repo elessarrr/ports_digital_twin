@@ -14,3 +14,7 @@ simpy>=4.0.0
 numpy
 scikit-learn
 statsmodels
+locust
+pytest-benchmark
+matplotlib
+streamlit-card
