@@ -10,6 +10,9 @@ import plotly.graph_objects as go
 from typing import Dict, Any, Optional, List
 import asyncio
 
+from hk_port_digital_twin.src.dashboard.utils.performance_monitor import timing_decorator
+from hk_port_digital_twin.src.dashboard.utils.ux_metrics import track_time_on_page, get_user_feedback
+
 # Fallback for missing modules
 try:
     from src.core.scenario_simulation import ScenarioAwareCalculator
@@ -128,6 +131,7 @@ class ScenarioRenderer:
         with st.expander("Performance Metrics"):
             self._render_performance_metrics(scenario_values)
 
+    @timing_decorator
     def _render_key_metrics(self, scenario_values: Dict[str, Any]) -> None:
         """
         Renders the key metrics section.
@@ -138,6 +142,7 @@ class ScenarioRenderer:
         col1.metric("Throughput", f"{scenario_values.get('throughput', 0):.2f}")
         col2.metric("Utilization", f"{scenario_values.get('utilization', 0):.2f}")
 
+    @timing_decorator
     def _render_throughput_analysis(self, scenario_values: Dict[str, Any]) -> None:
         """
         Renders the throughput analysis section.
@@ -150,6 +155,7 @@ class ScenarioRenderer:
         fig = px.line(df, x="Day", y="Throughput", title="Throughput Over Time")
         st.plotly_chart(fig, use_container_width=True)
 
+    @timing_decorator
     def _render_waiting_time_analysis(self, scenario_values: Dict[str, Any]) -> None:
         """
         Renders the waiting time analysis section.
@@ -160,6 +166,7 @@ class ScenarioRenderer:
         fig = px.histogram(waiting_time_data, nbins=20, title="Waiting Time Distribution")
         st.plotly_chart(fig, use_container_width=True)
 
+    @timing_decorator
     def _render_performance_metrics(self, scenario_values: Dict[str, Any]):
         """Renders a radar chart for consolidated performance indicators."""
         st.subheader("Consolidated Performance Indicators")
@@ -217,6 +224,9 @@ class ConsolidatedScenariosTab:
             data_provider = ScenarioData(scenario_name)
             renderer = ScenarioRenderer(data_provider)
             await renderer.render()
+
+        track_time_on_page()
+        get_user_feedback()
 
 def render_consolidated_scenarios_tab(scenario_data: Optional[Dict[str, Any]] = None) -> None:
     """Convenience function to render the consolidated scenarios tab."""

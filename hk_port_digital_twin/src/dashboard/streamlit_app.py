@@ -48,6 +48,8 @@ from hk_port_digital_twin.src.dashboard.executive_dashboard import ExecutiveDash
 from hk_port_digital_twin.src.analysis.roi_calculator import render_roi_calculator
 from hk_port_digital_twin.src.dashboard import guided_tour
 from hk_port_digital_twin.src.utils.strategic_visualization import StrategicVisualization, render_strategic_controls
+from hk_port_digital_twin.src.dashboard.performance_dashboard import render_performance_dashboard
+from hk_port_digital_twin.src.dashboard.utils.performance_monitor import PerformanceMonitor
 
 # Tab configuration
 from .tabs.berth_tab import render as render_berth_tab
@@ -98,6 +100,7 @@ TABS = {
     "Cargo Statistics": render_cargo_tab,
     "Vessel Analytics": render_vessel_tab,
     "Scenarios": render_consolidated_scenarios_tab,
+    "Performance Dashboard": render_performance_dashboard,
 }
 
 def main():
@@ -108,9 +111,18 @@ def main():
         st.title("Navigation")
         selected_tab = st.radio("Go to", list(TABS.keys()))
 
+        st.title("Settings")
+        debug_mode = st.checkbox("Enable Debug Mode")
+
     # Render the selected tab
     if selected_tab in TABS:
-        TABS[selected_tab]()
+        if debug_mode:
+            monitor = PerformanceMonitor()
+            monitor.track_memory_usage(selected_tab)
+            TABS[selected_tab]()
+            monitor.generate_report()
+        else:
+            TABS[selected_tab]()
 
 if __name__ == "__main__":
     main()
