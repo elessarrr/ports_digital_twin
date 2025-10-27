@@ -14,7 +14,7 @@ import sys
 import os
 from unittest.mock import patch
 
-from hk_port_digital_twin.src.core.berth_manager import Berth, BerthManager
+from hk_port_digital_twin.core.berth_manager import Berth, BerthManager
 
 class TestBerth:
     """Test cases for the Berth dataclass"""
@@ -194,7 +194,7 @@ class TestBerthManager:
         result = manager.allocate_berth(1, 'ship123')
         assert result == True
         
-        berth = manager.get_berth(1)
+        berth = manager.get_berth_status(1)
         assert berth.is_occupied == True
         assert berth.current_ship == 'ship123'
         assert berth.occupation_start_time == env.now
@@ -233,7 +233,7 @@ class TestBerthManager:
         result = manager.release_berth(1)
         assert result == True
         
-        berth = manager.get_berth(1)
+        berth = manager.get_berth_status(1)
         assert berth.is_occupied == False
         assert berth.current_ship is None
         assert berth.occupation_start_time is None
@@ -254,20 +254,20 @@ class TestBerthManager:
         
         result = manager.release_berth(1)
         assert result == False
-    
-    def test_get_berth(self, env, sample_berths_config):
+
+    def test_get_berth_status(self, env, sample_berths_config):
         """Test getting berth information"""
         manager = BerthManager(env, sample_berths_config)
         
-        berth = manager.get_berth(1)
+        berth = manager.get_berth_status(1)
         assert berth is not None
         assert berth.berth_id == 1
         assert berth.name == 'Berth_A1'
         
         # Test nonexistent berth
-        berth = manager.get_berth(999)
+        berth = manager.get_berth_status(999)
         assert berth is None
-    
+
     def test_get_available_berths(self, env, sample_berths_config):
         """Test getting available berths"""
         manager = BerthManager(env, sample_berths_config)
@@ -371,7 +371,7 @@ class TestBerthManager:
         manager.release_berth(1)
         
         # Verify statistics exist
-        berth = manager.get_berth(1)
+        berth = manager.get_berth_status(1)
         assert berth.ships_served == 1
         assert berth.total_occupation_time == 10
         assert len(manager.allocation_history) == 2
@@ -380,6 +380,7 @@ class TestBerthManager:
         manager.reset_statistics()
         
         # Verify reset
+        berth = manager.get_berth_status(1)
         assert berth.ships_served == 0
         assert berth.total_occupation_time == 0
         assert len(manager.allocation_history) == 0
@@ -396,7 +397,7 @@ class TestBerthManager:
         assert success == True
         
         # Verify allocation
-        berth = manager.get_berth(berth_id)
+        berth = manager.get_berth_status(berth_id)
         assert berth.is_occupied == True
         assert berth.current_ship == 'ship123'
         
@@ -408,6 +409,7 @@ class TestBerthManager:
         assert success == True
         
         # Verify release
+        berth = manager.get_berth_status(berth_id)
         assert berth.is_occupied == False
         assert berth.current_ship is None
         assert berth.ships_served == 1

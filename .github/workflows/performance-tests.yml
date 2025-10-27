@@ -1,0 +1,30 @@
+name: Performance Tests
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  performance-testing:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run performance tests
+        run: pytest --benchmark-json=benchmark_results.json hk_port_digital_twin/tests/performance/
+
+      - name: Validate performance benchmarks
+        run: python hk_port_digital_twin/tests/performance/benchmarks.py

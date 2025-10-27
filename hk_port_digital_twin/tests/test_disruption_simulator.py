@@ -1,14 +1,6 @@
 import unittest
 from datetime import datetime, timedelta
-import sys
-import os
-
-# Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-
-# Import directly from the module file to avoid package import issues
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src', 'scenarios'))
-from disruption_simulator import (
+from hk_port_digital_twin.scenarios.disruption_simulator import (
     DisruptionSimulator, DisruptionEvent, RecoveryStrategy,
     DisruptionType, DisruptionSeverity
 )

@@ -13,9 +13,9 @@ import sys
 import os
 
 # Add src to path for imports
-from hk_port_digital_twin.src.core.container_handler import ContainerHandler
-from hk_port_digital_twin.src.core.ship_manager import Ship, ShipState
-from hk_port_digital_twin.src.core.berth_manager import Berth
+from hk_port_digital_twin.core.container_handler import ContainerHandler
+from hk_port_digital_twin.core.ship_manager import Ship, ShipState
+from hk_port_digital_twin.core.berth_manager import Berth
 
 
 class TestContainerHandler:

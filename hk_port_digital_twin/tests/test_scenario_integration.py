@@ -19,23 +19,23 @@ from datetime import datetime, date
 from typing import Dict, List, Any
 
 # Import scenario components
-from hk_port_digital_twin.src.scenarios.scenario_parameters import (
+from hk_port_digital_twin.scenarios.scenario_parameters import (
     ScenarioParameters,
     get_scenario_parameters,
     validate_scenario_parameters,
     ALL_SCENARIOS
 )
-from hk_port_digital_twin.src.scenarios.scenario_manager import ScenarioManager
-from hk_port_digital_twin.src.scenarios.scenario_optimizer import ScenarioAwareBerthOptimizer
-from hk_port_digital_twin.src.scenarios.historical_extractor import HistoricalParameterExtractor
+from hk_port_digital_twin.scenarios.scenario_manager import ScenarioManager
+from hk_port_digital_twin.scenarios.scenario_optimizer import ScenarioAwareBerthOptimizer
+from hk_port_digital_twin.scenarios.historical_extractor import HistoricalParameterExtractor
 
 # Import core simulation components
-from hk_port_digital_twin.src.core.port_simulation import PortSimulation
-from hk_port_digital_twin.src.core.ship_manager import Ship, ShipState
-from hk_port_digital_twin.src.core.berth_manager import Berth, BerthManager
+from hk_port_digital_twin.core.port_simulation import PortSimulation
+from hk_port_digital_twin.core.ship_manager import Ship, ShipState
+from hk_port_digital_twin.core.berth_manager import Berth, BerthManager
 
 # Import optimization components
-from hk_port_digital_twin.src.ai.optimization import BerthAllocationOptimizer, OptimizationResult
+from hk_port_digital_twin.ai.optimization import BerthAllocationOptimizer, OptimizationResult
 
 
 class TestScenarioParameterIntegration(unittest.TestCase):

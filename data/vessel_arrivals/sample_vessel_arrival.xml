@@ -1,0 +1,18 @@
+<VesselArrivals>
+    <Vessel>
+        <VesselID>9V7245</VesselID>
+        <Name>MAERSK HONAM</Name>
+        <ETA>2025-10-27T14:30:00Z</ETA>
+        <ShipType>Container Ship</ShipType>
+        <TEU_Capacity>15000</TEU_Capacity>
+        <Draft>15.5</Draft>
+    </Vessel>
+    <Vessel>
+        <VesselID>D5MX3</VesselID>
+        <Name>EVER GIVEN</Name>
+        <ETA>2025-10-27T16:00:00Z</ETA>
+        <ShipType>Container Ship</ShipType>
+        <TEU_Capacity>20124</TEU_Capacity>
+        <Draft>16.0</Draft>
+    </Vessel>
+</VesselArrivals>

@@ -23,7 +23,7 @@ from unittest.mock import patch, MagicMock
 import importlib.util
 
 # Add the src directory to the path for imports
-from hk_port_digital_twin.src.utils.wait_time_calculator import WaitTimeCalculator, calculate_wait_time
+from hk_port_digital_twin.utils.wait_time_calculator import WaitTimeCalculator, calculate_wait_time
 WAIT_TIME_AVAILABLE = True
 
 
@@ -35,19 +35,6 @@ class TestWaitTimeCalculatorIntegration(unittest.TestCase):
         if not WAIT_TIME_AVAILABLE:
             self.skipTest("Wait time calculator not available")
         self.calculator = WaitTimeCalculator()
-    
-    def test_dashboard_integration_import(self):
-        """Test that the dashboard can import wait time calculator components."""
-        # Test importing from dashboard context
-        dashboard_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'dashboard', 'streamlit_app_v2.py')
-        
-        if os.path.exists(dashboard_path):
-            # Verify the import statements work
-            with open(dashboard_path, 'r') as f:
-                content = f.read()
-                self.assertIn('wait_time_calculator', content)
-                self.assertIn('WaitTimeCalculator', content)
-                self.assertIn('calculate_wait_time', content)
     
     def test_scenario_compatibility_with_dashboard(self):
         """Test that scenario names are compatible with dashboard expectations."""

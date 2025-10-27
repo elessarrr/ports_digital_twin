@@ -10,7 +10,7 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
-from hk_port_digital_twin.src.analysis.performance_benchmarking import (
+from hk_port_digital_twin.analysis.performance_benchmarking import (
     PerformanceBenchmarking,
     BenchmarkMetric,
     BenchmarkCategory,

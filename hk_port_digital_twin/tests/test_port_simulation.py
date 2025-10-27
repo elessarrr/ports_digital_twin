@@ -8,7 +8,7 @@ import pytest
 import sys
 import os
 
-from hk_port_digital_twin.src.core.port_simulation import PortSimulation
+from hk_port_digital_twin.core.port_simulation import PortSimulation
 from hk_port_digital_twin.config.settings import SIMULATION_CONFIG
 
 

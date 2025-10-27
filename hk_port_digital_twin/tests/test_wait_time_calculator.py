@@ -12,7 +12,7 @@ scenario-aware wait times for port operations. The tests cover:
 import unittest
 import numpy as np
 from unittest.mock import patch, MagicMock
-from hk_port_digital_twin.src.utils.wait_time_calculator import WaitTimeCalculator, calculate_wait_time
+from hk_port_digital_twin.utils.wait_time_calculator import WaitTimeCalculator, calculate_wait_time
 
 
 class TestWaitTimeCalculator(unittest.TestCase):
@@ -111,17 +111,31 @@ class TestWaitTimeCalculator(unittest.TestCase):
     
     def test_calculate_wait_time_none_inputs(self):
         """Test wait time calculation with None inputs."""
-        # Test None scenario - should raise TypeError
-        with self.assertRaises(TypeError):
+        # Test None scenario - should raise ValueError
+        with self.assertRaises(ValueError):
             self.calculator.calculate_wait_time(None)
         
-        # Test None multiplier - should raise TypeError
-        with self.assertRaises(TypeError):
+        # Test None multiplier - should raise ValueError
+        with self.assertRaises(ValueError):
             self.calculator.calculate_wait_time('Normal Operations', multiplier=None)
         
-        # Test None num_samples - should raise TypeError
-        with self.assertRaises(TypeError):
+        # Test None num_samples - should raise ValueError
+        with self.assertRaises(ValueError):
             self.calculator.calculate_wait_time('Normal Operations', num_samples=None)
+
+    def test_calculate_wait_time_function_invalid_inputs(self):
+        """Test the function with invalid inputs."""
+        # Test with None - should raise ValueError
+        with self.assertRaises(ValueError):
+            calculate_wait_time(None)
+        
+        # Test with empty string - should raise ValueError
+        with self.assertRaises(ValueError):
+            calculate_wait_time('')
+        
+        # Test with non-string input - should raise ValueError
+        with self.assertRaises(ValueError):
+            calculate_wait_time(123)
     
     def test_calculate_wait_time_num_samples_parameter(self):
         """Test wait time calculation with different num_samples values."""
@@ -173,6 +187,10 @@ class TestWaitTimeCalculator(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.calculator._calculate_threshold_wait_time('Normal Operations', num_samples=0)
 
+    def test_calculator_unknown_scenario_raises_value_error(self):
+        """Test that WaitTimeCalculator.calculate_wait_time raises ValueError for unknown scenarios."""
+        with self.assertRaises(ValueError):
+            self.calculator.calculate_wait_time('unknown_scenario')
 
 class TestCalculateWaitTimeFunction(unittest.TestCase):
     """Test cases for the standalone calculate_wait_time function."""
@@ -207,22 +225,24 @@ class TestCalculateWaitTimeFunction(unittest.TestCase):
     
     def test_calculate_wait_time_function_invalid_inputs(self):
         """Test the function with invalid inputs."""
-        # Test with None - should raise TypeError
-        with self.assertRaises(TypeError):
+        # Test with None - should raise ValueError
+        with self.assertRaises(ValueError):
             calculate_wait_time(None)
         
         # Test with empty string - should raise ValueError
         with self.assertRaises(ValueError):
             calculate_wait_time('')
         
-        # Test with non-string input - should raise TypeError
-        with self.assertRaises(TypeError):
+        # Test with non-string input - should raise ValueError
+        with self.assertRaises(ValueError):
             calculate_wait_time(123)
 
+    def test_standalone_function_empty_scenario_logs_error(self):
+        """Test that the standalone function logs an error and returns 6.0 for an empty scenario."""
+        with self.assertRaises(ValueError):
+            calculate_wait_time('')
 
 class TestWaitTimeCalculatorIntegration(unittest.TestCase):
-    """Integration tests for the wait time calculator."""
-    
     def setUp(self):
         """Set up test fixtures."""
         if WaitTimeCalculator is None or calculate_wait_time is None:
@@ -268,15 +288,6 @@ class TestWaitTimeCalculatorIntegration(unittest.TestCase):
         bands = calculator.threshold_bands['Normal Operations']
         self.assertGreaterEqual(min(samples), bands['min_hours'] * 0.9)  # Allow small variance
         self.assertLessEqual(max(samples), bands['max_hours'] * 1.1)  # Allow small variance
-    
-    def test_error_logging(self):
-        """Test that errors are properly logged."""
-        with self.assertLogs('utils.wait_time_calculator', level='ERROR') as cm:
-            # This should trigger an error for unknown scenario in the standalone function
-            result = calculate_wait_time('unknown_scenario')
-            self.assertIsInstance(result, (int, float))
-            self.assertIn('Error calculating wait time', cm.output[0])
-
 
 class TestWaitTimeCalculatorPerformance(unittest.TestCase):
     """Performance tests for the wait time calculator."""

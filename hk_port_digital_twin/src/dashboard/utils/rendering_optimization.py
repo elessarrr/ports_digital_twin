@@ -149,17 +149,6 @@ def memoize_dataframe(func: Callable) -> Callable:
     return wrapper
 
 
-def efficient_groupby(df: pd.DataFrame, group_cols: List[str], 
-                     agg_funcs: Dict[str, Union[str, List[str]]]) -> pd.DataFrame:
-    """Efficient groupby operation with optimization."""
-    # Use categorical data types for grouping columns if beneficial
-    for col in group_cols:
-        if df[col].dtype == 'object' and df[col].nunique() / len(df) < 0.5:
-            df[col] = df[col].astype('category')
-    
-    return df.groupby(group_cols).agg(agg_funcs).reset_index()
-
-
 def optimize_chart_data(data: Union[pd.DataFrame, Dict], 
                        max_points: int = 1000) -> Union[pd.DataFrame, Dict]:
     """Optimize data for chart rendering by reducing points if necessary."""

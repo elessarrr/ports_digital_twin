@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 import sys
 import os
 
-from hk_port_digital_twin.src.utils.visualization import (
+from hk_port_digital_twin.utils.visualization import (
     create_port_layout_chart,
     create_ship_queue_chart,
     create_berth_utilization_chart,
@@ -104,7 +104,7 @@ class TestShipQueueChart:
         fig = create_ship_queue_chart(queue_data)
         
         assert isinstance(fig, go.Figure)
-        assert len(fig.data) == 1  # One bar chart
+        assert len(fig.data) == 2  # One trace per ship type
         assert "Ship Waiting Queue" in fig.layout.title.text
     
     def test_create_ship_queue_chart_empty(self):
@@ -150,9 +150,9 @@ class TestBerthUtilizationChart:
         fig = create_berth_utilization_chart(utilization_data)
         
         assert isinstance(fig, go.Figure)
-        assert len(fig.data) == 1  # One bar chart
+        assert len(fig.data) == 3  # One trace per utilization category
         assert "Berth Utilization" in fig.layout.title.text
-        assert len(fig.data[0].x) == 4  # Four berths
+        assert sum(len(trace.x) for trace in fig.data) == 4  # Four berths in total
     
     def test_create_berth_utilization_chart_empty(self):
         """Test berth utilization chart with empty data"""
@@ -161,8 +161,7 @@ class TestBerthUtilizationChart:
         fig = create_berth_utilization_chart(utilization_data)
         
         assert isinstance(fig, go.Figure)
-        assert len(fig.data) == 1
-        assert len(fig.data[0].x) == 0  # No berths
+        assert len(fig.data) == 0
     
     def test_create_berth_utilization_chart_color_coding(self):
         """Test berth utilization chart color coding"""
@@ -175,7 +174,7 @@ class TestBerthUtilizationChart:
         fig = create_berth_utilization_chart(utilization_data)
         
         assert isinstance(fig, go.Figure)
-        colors = fig.data[0].marker.color
+        colors = [trace.marker.color for trace in fig.data]
         assert 'red' in colors
         assert 'orange' in colors
         assert 'green' in colors

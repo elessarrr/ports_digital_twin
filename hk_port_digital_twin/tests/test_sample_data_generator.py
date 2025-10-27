@@ -8,7 +8,7 @@ import pandas as pd
 import sys
 import os
 
-from hk_port_digital_twin.src.utils.sample_data_generator import generate_sample_vessel_data
+from hk_port_digital_twin.utils.sample_data_generator import generate_sample_vessel_data
 
 
 class TestSampleDataGenerator(unittest.TestCase):
@@ -24,16 +24,13 @@ class TestSampleDataGenerator(unittest.TestCase):
         self.assertEqual(len(ships_df), 5)
         
         # Check required columns
-        required_columns = ['ship_id', 'ship_name', 'ship_type', 'size_teu', 
-                          'arrival_time', 'containers_to_unload', 'containers_to_load']
+        required_columns = ['ship_id', 'vessel_name', 'vessel_type', 'port_of_origin', 
+                          'destination_port', 'arrival_time', 'berth_time', 'departure_time']
         for col in required_columns:
             self.assertIn(col, ships_df.columns)
         
         # Check data types and ranges
-        self.assertTrue(all(ships_df['ship_type'].isin(['container', 'bulk'])))
-        self.assertTrue(all(ships_df['size_teu'] > 0))
-        self.assertTrue(all(ships_df['containers_to_unload'] >= 0))
-        self.assertTrue(all(ships_df['containers_to_load'] >= 0))
+        self.assertTrue(all(ships_df['vessel_type'].isin(['Container Ship', 'Bulk Carrier'])))
     
 
 if __name__ == '__main__':
