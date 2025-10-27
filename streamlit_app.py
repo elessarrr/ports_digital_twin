@@ -14,20 +14,14 @@ project_root = Path(__file__).resolve().parent
 sys.path.insert(0, str(project_root))
 
 try:
-    dashboard_path = project_root / "hk_port_digital_twin" / "src" / "dashboard" / "streamlit_app.py"
-    
-    if not dashboard_path.exists():
-        raise FileNotFoundError(f"Dashboard file not found at: {dashboard_path}")
+    # Run the dashboard as a module to ensure correct package context for imports
+    runpy.run_module("hk_port_digital_twin.dashboard.executive_dashboard", run_name="__main__")
 
-    # This is a more robust way to run a script, as it handles sys.path and other things correctly.
-    # It should also play nicer with Streamlit's file watcher.
-    runpy.run_path(str(dashboard_path), run_name="__main__")
-
-except FileNotFoundError as e:
+except ImportError as e:
     import streamlit as st
-    st.error(f"Dashboard file not found: {e}")
+    st.error(f"Error importing dashboard module: {e}")
     st.info(f"Current working directory: {os.getcwd()}")
-    st.info(f"Looking for dashboard at: {Path(__file__).resolve().parent / 'hk_port_digital_twin' / 'src' / 'dashboard' / 'streamlit_app.py'}")
+    st.info(f"Python path: {sys.path[:3]}...")
 except Exception as e:
     import streamlit as st
     st.error(f"Error running dashboard: {e}")

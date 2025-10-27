@@ -29,8 +29,8 @@ from hk_port_digital_twin.src.utils.comprehensive_business_intelligence import (
     ComprehensiveBusinessIntelligence, ComparativeAnalysisResult, ExecutiveBusinessReport,
     ComparisonType, BusinessIntelligenceScope
 )
-from hk_port_digital_twin.src.core.simulation_controller import SimulationController
-from hk_port_digital_twin.src.core.strategic_simulation_controller import StrategicSimulationController
+from hk_port_digital_twin.core.simulation_controller import SimulationController
+from hk_port_digital_twin.core.strategic_simulation_controller import StrategicSimulationController
 from hk_port_digital_twin.src.dashboard.executive_dashboard import ExecutiveDashboard
 from hk_port_digital_twin.src.utils.strategic_visualization import StrategicVisualization
 from hk_port_digital_twin.src.utils.enhanced_visualization import (

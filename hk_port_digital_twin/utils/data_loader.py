@@ -43,11 +43,7 @@ HKObservatoryIntegration = None
 get_weather_impact_for_simulation = None
 logger.info("Weather integration disabled - feature removal in progress")
 
-try:
-    from hk_port_digital_twin.src.dashboard.data.vessel_data_loader import VesselDataLoader
-except ImportError:
-    logger.warning("VesselDataLoader not found.")
-    VesselDataLoader = None
+from hk_port_digital_twin.dashboard.data.vessel_data_loader import VesselDataLoader
 
 # Data file paths
 RAW_DATA_DIR = (Path(__file__).parent.parent.parent / ".." / "raw_data").resolve()

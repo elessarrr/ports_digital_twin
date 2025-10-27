@@ -11,21 +11,13 @@ from datetime import datetime, date
 from typing import Dict, List, Optional, Tuple
 from dataclasses import asdict
 
-try:
-    from hk_port_digital_twin.src.utils.data_loader import (
-        get_time_series_data,
-        forecast_cargo_throughput,
-        get_enhanced_cargo_analysis,
-        _analyze_seasonal_patterns,
-        load_focused_cargo_statistics
-    )
-except ImportError:
-    logging.warning("Could not import data_loader functions. Historical extraction will use default values.")
-    get_time_series_data = None
-    forecast_cargo_throughput = None
-    get_enhanced_cargo_analysis = None
-    _analyze_seasonal_patterns = None
-    load_focused_cargo_statistics = None
+from hk_port_digital_twin.utils.data_loader import (
+    get_time_series_data,
+    forecast_cargo_throughput,
+    get_enhanced_cargo_analysis,
+    _analyze_seasonal_patterns,
+    load_focused_cargo_statistics
+)
 
 from .scenario_parameters import ScenarioParameters, ALL_SCENARIOS
 

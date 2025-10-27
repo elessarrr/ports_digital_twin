@@ -13,12 +13,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Import state tracker for performance monitoring
-try:
-    from .state_tracker import track_state_change
-    STATE_TRACKING_ENABLED = True
-except ImportError:
-    STATE_TRACKING_ENABLED = False
-    logger.warning("State tracking not available")
+from .state_tracker import track_state_change
+STATE_TRACKING_ENABLED = True
 
 
 class SessionStateManager:

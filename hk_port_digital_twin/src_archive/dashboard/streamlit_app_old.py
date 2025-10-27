@@ -31,33 +31,33 @@ project_root = find_project_root()
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from hk_port_digital_twin.src.utils.data_loader import RealTimeDataConfig, get_real_time_manager, load_container_throughput, load_vessel_arrivals, load_berth_configurations, initialize_vessel_data_pipeline, load_all_vessel_data, get_comprehensive_vessel_analysis, load_combined_vessel_data, load_all_vessel_data_with_backups
+from hk_port_digital_twin.utils.data_loader import RealTimeDataConfig, get_real_time_manager, load_container_throughput, load_vessel_arrivals, load_berth_configurations, initialize_vessel_data_pipeline, load_all_vessel_data, get_comprehensive_vessel_analysis, load_combined_vessel_data, load_all_vessel_data_with_backups
 from hk_port_digital_twin.config.settings import SIMULATION_CONFIG, get_enhanced_simulation_config
-from hk_port_digital_twin.src.core.port_simulation import PortSimulation
-from hk_port_digital_twin.src.core.simulation_controller import SimulationController
-from hk_port_digital_twin.src.core.berth_manager import BerthManager
-from hk_port_digital_twin.src.scenarios import ScenarioManager, list_available_scenarios
-from hk_port_digital_twin.src.utils.visualization import create_kpi_summary_chart, create_port_layout_chart, create_ship_queue_chart, create_berth_utilization_chart, create_throughput_timeline, create_waiting_time_distribution
+from hk_port_digital_twin.core.port_simulation import PortSimulation
+from hk_port_digital_twin.core.simulation_controller import SimulationController
+from hk_port_digital_twin.core.berth_manager import BerthManager
+from hk_port_digital_twin.scenarios import ScenarioManager, list_available_scenarios
+from hk_port_digital_twin.utils.visualization import create_kpi_summary_chart, create_port_layout_chart, create_ship_queue_chart, create_berth_utilization_chart, create_throughput_timeline, create_waiting_time_distribution
 # Weather integration disabled for feature removal
-# from hk_port_digital_twin.src.utils.weather_integration import HKObservatoryIntegration
+# from hk_port_digital_twin.utils.weather_integration import HKObservatoryIntegration
 HKObservatoryIntegration = None  # Disabled
-from hk_port_digital_twin.src.utils.data_loader import load_focused_cargo_statistics, get_enhanced_cargo_analysis, get_time_series_data
-from hk_port_digital_twin.src.dashboard.scenario_tab_consolidation_refactored import ConsolidatedScenariosTab
-from hk_port_digital_twin.src.dashboard.vessel_charts import render_vessel_analytics_dashboard
-from hk_port_digital_twin.src.dashboard.executive_dashboard import ExecutiveDashboard
-from hk_port_digital_twin.src.analysis.roi_calculator import render_roi_calculator
-from hk_port_digital_twin.src.dashboard import guided_tour
-from hk_port_digital_twin.src.utils.strategic_visualization import StrategicVisualization, render_strategic_controls
-from hk_port_digital_twin.src.core.strategic_simulation_controller import StrategicSimulationController
-from hk_port_digital_twin.src.utils.scenario_aware_calculator import ScenarioAwareCalculator, ValueType, ScenarioType
-from hk_port_digital_twin.src.analysis.roi_calculator import render_roi_calculator
-from hk_port_digital_twin.src.utils.scenario_helpers import get_wait_time_scenario_name
-from hk_port_digital_twin.src.dashboard.utils.debouncing import DebounceManager
-from hk_port_digital_twin.src.dashboard.utils.session_state_manager import SessionStateManager
-from hk_port_digital_twin.src.dashboard.utils.rendering_optimization import optimized_computation
+from hk_port_digital_twin.utils.data_loader import load_focused_cargo_statistics, get_enhanced_cargo_analysis, get_time_series_data
+from hk_port_digital_twin.dashboard.scenario_tab_consolidation_refactored import ConsolidatedScenariosTab
+from hk_port_digital_twin.dashboard.vessel_charts import render_vessel_analytics_dashboard
+from hk_port_digital_twin.dashboard.executive_dashboard import ExecutiveDashboard
+from hk_port_digital_twin.analysis.roi_calculator import render_roi_calculator
+from hk_port_digital_twin.dashboard import guided_tour
+from hk_port_digital_twin.utils.strategic_visualization import StrategicVisualization, render_strategic_controls
+from hk_port_digital_twin.core.strategic_simulation_controller import StrategicSimulationController
+from hk_port_digital_twin.utils.scenario_aware_calculator import ScenarioAwareCalculator, ValueType, ScenarioType
+from hk_port_digital_twin.analysis.roi_calculator import render_roi_calculator
+from hk_port_digital_twin.utils.scenario_helpers import get_wait_time_scenario_name
+from hk_port_digital_twin.dashboard.utils.debouncing import DebounceManager
+from hk_port_digital_twin.dashboard.utils.session_state_manager import SessionStateManager
+from hk_port_digital_twin.dashboard.utils.rendering_optimization import optimized_computation
 
 try:
-    from hk_port_digital_twin.src.utils.wait_time_calculator import WaitTimeCalculator, calculate_wait_time
+    from hk_port_digital_twin.utils.wait_time_calculator import WaitTimeCalculator, calculate_wait_time
 except (ImportError, NameError, AttributeError) as e:
     # This allows the app to run even if the wait time calculator is not available
     # The dashboard will gracefully degrade by hiding wait time-related features
@@ -82,10 +82,10 @@ st.set_page_config(
 # Load custom CSS
 css_path = os.path.join(os.path.dirname(__file__), "style.css")
 load_css(css_path)
-# from hk_port_digital_twin.src.dashboard.unified_simulations_tab import UnifiedSimulationsTab  # Commented out - tab hidden
+# from hk_port_digital_twin.dashboard.unified_simulations_tab import UnifiedSimulationsTab  # Commented out - tab hidden
 
 try:
-    from hk_port_digital_twin.src.dashboard.marine_traffic_integration import MarineTrafficIntegration
+    from hk_port_digital_twin.dashboard.marine_traffic_integration import MarineTrafficIntegration
 except ImportError:
     MarineTrafficIntegration = None
 

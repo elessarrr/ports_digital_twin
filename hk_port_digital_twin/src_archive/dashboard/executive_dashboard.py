@@ -28,14 +28,8 @@ from enum import Enum
 import numpy as np
 
 # Import strategic simulation components
-try:
-    from ..core.strategic_simulation_controller import StrategicSimulationController, StrategicSimulationMode, BusinessMetrics
-    from ..analytics.business_intelligence import BusinessIntelligenceEngine, KPICategory, ExecutiveSummary
-except ImportError:
-    # Fallback for development
-    StrategicSimulationController = None
-    BusinessIntelligenceEngine = None
-
+from ..core.strategic_simulation_controller import StrategicSimulationController, StrategicSimulationMode, BusinessMetrics
+from ..analytics.business_intelligence import BusinessIntelligenceEngine, KPICategory, ExecutiveSummary
 
 class DashboardTheme(Enum):
     """Dashboard theme options for executive presentations"""
@@ -69,7 +63,7 @@ class StrategicInsight:
     risk_factors: List[str]
 
 
-from hk_port_digital_twin.src.core.port_simulation import PortSimulation
+from ..core.port_simulation import PortSimulation
 
 class ExecutiveDashboard:
     """Main class for executive dashboard functionality"""
@@ -207,7 +201,19 @@ class ExecutiveDashboard:
             
         with plan_tab3:
             self._render_risk_assessment()
+
+if __name__ == "__main__":
+    st.set_page_config(layout="wide", page_title="Executive Dashboard")
     
+    # Initialize the simulation
+    port_simulation = PortSimulation()
+    
+    # Create and render the dashboard
+    dashboard = ExecutiveDashboard(port_simulation)
+    dashboard.render_executive_summary()
+    dashboard.render_business_impact_chart()
+    dashboard.render_strategic_planning_tools()
+
     def render_real_time_metrics(self) -> None:
         """Render real-time business metrics dashboard"""
         st.subheader("⏱️ Real-Time Business Metrics")

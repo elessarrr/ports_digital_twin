@@ -432,8 +432,11 @@ def render_executive_dashboard_tab() -> None:
     st.header("🏢 Executive Dashboard")
     st.markdown("Strategic business intelligence and decision-making tools for port operations")
     
+    # Initialize port simulation for dashboard
+    port_simulation = PortSimulation()
+    
     # Initialize dashboard
-    dashboard = ExecutiveDashboard()
+    dashboard = ExecutiveDashboard(port_simulation)
     
     # Create main dashboard sections
     exec_tab1, exec_tab2, exec_tab3, exec_tab4 = st.tabs([
