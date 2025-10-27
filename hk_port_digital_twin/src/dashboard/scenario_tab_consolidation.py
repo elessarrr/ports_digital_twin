@@ -29,6 +29,29 @@ try:
     from scenario_aware_calculator import ScenarioAwareCalculator, ValueType, ScenarioType
     from wait_time_calculator import WaitTimeCalculator, calculate_wait_time
     from scenario_helpers import get_wait_time_scenario_name
+    # Import async processing and progress tracking
+    from async_processor import (
+        AsyncProcessor, TaskStatus, TaskPriority, 
+        submit_async_task, get_task_result, is_task_complete
+    )
+    from progress_tracker import (
+        ProgressTracker, ProgressConfig, ProgressStyle,
+        track_function_with_progress, st_async_button, update_all_progress
+    )
+    # Import UI enhancements and progressive loading
+    from ui_enhancements import (
+        UIEnhancer, LoadingStyle, NotificationType,
+        with_loading, with_error_handling, with_performance_monitoring,
+        st_loading_button, st_error_container
+    )
+    from progressive_loader import (
+        ProgressiveDataLoader, LoadingStrategy, LoadingConfig,
+        create_progressive_loader, load_large_csv
+    )
+    from computation_optimizer import (
+        VectorizedOptimizer, ParallelProcessor, MemoryOptimizer,
+        performance_timer, cached_calculation
+    )
 except ImportError:
     # Fallback if calculator modules are not available
     ScenarioAwareCalculator = None
@@ -36,6 +59,34 @@ except ImportError:
     ScenarioType = None
     WaitTimeCalculator = None
     calculate_wait_time = None
+    # Async processing fallbacks
+    AsyncProcessor = None
+    TaskStatus = None
+    # UI enhancement fallbacks
+    UIEnhancer = None
+    LoadingStyle = None
+    with_loading = None
+    with_error_handling = None
+    st_loading_button = None
+    # Progressive loader fallbacks
+    ProgressiveDataLoader = None
+    create_progressive_loader = None
+    # Computation optimizer fallbacks
+    VectorizedOptimizer = None
+    ParallelProcessor = None
+    MemoryOptimizer = None
+    performance_timer = None
+    cached_calculation = None
+    TaskPriority = None
+    submit_async_task = None
+    get_task_result = None
+    is_task_complete = None
+    ProgressTracker = None
+    ProgressConfig = None
+    ProgressStyle = None
+    track_function_with_progress = None
+    st_async_button = None
+    update_all_progress = None
 sys.path.append(str(Path(__file__).resolve().parents[2] / 'config'))
 try:
     from settings import get_dashboard_preferences, get_default_section_states
@@ -124,6 +175,27 @@ class ConsolidatedScenariosTab:
             self.calculator = ScenarioAwareCalculator()
         else:
             self.calculator = None
+            
+        # Initialize performance optimization components
+        if UIEnhancer is not None:
+            self.ui_enhancer = UIEnhancer()
+        else:
+            self.ui_enhancer = None
+            
+        if ProgressiveDataLoader is not None:
+            self.data_loader = ProgressiveDataLoader()
+        else:
+            self.data_loader = None
+            
+        if VectorizedOptimizer is not None:
+            self.vectorized_optimizer = VectorizedOptimizer()
+        else:
+            self.vectorized_optimizer = None
+            
+        if ParallelProcessor is not None:
+            self.parallel_processor = ParallelProcessor()
+        else:
+            self.parallel_processor = None
         
     @property
     def section_states(self):
@@ -160,12 +232,23 @@ class ConsolidatedScenariosTab:
                     button_key = "expand_all_toggle"
                 
                 if st.button(button_text, key=button_key):
-                    if all_expanded:
-                        self._collapse_all_sections()
-                    else:
-                        self._expand_all_sections()
+                        if all_expanded:
+                            self._collapse_all_sections()
+                        else:
+                            self._expand_all_sections()
         
-
+        # Performance enhancements demonstration section
+        with st.expander("⚡ Performance Enhancements Demo", expanded=False):
+            demo_tab1, demo_tab2, demo_tab3 = st.tabs(["🎨 UI Enhancements", "⚡ Performance Optimizations", "📊 Metrics"])
+            
+            with demo_tab1:
+                self.demonstrate_ui_enhancements()
+            
+            with demo_tab2:
+                self.demonstrate_performance_optimizations()
+                
+            with demo_tab3:
+                self.show_performance_metrics()
         
         # Render all sections
         for section_key, section_info in self.sections.items():
@@ -3263,31 +3346,140 @@ class ConsolidatedScenariosTab:
             max_cranes = st.number_input("Maximum Cranes", min_value=1, max_value=100, value=40)
             budget_constraint = st.number_input("Budget Constraint (M HKD)", min_value=0, value=1000)
             
-            if st.button("🚀 Run Optimization"):
-                with st.spinner("Running multi-scenario optimization..."):
-                    # Simulate optimization process
-                    import time
-                    time.sleep(2)
+            # Cache Management
+            st.markdown("---")
+            st.subheader("🗄️ Cache Management")
+            
+            cache_col1, cache_col2, cache_col3 = st.columns([2, 1, 1])
+            
+            with cache_col1:
+                st.markdown("**Cache Status:** Optimization results are cached to improve performance")
+                
+            with cache_col2:
+                if st.button("🗑️ Clear Cache", help="Clear all cached optimization results"):
+                    try:
+                        from src.utils.performance_cache import clear_cache
+                        clear_cache()
+                        st.success("Cache cleared successfully!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error clearing cache: {str(e)}")
+                        
+            with cache_col3:
+                if st.button("📊 Cache Info", help="View cache statistics"):
+                    try:
+                        from src.utils.performance_cache import get_cache_stats
+                        cache_stats = get_cache_stats()
+                        st.info(f"Cache: {cache_stats['size']}/{cache_stats['max_size']} items, {cache_stats['hit_rate']:.1f}% hit rate")
+                    except Exception as e:
+                        st.error(f"Error loading cache info: {str(e)}")
+            
+            st.markdown("---")
+            
+            # Async optimization with progress tracking
+            if st_async_button and track_function_with_progress:
+                # Prepare optimization parameters
+                weights = {
+                    'normal': normal_weight,
+                    'peak_season': peak_weight,
+                    'maintenance': maintenance_weight,
+                    'typhoon_season': typhoon_weight
+                }
+                constraints = {
+                    'max_berths': max_berths,
+                    'max_cranes': max_cranes,
+                    'budget': budget_constraint
+                }
+                
+                # Create progress configuration for optimization
+                progress_config = ProgressConfig(
+                    style=ProgressStyle.BAR,
+                    show_percentage=True,
+                    show_time_remaining=True,
+                    show_elapsed_time=True,
+                    show_cancel_button=True,
+                    show_details=True
+                )
+                
+                # Use async button with progress tracking
+                task_id = st_async_button(
+                    label="🚀 Run Optimization",
+                    func=self._run_optimization_async,
+                    objective=objective,
+                    weights=weights,
+                    constraints=constraints,
+                    key="optimization_button",
+                    help="Run multi-scenario optimization with real-time progress tracking",
+                    progress_title=f"Running {objective} Optimization",
+                    progress_description="Analyzing scenarios and optimizing port operations...",
+                    priority=TaskPriority.HIGH if TaskPriority else None,
+                    timeout=300.0,  # 5 minute timeout
+                    config=progress_config
+                )
+                
+                # Check for completed optimization results
+                if task_id and is_task_complete and is_task_complete(task_id):
+                    result = get_task_result(task_id)
+                    if result and result.status == TaskStatus.COMPLETED and result.result:
+                        st.session_state.optimization_results = result.result
+                        st.success(f"✅ Optimization completed for: {objective}!")
+                        if result.metadata and result.metadata.get('cached'):
+                            st.info("🚀 Result retrieved from cache - instant response!")
+                        else:
+                            st.info("💾 Result cached for faster future access")
+                    elif result and result.status == TaskStatus.FAILED:
+                        st.error(f"❌ Optimization failed: {result.error}")
+                    elif result and result.status == TaskStatus.CANCELLED:
+                        st.warning("⚠️ Optimization was cancelled")
+            else:
+                # Fallback to synchronous processing if async is not available
+                if st.button("🚀 Run Optimization"):
+                    # Import performance cache
+                    from src.utils.performance_cache import get_cached_optimization_result, cache_optimization_result
                     
-                    # Generate optimization results based on selected objective
-                    optimization_results = self._generate_optimization_results(
-                        objective=objective,
-                        weights={
-                            'normal': normal_weight,
-                            'peak_season': peak_weight,
-                            'maintenance': maintenance_weight,
-                            'typhoon_season': typhoon_weight
-                        },
-                        constraints={
-                            'max_berths': max_berths,
-                            'max_cranes': max_cranes,
-                            'budget': budget_constraint
-                        }
-                    )
+                    # Prepare optimization parameters
+                    weights = {
+                        'normal': normal_weight,
+                        'peak_season': peak_weight,
+                        'maintenance': maintenance_weight,
+                        'typhoon_season': typhoon_weight
+                    }
+                    constraints = {
+                        'max_berths': max_berths,
+                        'max_cranes': max_cranes,
+                        'budget': budget_constraint
+                    }
+                    
+                    # Check cache first
+                    cached_result = get_cached_optimization_result(objective, weights, constraints)
+                    
+                    if cached_result is not None:
+                        # Cache hit - use cached result
+                        optimization_results = cached_result
+                        st.success(f"✅ Optimization completed for: {objective} (cached result)")
+                        st.info("🚀 Result retrieved from cache - instant response!")
+                    else:
+                        # Cache miss - run optimization
+                        with st.spinner("Running multi-scenario optimization..."):
+                            # Simulate optimization process
+                            import time
+                            time.sleep(2)
+                            
+                            # Generate optimization results based on selected objective
+                            optimization_results = self._generate_optimization_results(
+                                objective=objective,
+                                weights=weights,
+                                constraints=constraints
+                            )
+                            
+                            # Cache the result for future use
+                            cache_optimization_result(objective, weights, constraints, optimization_results)
+                            
+                        st.success(f"✅ Optimization completed for: {objective}!")
+                        st.info("💾 Result cached for faster future access")
                     
                     # Store optimization results
                     st.session_state.optimization_results = optimization_results
-                    st.success(f"Optimization completed for: {objective}!")
         
         with opt_col2:
             st.subheader("📊 Optimization Results")
@@ -3342,6 +3534,53 @@ class ConsolidatedScenariosTab:
                     showlegend=False
                 )
                 st.plotly_chart(fig, use_container_width=True)
+                
+                # Cache performance statistics
+                with st.expander("📊 Cache Performance Statistics", expanded=False):
+                    try:
+                        from src.utils.performance_cache import get_cache_stats
+                        cache_stats = get_cache_stats()
+                        
+                        # Display cache metrics in columns
+                        cache_col1, cache_col2, cache_col3, cache_col4 = st.columns(4)
+                        
+                        with cache_col1:
+                            st.metric("Cache Size", f"{cache_stats['size']}/{cache_stats['max_size']}")
+                            
+                        with cache_col2:
+                            st.metric("Hit Rate", f"{cache_stats['hit_rate']:.1f}%")
+                            
+                        with cache_col3:
+                            st.metric("Total Requests", cache_stats['total_requests'])
+                            
+                        with cache_col4:
+                            st.metric("Memory Usage", cache_stats['memory_usage_estimate'])
+                        
+                        # Additional statistics
+                        st.markdown("**Detailed Statistics:**")
+                        detail_col1, detail_col2 = st.columns(2)
+                        
+                        with detail_col1:
+                            st.write(f"• Cache Hits: {cache_stats['hits']}")
+                            st.write(f"• Cache Misses: {cache_stats['misses']}")
+                            st.write(f"• Evictions: {cache_stats['evictions']}")
+                            
+                        with detail_col2:
+                            if cache_stats['oldest_entry_age']:
+                                st.write(f"• Oldest Entry Age: {cache_stats['oldest_entry_age']:.1f}s")
+                            else:
+                                st.write("• Oldest Entry Age: N/A")
+                            st.write(f"• Cache Uptime: {cache_stats.get('cache_uptime_formatted', 'N/A')}")
+                            
+                        # Most accessed keys
+                        if cache_stats['most_accessed_keys']:
+                            st.markdown("**Most Accessed Cache Keys:**")
+                            for key, count in cache_stats['most_accessed_keys']:
+                                st.write(f"• {key}: {count} accesses")
+                                
+                    except Exception as e:
+                        st.error(f"Error loading cache statistics: {str(e)}")
+                        
             else:
                 st.info("Run optimization to see results here")
     
@@ -3812,7 +4051,7 @@ class ConsolidatedScenariosTab:
                 st.info("Configure and analyze an investment scenario to see results here")
     
     def _generate_optimization_results(self, objective: str, weights: Dict[str, float], constraints: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate optimization results based on selected objective and parameters.
+        """Generate optimization results using vectorized computation for improved performance.
         
         Args:
             objective: Selected optimization objective
@@ -3822,88 +4061,247 @@ class ConsolidatedScenariosTab:
         Returns:
             Dictionary containing optimization results
         """
-        import random
-        
-        # Set random seed for consistent results within the same session
-        random.seed(hash(objective + str(sorted(weights.items())) + str(sorted(constraints.items()))) % 1000)
-        
-        # Base performance values that vary by objective
-        if objective == "Minimize Total Waiting Time":
-            base_performance = {
-                'normal': random.uniform(0.88, 0.95),
-                'peak_season': random.uniform(0.75, 0.85),
-                'maintenance': random.uniform(0.82, 0.90),
-                'typhoon_season': random.uniform(0.68, 0.78)
-            }
-            objective_value = random.uniform(0.82, 0.92)
-            optimal_berths = random.randint(16, 22)
-            optimal_cranes = random.randint(32, 42)
+        try:
+            # Use vectorized optimizer for improved performance
+            from src.utils.computation_optimizer import vectorized_optimizer
+            return vectorized_optimizer.generate_optimization_results_vectorized(
+                objective, weights, constraints
+            )
+        except ImportError:
+            # Fallback to original implementation if optimizer not available
+            import random
             
-        elif objective == "Maximize Throughput":
-            base_performance = {
-                'normal': random.uniform(0.90, 0.97),
-                'peak_season': random.uniform(0.85, 0.92),
-                'maintenance': random.uniform(0.78, 0.88),
-                'typhoon_season': random.uniform(0.70, 0.80)
-            }
-            objective_value = random.uniform(0.85, 0.95)
-            optimal_berths = random.randint(18, 25)
-            optimal_cranes = random.randint(35, 45)
+            # Set random seed for consistent results within the same session
+            random.seed(hash(objective + str(sorted(weights.items())) + str(sorted(constraints.items()))) % 1000)
             
-        elif objective == "Minimize Costs":
-            base_performance = {
-                'normal': random.uniform(0.85, 0.92),
-                'peak_season': random.uniform(0.72, 0.82),
-                'maintenance': random.uniform(0.80, 0.87),
-                'typhoon_season': random.uniform(0.65, 0.75)
-            }
-            objective_value = random.uniform(0.78, 0.88)
-            optimal_berths = random.randint(14, 20)
-            optimal_cranes = random.randint(28, 38)
+            # Base performance values that vary by objective
+            if objective == "Minimize Total Waiting Time":
+                base_performance = {
+                    'normal': random.uniform(0.88, 0.95),
+                    'peak_season': random.uniform(0.75, 0.85),
+                    'maintenance': random.uniform(0.82, 0.90),
+                    'typhoon_season': random.uniform(0.68, 0.78)
+                }
+                objective_value = random.uniform(0.82, 0.92)
+                optimal_berths = random.randint(16, 22)
+                optimal_cranes = random.randint(32, 42)
+                
+            elif objective == "Maximize Throughput":
+                base_performance = {
+                    'normal': random.uniform(0.90, 0.97),
+                    'peak_season': random.uniform(0.85, 0.92),
+                    'maintenance': random.uniform(0.78, 0.88),
+                    'typhoon_season': random.uniform(0.70, 0.80)
+                }
+                objective_value = random.uniform(0.85, 0.95)
+                optimal_berths = random.randint(18, 25)
+                optimal_cranes = random.randint(35, 45)
+                
+            elif objective == "Minimize Costs":
+                base_performance = {
+                    'normal': random.uniform(0.85, 0.92),
+                    'peak_season': random.uniform(0.72, 0.82),
+                    'maintenance': random.uniform(0.80, 0.87),
+                    'typhoon_season': random.uniform(0.65, 0.75)
+                }
+                objective_value = random.uniform(0.78, 0.88)
+                optimal_berths = random.randint(14, 20)
+                optimal_cranes = random.randint(28, 38)
+                
+            else:  # Balanced Performance
+                base_performance = {
+                    'normal': random.uniform(0.87, 0.94),
+                    'peak_season': random.uniform(0.76, 0.86),
+                    'maintenance': random.uniform(0.81, 0.89),
+                    'typhoon_season': random.uniform(0.67, 0.77)
+                }
+                objective_value = random.uniform(0.80, 0.90)
+                optimal_berths = random.randint(16, 22)
+                optimal_cranes = random.randint(30, 40)
             
-        else:  # Balanced Performance
-            base_performance = {
-                'normal': random.uniform(0.87, 0.94),
-                'peak_season': random.uniform(0.76, 0.86),
-                'maintenance': random.uniform(0.81, 0.89),
-                'typhoon_season': random.uniform(0.67, 0.77)
+            # Apply weight adjustments to performance
+            weighted_performance = {}
+            for scenario, perf in base_performance.items():
+                weight = weights.get(scenario, 0.25)
+                # Higher weights should lead to better optimization for that scenario
+                weight_adjustment = 1 + (weight - 0.25) * 0.2  # Scale weight impact
+                weighted_performance[scenario] = min(0.98, perf * weight_adjustment)
+            
+            # Apply constraint adjustments
+            constraint_factor = 1.0
+            if constraints['max_berths'] < optimal_berths:
+                constraint_factor *= 0.95  # Reduce performance if berth-constrained
+                optimal_berths = constraints['max_berths']
+            if constraints['max_cranes'] < optimal_cranes:
+                constraint_factor *= 0.93  # Reduce performance if crane-constrained
+                optimal_cranes = constraints['max_cranes']
+            
+            # Apply constraint factor to all performance values
+            for scenario in weighted_performance:
+                weighted_performance[scenario] *= constraint_factor
+            
+            objective_value *= constraint_factor
+            
+            return {
+                'objective': objective,
+                'objective_value': round(objective_value, 3),
+                'optimal_berths': optimal_berths,
+                'optimal_cranes': optimal_cranes,
+                'scenario_performance': {k: round(v, 3) for k, v in weighted_performance.items()},
+                'weights_used': weights,
+                'constraints_applied': constraints
             }
-            objective_value = random.uniform(0.80, 0.90)
-            optimal_berths = random.randint(16, 22)
-            optimal_cranes = random.randint(30, 40)
+    
+    def _run_optimization_async(self, objective: str, weights: dict, constraints: dict, progress_tracker=None) -> dict:
+        """
+        Optimized asynchronous optimization method with progress tracking.
         
-        # Apply weight adjustments to performance
-        weighted_performance = {}
-        for scenario, perf in base_performance.items():
-            weight = weights.get(scenario, 0.25)
-            # Higher weights should lead to better optimization for that scenario
-            weight_adjustment = 1 + (weight - 0.25) * 0.2  # Scale weight impact
-            weighted_performance[scenario] = min(0.98, perf * weight_adjustment)
+        Args:
+            objective: The optimization objective
+            weights: Dictionary of scenario weights
+            constraints: Dictionary of operational constraints
+            progress_tracker: Progress tracker instance for real-time updates
+            
+        Returns:
+            Dictionary containing optimization results
+        """
+        from src.utils.performance_cache import get_cached_optimization_result, cache_optimization_result
         
-        # Apply constraint adjustments
-        constraint_factor = 1.0
-        if constraints['max_berths'] < optimal_berths:
-            constraint_factor *= 0.95  # Reduce performance if berth-constrained
-            optimal_berths = constraints['max_berths']
-        if constraints['max_cranes'] < optimal_cranes:
-            constraint_factor *= 0.93  # Reduce performance if crane-constrained
-            optimal_cranes = constraints['max_cranes']
+        try:
+            # Update progress: Starting optimization
+            if progress_tracker:
+                progress_tracker.update(0, "Initializing optimization...")
+            
+            # Check cache first
+            if progress_tracker:
+                progress_tracker.update(20, "Checking cache for existing results...")
+            
+            cached_result = get_cached_optimization_result(objective, weights, constraints)
+            
+            if cached_result is not None:
+                # Cache hit - return cached result immediately
+                if progress_tracker:
+                    progress_tracker.update(100, "Retrieved from cache!")
+                return {
+                    **cached_result,
+                    '_metadata': {'cached': True}
+                }
+            
+            # Cache miss - run optimization with progress updates
+            if progress_tracker:
+                progress_tracker.update(40, "Analyzing scenario parameters...")
+            
+            if progress_tracker:
+                progress_tracker.update(60, "Calculating optimized performance metrics...")
+            
+            if progress_tracker:
+                progress_tracker.update(80, "Applying weights and constraints...")
+            
+            # Generate optimization results using optimized computation
+            optimization_results = self._generate_optimization_results(
+                objective=objective,
+                weights=weights,
+                constraints=constraints
+            )
+            
+            if progress_tracker:
+                progress_tracker.update(95, "Caching results for future use...")
+            
+            # Cache the result for future use
+            cache_optimization_result(objective, weights, constraints, optimization_results)
+            
+            if progress_tracker:
+                progress_tracker.update(100, "Optimization completed successfully!")
+            
+            return {
+                **optimization_results,
+                '_metadata': {'cached': False}
+            }
+            
+        except Exception as e:
+            if progress_tracker:
+                progress_tracker.update(0, f"Error: {str(e)}")
+            raise e
+
+    def demonstrate_ui_enhancements(self) -> None:
+        """Demonstrate the UI enhancement capabilities."""
+        if self.ui_enhancer is None:
+            st.info("UI enhancements not available - install required dependencies")
+            return
+            
+        st.subheader("🎨 UI Enhancement Demonstrations")
         
-        # Apply constraint factor to all performance values
-        for scenario in weighted_performance:
-            weighted_performance[scenario] *= constraint_factor
+        col1, col2 = st.columns(2)
         
-        objective_value *= constraint_factor
+        with col1:
+            st.write("**Loading Indicators:**")
+            if st.button("Demo Spinner Loading"):
+                with self.ui_enhancer.loading_indicator(LoadingStyle.SPINNER, "Processing data..."):
+                    import time
+                    time.sleep(2)
+                st.success("Loading completed!")
+                
+            if st.button("Demo Progress Bar"):
+                with self.ui_enhancer.loading_indicator(LoadingStyle.PROGRESS_BAR, "Analyzing scenarios..."):
+                    import time
+                    time.sleep(2)
+                st.success("Analysis completed!")
         
-        return {
-            'objective': objective,
-            'objective_value': round(objective_value, 3),
-            'optimal_berths': optimal_berths,
-            'optimal_cranes': optimal_cranes,
-            'scenario_performance': {k: round(v, 3) for k, v in weighted_performance.items()},
-            'weights_used': weights,
-            'constraints_applied': constraints
-        }
+        with col2:
+            st.write("**Notifications:**")
+            if st.button("Demo Success Notification"):
+                self.ui_enhancer.show_notification("Operation completed successfully!", NotificationType.SUCCESS)
+                
+            if st.button("Demo Warning Notification"):
+                self.ui_enhancer.show_notification("This is a warning message", NotificationType.WARNING)
+
+    def demonstrate_performance_optimizations(self) -> None:
+        """Demonstrate the performance optimization capabilities."""
+        st.subheader("⚡ Performance Optimization Demonstrations")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write("**Vectorized Operations:**")
+            if self.vectorized_optimizer and st.button("Demo Vectorized Calculation"):
+                with st.spinner("Running vectorized optimization..."):
+                    # Demo vectorized optimization
+                    results = self.vectorized_optimizer.generate_optimization_results_vectorized(
+                        objectives=['throughput', 'efficiency'],
+                        weights_list=[{'throughput': 0.7, 'efficiency': 0.3}],
+                        constraints_list=[{'max_berths': 10, 'max_cranes': 20}]
+                    )
+                    st.success(f"Processed {len(results)} scenarios using vectorization!")
+                    st.json(results[0] if results else {})
+        
+        with col2:
+            st.write("**Progressive Loading:**")
+            if self.data_loader and st.button("Demo Progressive Loading"):
+                with st.spinner("Loading data progressively..."):
+                    # Demo progressive loading (simulated)
+                    progress_bar = st.progress(0)
+                    for i in range(100):
+                        progress_bar.progress(i + 1)
+                        import time
+                        time.sleep(0.01)
+                    st.success("Data loaded progressively!")
+
+    def show_performance_metrics(self) -> None:
+        """Display performance metrics and optimization status."""
+        if self.ui_enhancer:
+            with self.ui_enhancer.performance_monitor.monitor_operation("metrics_display"):
+                st.subheader("📊 Performance Metrics")
+                
+                metrics_col1, metrics_col2, metrics_col3 = st.columns(3)
+                
+                with metrics_col1:
+                    st.metric("Vectorization", "✅ Active" if self.vectorized_optimizer else "❌ Inactive")
+                
+                with metrics_col2:
+                    st.metric("Progressive Loading", "✅ Active" if self.data_loader else "❌ Inactive")
+                
+                with metrics_col3:
+                    st.metric("UI Enhancements", "✅ Active" if self.ui_enhancer else "❌ Inactive")
 
 
 # Convenience function for easy integration

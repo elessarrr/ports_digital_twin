@@ -1921,6 +1921,14 @@ class RealTimeDataManager:
                         
                         self._record_operation_success('vessel_update')
                         logger.debug(f"Comprehensive vessel data updated: {comprehensive_analysis['data_summary']['total_vessels']} vessels from {comprehensive_analysis['data_summary']['files_processed']} files")
+                        
+                        # Invalidate optimization cache when vessel data changes
+                        try:
+                            from src.utils.performance_cache import clear_cache
+                            clear_cache()
+                            logger.debug("Optimization cache cleared due to vessel data update")
+                        except ImportError:
+                            logger.debug("Performance cache module not available")
                     else:
                         logger.warning("Comprehensive vessel analysis returned empty results")
                         
@@ -2015,6 +2023,13 @@ class RealTimeDataManager:
         logger.info(f"Vessel file changed: {file_path}")
         if self.config.auto_reload_on_file_change:
             self._update_vessel_data()
+            # Clear optimization cache when vessel data changes
+            try:
+                from .performance_cache import clear_cache
+                clear_cache()
+                logger.info("Optimization cache cleared due to vessel data change")
+            except Exception as e:
+                logger.error(f"Error clearing optimization cache: {e}")
     
     def _on_cargo_file_change(self, file_path: str):
         """Handle cargo file changes."""
@@ -2025,6 +2040,10 @@ class RealTimeDataManager:
                 cargo_data = load_port_cargo_statistics()
                 self.data_cache['cargo_statistics'] = cargo_data
                 self.last_updates['cargo_statistics'] = datetime.now()
+                # Clear optimization cache when cargo data changes
+                from .performance_cache import clear_cache
+                clear_cache()
+                logger.info("Optimization cache cleared due to cargo data change")
             except Exception as e:
                 logger.error(f"Error reloading cargo data: {e}")
     
@@ -2034,6 +2053,13 @@ class RealTimeDataManager:
         if self.config.auto_reload_on_file_change:
             # Custom berth data reloading logic would go here
             logger.info("Berth data reload triggered")
+            # Clear optimization cache when berth data changes
+            try:
+                from .performance_cache import clear_cache
+                clear_cache()
+                logger.info("Optimization cache cleared due to berth data change")
+            except Exception as e:
+                logger.error(f"Error clearing optimization cache: {e}")
     
     def register_update_callback(self, data_type: str, callback: Callable):
         """Register a callback for data updates.
@@ -3491,3 +3517,55 @@ def extract_historical_simulation_parameters() -> Dict[str, any]:
     except Exception as e:
         logger.error(f"Error extracting historical simulation parameters: {e}")
         return {}
+
+
+def refresh_vessel_data():
+    """
+    Manually refresh vessel data and clear optimization cache.
+    
+    This function triggers a fresh load of vessel data and invalidates
+    the optimization cache to ensure fresh results.
+    """
+    try:
+        from .performance_cache import clear_optimization_cache
+        
+        logger.info("Starting manual vessel data refresh...")
+        
+        # Clear the optimization cache first
+        clear_optimization_cache()
+        logger.info("Cleared optimization cache")
+        
+        # Clear the data cache to force fresh data loading
+        global data_cache
+        data_cache.clear()
+        logger.info("Cleared data cache")
+        
+        # Initialize real-time data manager to trigger fresh data loading
+        real_time_manager = RealTimeDataManager()
+        
+        # Force update vessel data
+        real_time_manager._update_vessel_data()
+        logger.info("Updated vessel data")
+        
+        # Force update cargo data if available
+        try:
+            real_time_manager._update_cargo_data()
+            logger.info("Updated cargo data")
+        except Exception as e:
+            logger.warning(f"Could not update cargo data: {e}")
+        
+        # Load fresh container throughput data
+        try:
+            container_data = load_container_throughput()
+            if not container_data.empty:
+                data_cache.set('container_throughput', container_data)
+                logger.info("Refreshed container throughput data")
+        except Exception as e:
+            logger.warning(f"Could not refresh container throughput data: {e}")
+        
+        logger.info("Manual vessel data refresh completed successfully")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error during manual vessel data refresh: {e}")
+        return False

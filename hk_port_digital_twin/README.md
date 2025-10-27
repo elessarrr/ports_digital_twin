@@ -15,6 +15,8 @@ A comprehensive digital twin simulation system for Hong Kong's port operations.
   - `processed/` - Processed data
   - `sample/` - Sample data for testing
 - `docs/` - Documentation
+  - `caching_system_guide.md` - Comprehensive caching system documentation
+  - `caching_quick_reference.md` - Quick reference for developers
 
 ## Features Implemented
 
@@ -28,6 +30,13 @@ A comprehensive digital twin simulation system for Hong Kong's port operations.
 - BerthManager for berth allocation
 - Smart allocation algorithms
 - Statistics and history tracking
+
+### Performance Caching System ✅
+- LRU cache with TTL support for optimization results
+- Automatic cache invalidation on data changes
+- Comprehensive performance monitoring and statistics
+- Thread-safe operations with memory management
+- Integration with data loading pipeline
 
 ## Getting Started
 
