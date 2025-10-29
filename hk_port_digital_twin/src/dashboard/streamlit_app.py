@@ -2067,15 +2067,8 @@ def main():
             with col1:
                 st.write("**Select Scenarios to Compare**")
                 available_scenarios = list_available_scenarios()
-                # Create display names with emojis
-                scenario_display_options = [get_scenario_display_name(scenario) for scenario in available_scenarios]
-                
-                scenario1_display = st.selectbox("Scenario 1", scenario_display_options, key="scenario1_select")
-                scenario2_display = st.selectbox("Scenario 2", scenario_display_options, key="scenario2_select", index=1 if len(scenario_display_options) > 1 else 0)
-                
-                # Extract actual scenario keys for processing
-                scenario1 = get_scenario_key_from_display(scenario1_display)
-                scenario2 = get_scenario_key_from_display(scenario2_display)
+                scenario1 = st.selectbox("Scenario 1", available_scenarios, key="scenario1_select")
+                scenario2 = st.selectbox("Scenario 2", available_scenarios, key="scenario2_select", index=1 if len(available_scenarios) > 1 else 0)
             
             with col2:
                 st.write("**Comparison Parameters**")
