@@ -215,7 +215,7 @@ DASHBOARD_PREFERENCES = {
 # Default Section States for Consolidated Scenarios Tab
 # Controls which sections are expanded by default
 DEFAULT_SECTION_STATES = {
-    'overview': True,     # Scenario Selection & Overview - expanded by default
+    'overview': False,    # Scenario Selection & Overview - collapsed by default
     'operations': False,  # Operational Impact - collapsed by default
     'analytics': False,   # Performance Analytics - collapsed by default
     'cargo': False,       # Cargo Analysis - collapsed by default
