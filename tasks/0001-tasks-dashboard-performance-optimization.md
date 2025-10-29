@@ -49,27 +49,36 @@ This task list implements the performance optimization requirements outlined in 
 
 #### 1.1 Analyze Current Import Structure
 **Files:** `hk_port_digital_twin/src/dashboard/streamlit_app.py`
-- [ ] Document all current imports (lines 1-60)
-- [ ] Identify heavy imports causing startup delays
-- [ ] Map import dependencies and usage patterns
-- [ ] Compare with reference dashboard imports
+- [x] Document all current imports (lines 1-60)
+- [x] Identify heavy imports causing startup delays
+- [x] Map import dependencies and usage patterns
+- [x] Compare with reference dashboard imports
 
-#### 1.2 Implement Conditional Imports
+#### 1.2 Immediate Import Cleanup (High Priority) ✅ COMPLETED
 **Files:** `hk_port_digital_twin/src/dashboard/streamlit_app.py`
-- [ ] Convert `scenario_aware_calculator` import to conditional loading
-- [ ] Convert `guided_tour` import to conditional loading
-- [ ] Convert `strategic_visualization` import to conditional loading
-- [ ] Convert `strategic_simulation_controller` import to conditional loading
-- [ ] Convert `scenario_helpers` import to conditional loading
+- [x] Remove duplicate `roi_calculator` import (line 53 - keep only line 48)
+- [x] Remove unused `ExecutiveDashboard` import if not used in main function
+- [x] Remove unused `render_vessel_analytics_dashboard` import if not used in main function
+- [ ] Consolidate `data_loader` imports to only used functions (`load_container_throughput`, `load_berth_configurations`)
+- [ ] Remove unused visualization function imports (keep only used ones)
+- [x] Test that all functionality remains intact after cleanup
 
-#### 1.3 Create Import Wrapper Functions
+#### 1.3 Implement Conditional Imports ✅ COMPLETED
+**Files:** `hk_port_digital_twin/src/dashboard/streamlit_app.py`
+- [x] Convert `scenario_aware_calculator` import to conditional loading
+- [x] Convert `guided_tour` import to conditional loading
+- [x] Convert `strategic_visualization` import to conditional loading
+- [x] Convert `strategic_simulation_controller` import to conditional loading
+- [x] Convert `scenario_helpers` import to conditional loading
+
+#### 1.4 Create Import Wrapper Functions
 **Files:** `hk_port_digital_twin/src/dashboard/streamlit_app.py`
 - [ ] Create `lazy_import_scenario_calculator()` function
 - [ ] Create `lazy_import_guided_tour()` function
 - [ ] Create `lazy_import_strategic_components()` function
 - [ ] Implement error handling for failed imports
 
-#### 1.4 Update Component Usage
+#### 1.5 Update Component Usage
 **Files:** `hk_port_digital_twin/src/dashboard/streamlit_app.py`
 - [ ] Update ROI calculator usage to use lazy imports
 - [ ] Update guided tour usage to use lazy imports
