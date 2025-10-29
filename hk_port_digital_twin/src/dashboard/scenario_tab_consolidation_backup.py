@@ -90,11 +90,8 @@ class ConsolidatedScenariosTab:
         self.preferences = get_dashboard_preferences()
         self.default_states = get_default_section_states()
         
-    def render_consolidated_tab(self, scenario_data: Optional[Dict[str, Any]] = None) -> None:
+    def render_consolidated_tab(self) -> None:
         """Render the complete consolidated scenarios tab.
-        
-        Args:
-            scenario_data: Optional scenario data to display
         """
         self._initialize_session_state()
         
@@ -115,15 +112,74 @@ class ConsolidatedScenariosTab:
             if self.preferences.get('enable_expand_collapse_all', True):
                 if st.button("📕 Collapse All", key="collapse_all"):
                     self._collapse_all_sections()
-        
 
+        # Scenario selection interface
+        scenario_col1, scenario_col2 = st.columns([1, 2])
         
+        with scenario_col1:
+            st.subheader("🎯 Scenario Selection")
+            
+            # Initialize scenario tracking
+            self._initialize_scenario_tracking()
+            
+            # Get available scenarios
+            try:
+                from hk_port_digital_twin.src.scenarios import list_available_scenarios
+                available_scenarios = list_available_scenarios()
+            except ImportError:
+                available_scenarios = ['normal', 'peak_season', 'maintenance', 'typhoon_season']
+            
+            # Primary scenario selection
+            primary_scenario = st.selectbox(
+                "Primary Scenario",
+                available_scenarios,
+                help="Select the main scenario for analysis",
+                key="primary_scenario_select"
+            )
+            
+            # Detect scenario change
+            scenario_changed = self._detect_scenario_change(primary_scenario)
+            
+            # Show scenario change indicator if changed
+            if scenario_changed:
+                st.markdown("*(Note : All values will be regenerated for the new scenario)*")
+        
+        with scenario_col2:
+            # Comparison scenario selection
+            comparison_scenarios = st.multiselect(
+                "Comparison Scenarios",
+                [s for s in available_scenarios if s != primary_scenario],
+                help="Select scenarios to compare against the primary scenario"
+            )
+            
+            # Display selected comparison scenarios with visual indicators
+            if comparison_scenarios:
+                st.markdown("**Selected Comparison Scenarios:**")
+                for comp_scenario in comparison_scenarios:
+                    comp_scenario_name = self._map_scenario_key_to_name(comp_scenario)
+                    comp_color = self._get_scenario_color(comp_scenario_name)
+                    comp_badge = self._get_scenario_badge(comp_scenario_name)
+                    comp_border = self._get_scenario_border_color(comp_scenario_name)
+                    
+                    st.markdown(
+                        f"""<div style="padding: 8px; border-radius: 4px; background-color: {comp_color}; 
+                        border-left: 3px solid {comp_border}; margin: 5px 0; font-size: 0.9em;">
+                        {comp_badge} {comp_scenario_name}
+                        </div>""",
+                        unsafe_allow_html=True
+                    )
+
+        current_scenario = self._get_current_scenario() # Synchronize scenario first
+        
+        # Get scenario data
+        scenario_data = self._get_scenario_data(current_scenario)
+
         # Render validation section
         self._render_validation_section()
         
         # Render all sections
         for section_key, section_info in self.sections.items():
-            self._render_section(section_key, section_info, scenario_data)
+            self._render_section(section_key, section_info, scenario_data, current_scenario)
     
     def _initialize_session_state(self) -> None:
         """Initialize session state variables for the consolidated tab."""
@@ -194,25 +250,31 @@ class ConsolidatedScenariosTab:
             st.session_state.consolidated_sections_state[section_key] = False
         st.rerun()
     
-    def _render_section(self, section_key: str, section_info: Dict[str, str], scenario_data: Optional[Dict[str, Any]] = None) -> None:
+    def _render_section(self, section_key: str, section_info: Dict[str, str], scenario_data: Optional[Dict[str, Any]] = None, current_scenario: Optional[str] = None) -> None:
         """Render an individual section with enhanced features.
         
         Args:
             section_key: The key identifier for the section
             section_info: Dictionary containing section metadata
             scenario_data: Optional scenario data to display
+            current_scenario: The currently selected scenario
         """
+        # If the section is 'overview', delegate rendering completely
+        if section_key == 'overview':
+            self.render_scenario_overview_section(scenario_data)
+            return
+
         # Get current state
         is_expanded = st.session_state.consolidated_sections_state.get(section_key, False)
         
         # Get current scenario for visual indicators
-        current_scenario = self._get_current_scenario()
         scenario_badge = self._get_scenario_badge(current_scenario)
         
+        # Debug logging
+        print(f"DEBUG: Section '{section_key}' - Current scenario: '{current_scenario}', Badge: '{scenario_badge}'")
+        
         # Create section header with scenario indicator
-        section_title = f"{section_info.get('icon', '')} {section_info.get('title', section_key.title())}"
-        if section_key != 'overview':
-            section_title += f" {scenario_badge}"
+        section_title = f"{section_info.get('icon', '')} {section_info.get('title', section_key.title())} {scenario_badge}"
         
         # Add anchor point for navigation
         st.markdown(f'<div id="section-{section_key}"></div>', unsafe_allow_html=True)
@@ -220,16 +282,15 @@ class ConsolidatedScenariosTab:
         # Create expandable section
         with st.expander(section_title, expanded=is_expanded):
             # Show current scenario context at the top of each section
-            if section_key != 'overview':  # Skip for overview since it already shows scenario selection
-                scenario_color = self._get_scenario_color(current_scenario)
-                scenario_border = self._get_scenario_border_color(current_scenario)
-                st.markdown(
-                    f"""<div style="padding: 6px 10px; border-radius: 3px; background-color: {scenario_color}; 
-                    border-left: 3px solid {scenario_border}; margin-bottom: 10px; font-size: 0.85em;">
-                    <strong>Scenario Context:</strong> {scenario_badge} {current_scenario}
-                    </div>""",
-                    unsafe_allow_html=True
-                )
+            scenario_color = self._get_scenario_color(current_scenario)
+            scenario_border = self._get_scenario_border_color(current_scenario)
+            st.markdown(
+                f"""<div style="padding: 6px 10px; border-radius: 3px; background-color: {scenario_color}; 
+                border-left: 3px solid {scenario_border}; margin-bottom: 10px; font-size: 0.85em;">
+                <strong>Scenario Context:</strong> {scenario_badge} {current_scenario}
+                </div>""",
+                unsafe_allow_html=True
+            )
             
             # Show description if enabled
             if self.preferences.get('show_section_descriptions', True):
@@ -238,9 +299,7 @@ class ConsolidatedScenariosTab:
                 st.markdown("---")
             
             # Render section content
-            if section_key == 'overview':
-                self.render_scenario_overview_section(scenario_data)
-            elif section_key == 'operations':
+            if section_key == 'operations':
                 self.render_operational_impact_section(scenario_data)
             elif section_key == 'analytics':
                 self.render_performance_analytics_section(scenario_data)
@@ -278,22 +337,21 @@ class ConsolidatedScenariosTab:
         st.success(f"Link copied for {section_key} section! (Feature to be implemented)")
         # TODO: Implement actual link copying with JavaScript
         
-    def render_scenario_overview_section(self, scenario_data: Optional[Dict[str, Any]] = None) -> None:
-        """Render scenario overview with KPIs and metrics.
-        
+    def render_scenario_overview_section(self, scenario_data: Optional[Dict[str, Any]] = None) -> str:
+        """Render scenario overview with KPIs and metrics, and handle scenario selection.
+
         This section consolidates content from the original Overview tab,
         including KPI summaries, real-time simulation metrics, and enhanced metrics.
-        
+
         Args:
             scenario_data: Current scenario configuration and data
+            
+        Returns:
+            The selected scenario.
         """
-        #st.markdown("### 🎯 Scenario Selection & Overview")
-        #st.markdown("Select and configure simulation scenarios for analysis")
-        
-        # Scenario Analysis & Comparison (migrated from existing tab)
         st.subheader("📊 Scenario Analysis & Comparison")
         st.markdown("Compare different operational scenarios to optimize port performance")
-        
+
         # Scenario selection interface
         scenario_col1, scenario_col2 = st.columns([1, 2])
         
@@ -310,11 +368,6 @@ class ConsolidatedScenariosTab:
             except ImportError:
                 available_scenarios = ['normal', 'peak_season', 'maintenance', 'typhoon_season']
             
-            # Display current scenario with visual indicator
-            current_scenario = self._get_current_scenario()
-            scenario_color = self._get_scenario_color(current_scenario)
-            scenario_badge = self._get_scenario_badge(current_scenario)
-            
             # Primary scenario selection
             primary_scenario = st.selectbox(
                 "Primary Scenario",
@@ -329,7 +382,8 @@ class ConsolidatedScenariosTab:
             # Show scenario change indicator if changed
             if scenario_changed:
                 st.markdown("*(Note : All values will be regenerated for the new scenario)*")
-            
+        
+        with scenario_col2:
             # Comparison scenario selection
             comparison_scenarios = st.multiselect(
                 "Comparison Scenarios",
@@ -347,71 +401,25 @@ class ConsolidatedScenariosTab:
                     comp_border = self._get_scenario_border_color(comp_scenario_name)
                     
                     st.markdown(
-                        f"""<div style="padding: 8px; border-radius: 4px; background-color: {comp_color}; 
+                        f'''<div style="padding: 8px; border-radius: 4px; background-color: {comp_color}; 
                         border-left: 3px solid {comp_border}; margin: 5px 0; font-size: 0.9em;">
                         {comp_badge} {comp_scenario_name}
-                        </div>""",
+                        </div>''',
                         unsafe_allow_html=True
                     )
-            
-            # Analysis parameters
-            st.subheader("⚙️ Analysis Parameters")
-            simulation_duration = st.slider(
-                "Simulation Duration (hours)",
-                min_value=24,
-                max_value=168,
-                value=72,
-                step=24
-            )
-            
-            use_historical_data = st.checkbox(
-                "Use Historical Data",
-                value=True,
-                help="Include historical patterns in the analysis"
-            )
-            
-            if st.button("🔄 Run Scenario Comparison"):
-                with st.spinner("Running scenario comparison..."):
-                    try:
-                        # Import scenario comparison functionality
-                        from hk_port_digital_twin.src.scenarios.scenario_comparison import create_scenario_comparison
-                        
-                        # Run comparison
-                        comparison_results = create_scenario_comparison(
-                            primary_scenario=primary_scenario,
-                            comparison_scenarios=comparison_scenarios,
-                            simulation_hours=simulation_duration,
-                            use_historical_data=use_historical_data
-                        )
-                        
-                        if comparison_results:
-                            st.session_state.scenario_comparison_results = comparison_results
-                            st.success("Scenario comparison completed!")
-                        else:
-                            st.error("Failed to run scenario comparison")
-                            
-                    except Exception as e:
-                        st.error(f"Error running scenario comparison: {str(e)}")
-                        import logging
-                        logging.error(f"Scenario comparison error: {e}")
+
+        # This section will now display the overview for the selected scenario.
+        # The selection logic has been moved to the main render_consolidated_tab method.
         
-        with scenario_col2:
-            st.subheader("📊 Comparison Results")
-            
-            if hasattr(st.session_state, 'scenario_comparison_results') and st.session_state.scenario_comparison_results:
-                results = st.session_state.scenario_comparison_results
-                
-                # Display comparison metrics
-                if 'comparison_data' in results:
-                    comparison_df = pd.DataFrame(results['comparison_data'])
-                    st.dataframe(comparison_df, use_container_width=True)
-                    
-                    # Visualization of comparison results
-                    import plotly.express as px
-                    
-                    # Ship arrival rate comparison
-                    if 'ship_arrival_rate' in comparison_df.columns:
-                        fig_arrivals = px.bar(
+        return primary_scenario
+
+        if scenario_data:
+            st.write("Scenario Overview Content Here")
+            # For example, you can display KPIs from scenario_data
+            if "kpis" in scenario_data:
+                st.write(scenario_data["kpis"])
+        else:
+            st.warning("No scenario data available to display.")
                             comparison_df,
                             x='Scenario',
                             y='ship_arrival_rate',
@@ -1626,10 +1634,21 @@ class ConsolidatedScenariosTab:
     def _get_current_scenario(self) -> str:
         """
         Get the current scenario from session state.
+        Prioritizes selected_scenario from unified simulations tab for consistency.
         
         Returns:
             Current scenario name
         """
+        # Check if unified simulations tab has set a scenario
+        selected_scenario = st.session_state.get('selected_scenario')
+        if selected_scenario:
+            # Map scenario key to display name
+            scenario_display_name = self._map_scenario_key_to_name(selected_scenario)
+            # Update current_scenario to keep them in sync
+            st.session_state.current_scenario = scenario_display_name
+            return scenario_display_name
+        
+        # Fall back to current_scenario or default
         return st.session_state.get('current_scenario', 'Normal Operations')
 
     def _cache_scenario_value(self, key: str, value: Any) -> None:
