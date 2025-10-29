@@ -42,7 +42,7 @@ except ImportError:
     
     def get_default_section_states():
         return {
-            'overview': True,
+            'overview': False,
             'operations': False,
             'analytics': False,
             'cargo': False,
