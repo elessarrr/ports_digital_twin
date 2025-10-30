@@ -100,17 +100,23 @@ def test_ai_integration():
     ai_throughput = result['simulation_summary']['throughput_rate']
     traditional_throughput = traditional_result['simulation_summary']['throughput_rate']
     
-    if ai_waiting < traditional_waiting:
-        improvement = ((traditional_waiting - ai_waiting) / traditional_waiting) * 100
-        print(f"✓ AI optimization reduced waiting time by {improvement:.1f}%")
+    if traditional_waiting > 0:
+        if ai_waiting < traditional_waiting:
+            improvement = ((traditional_waiting - ai_waiting) / traditional_waiting) * 100
+            print(f"✓ AI optimization reduced waiting time by {improvement:.1f}%")
+        else:
+            print(f"⚠ AI waiting time: {ai_waiting:.2f}h vs Traditional: {traditional_waiting:.2f}h")
     else:
-        print(f"⚠ AI waiting time: {ai_waiting:.2f}h vs Traditional: {traditional_waiting:.2f}h")
-    
-    if ai_throughput > traditional_throughput:
-        improvement = ((ai_throughput - traditional_throughput) / traditional_throughput) * 100
-        print(f"✓ AI optimization improved throughput by {improvement:.1f}%")
+        print("Traditional waiting time is zero, cannot calculate improvement.")
+
+    if traditional_throughput > 0:
+        if ai_throughput > traditional_throughput:
+            improvement = ((ai_throughput - traditional_throughput) / traditional_throughput) * 100
+            print(f"✓ AI optimization improved throughput by {improvement:.1f}%")
+        else:
+            print(f"⚠ AI throughput: {ai_throughput:.2f} vs Traditional: {traditional_throughput:.2f}")
     else:
-        print(f"⚠ AI throughput: {ai_throughput:.2f} vs Traditional: {traditional_throughput:.2f}")
+        print("Traditional throughput is zero, cannot calculate improvement.")
     
     print("\n=== Test Completed Successfully ===")
     print(f"Test finished at: {datetime.now()}")

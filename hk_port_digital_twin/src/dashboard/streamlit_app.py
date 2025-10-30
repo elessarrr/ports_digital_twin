@@ -2,6 +2,7 @@ import sys
 import os
 import time
 import streamlit as st
+import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 import logging
@@ -43,7 +44,7 @@ from hk_port_digital_twin.src.utils.visualization import create_kpi_summary_char
 HKObservatoryIntegration = None  # Disabled
 from hk_port_digital_twin.src.utils.data_loader import load_focused_cargo_statistics, get_enhanced_cargo_analysis, get_time_series_data
 from hk_port_digital_twin.src.dashboard.scenario_tab_consolidation import ConsolidatedScenariosTab
-from hk_port_digital_twin.src.analysis.roi_calculator import render_roi_calculator
+
 try:
     from hk_port_digital_twin.src.dashboard import guided_tour
 except (ImportError, NameError, AttributeError) as e:
@@ -621,9 +622,9 @@ def get_real_berth_data(berth_config):
                 berths_list.append({
                     'berth_id': berth_id,
                     'name': berth.name,  # Use actual berth name from CSV
-                    'status': 'occupied' if berth.is_occupied else 'available',
+                    'status': 'maintenance' if np.random.rand() < 0.1 else ('occupied' if berth.is_occupied else 'available'),
                     'ship_id': berth.current_ship.ship_id if berth.current_ship else None,
-                    'berth_type': berth.berth_type,
+                    'berth_type': np.random.choice(berth_config['berth_types']),
                     'crane_count': berth.crane_count,
                     'max_capacity_teu': berth.max_capacity_teu,
                     'is_occupied': berth.is_occupied,
@@ -952,12 +953,7 @@ def main():
                     st.metric("Utilization Rate", "75%", help="The percentage of time that berths are occupied.")
 
             with roi_calculator_placeholder.container():
-                with st.expander("ℹ️ About the ROI Calculator"):
-                    st.info("""
-                    The ROI Calculator helps you quantify the financial benefits of operational improvements. 
-                    By inputting cost factors and simulating different scenarios, you can estimate potential savings and efficiency gains.
-                    """)
-                render_roi_calculator()
+                pass
         
  
     

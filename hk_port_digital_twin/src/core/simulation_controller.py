@@ -11,7 +11,7 @@ from typing import Optional, Callable, Tuple
 import logging
 
 from .port_simulation import PortSimulation
-from ..utils.metrics_collector import MetricsCollector
+from src.utils.metrics_collector import MetricsCollector
 
 
 class SimulationState(Enum):

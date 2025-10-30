@@ -22,9 +22,6 @@ from hk_port_digital_twin.src.scenarios.unified_simulation_framework import (
 from hk_port_digital_twin.src.utils.business_intelligence_utils import (
     SharedBusinessIntelligence, ROICalculationMethod, FinancialParameters
 )
-from hk_port_digital_twin.src.utils.strategic_roi_calculator import (
-    StrategicROICalculator, StrategicInvestmentType, StrategicInvestmentScenario
-)
 from hk_port_digital_twin.src.utils.comprehensive_business_intelligence import (
     ComprehensiveBusinessIntelligence, ComparativeAnalysisResult, ExecutiveBusinessReport,
     ComparisonType, BusinessIntelligenceScope
@@ -60,7 +57,6 @@ class SimulationDisplayConfig:
     description: str
     icon: str
     business_focus: str
-    expected_roi: float
     investment_required: float
     timeline_months: int
     key_benefits: List[str]
@@ -79,7 +75,6 @@ class UnifiedSimulationsTab:
         self.executive_dashboard = None
         self.strategic_viz = None
         self.business_intelligence = SharedBusinessIntelligence()
-        self.roi_calculator = StrategicROICalculator()
         self.comprehensive_bi = ComprehensiveBusinessIntelligence()
         self.unified_framework = UnifiedSimulationController()
         
@@ -97,7 +92,6 @@ class UnifiedSimulationsTab:
                 description="AI-driven optimization for maximum throughput during peak demand periods",
                 icon="📈",
                 business_focus="Revenue Maximization & Capacity Utilization",
-                expected_roi=180.0,
                 investment_required=2500000.0,
                 timeline_months=24,
                 key_benefits=[
@@ -122,9 +116,7 @@ class UnifiedSimulationsTab:
                 title="Normal Operations Baseline",
                 description="Optimized standard operations with continuous improvement focus",
                 icon="⚖️",
-                business_focus="Operational Excellence & Efficiency",
-                expected_roi=125.0,
-                investment_required=1500000.0,
+                business_focus="Operational Excellence & Efficiency",investment_required=1500000.0,
                 timeline_months=18,
                 key_benefits=[
                     "25% improvement in operational efficiency",
@@ -148,9 +140,7 @@ class UnifiedSimulationsTab:
                 title="Low Season Optimization",
                 description="Strategic maintenance and cost optimization during reduced demand",
                 icon="🔧",
-                business_focus="Cost Optimization & Sustainability",
-                expected_roi=285.0,
-                investment_required=800000.0,
+                business_focus="Cost Optimization & Sustainability",investment_required=800000.0,
                 timeline_months=12,
                 key_benefits=[
                     "22% cost savings through efficiency",
@@ -183,8 +173,7 @@ class UnifiedSimulationsTab:
         if 'business_intelligence' not in st.session_state:
             st.session_state.business_intelligence = self.business_intelligence
         
-        if 'roi_calculator' not in st.session_state:
-            st.session_state.roi_calculator = self.roi_calculator
+
     
     def render_view_mode_selector(self) -> ViewMode:
         """Render the view mode selector and return selected mode."""
@@ -259,7 +248,6 @@ class UnifiedSimulationsTab:
                 with st.container():
                     st.markdown(f"### {config.icon} {config.title}")
                     st.markdown(f"**Focus:** {config.business_focus}")
-                    st.markdown(f"**Expected ROI:** {config.expected_roi:.1f}%")
                     st.markdown(f"**Timeline:** {config.timeline_months} months")
                     
                     # Key benefits
@@ -531,10 +519,12 @@ class UnifiedSimulationsTab:
             )
         
         with col2:
+            # The 'expected_roi' attribute was part of a feature under development and has been removed.
+            # We can extract it from the key_benefits string if needed in the future.
             st.metric(
                 "Expected ROI",
-                f"{config.expected_roi:.1f}%",
-                help="Return on investment over project timeline"
+                "See Benefits",
+                help="ROI details are listed under Key Benefits"
             )
         
         with col3:
@@ -544,43 +534,13 @@ class UnifiedSimulationsTab:
                 help="Expected time to full implementation"
             )
         
-        # Create strategic investment scenario
-        investment_scenario = StrategicInvestmentScenario(
-            investment_type=StrategicInvestmentType.CAPACITY_EXPANSION,
-            investment_amount=config.investment_required,
-            timeline_months=config.timeline_months,
-            expected_annual_benefits=config.investment_required * (config.expected_roi / 100) / (config.timeline_months / 12),
-            implementation_costs=config.investment_required * 0.1,
-            operational_cost_changes=-config.investment_required * 0.05,
-            risk_factors=config.risk_factors,
-            strategic_objectives=["Operational Excellence", "Market Leadership", "Sustainability"]
-        )
+        # The StrategicInvestmentScenario and related calculations are part of a feature under development.
         
-        # Calculate strategic ROI
-        roi_result = self.roi_calculator.calculate_strategic_roi(investment_scenario)
-        
-        # Prepare executive metrics
-        executive_metrics = {
-            'investment_amount': config.investment_required,
-            'expected_roi': config.expected_roi,
-            'timeline_months': config.timeline_months,
-            'annual_benefits': roi_result.annual_benefits if hasattr(roi_result, 'annual_benefits') else 0.0,
-            'payback_period': roi_result.payback_period_months if hasattr(roi_result, 'payback_period_months') else config.timeline_months,
-            'risk_score': len(config.risk_factors) / 10.0,  # Simple risk scoring
-            'business_focus': config.business_focus,
-            'key_benefits': config.key_benefits,
-            'demo_highlights': config.demo_highlights
-        }
-        
-        # Create unified executive view
-        executive_chart = create_unified_executive_view(executive_metrics)
-        
-        # Display enhanced executive chart
-        st.plotly_chart(executive_chart, use_container_width=True)
-        
-        # Risk assessment
+        # This section is under development and will be enabled in a future version.
+        st.info("📈 Advanced strategic ROI calculations and executive reporting are currently under development.")
+
+        # Display key benefits and risks as defined in the configuration
         col1, col2 = st.columns(2)
-        
         with col1:
             st.markdown("#### ✅ Key Benefits")
             for benefit in config.key_benefits:
@@ -590,44 +550,12 @@ class UnifiedSimulationsTab:
             st.markdown("#### ⚠️ Risk Factors")
             for risk in config.risk_factors:
                 st.markdown(f"• {risk}")
-        
-        # Display strategic metrics
-        st.markdown("#### 💼 Strategic Business Case")
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.metric(
-                "Strategic Value Score",
-                f"{roi_result.strategic_value_score:.1f}/100",
-                help="Overall strategic value assessment"
-            )
-        
-        with col2:
-            st.metric(
-                "Market Positioning Impact",
-                f"{roi_result.market_positioning_impact:.1f}/100",
-                help="Impact on competitive market position"
-            )
-        
-        with col3:
-            st.metric(
-                "Sustainability Contribution",
-                f"{roi_result.sustainability_contribution:.1f}/100",
-                help="Environmental and sustainability benefits"
-            )
-        
-        # Add comprehensive executive business report
-        st.markdown("#### 📊 Executive Business Intelligence Report")
-        
+            
         try:
-            # Generate comprehensive executive report
             executive_report = self.comprehensive_bi.generate_executive_report(
-                scenario_name=scenario,
-                investment_scenario=investment_scenario,
-                roi_result=roi_result,
+                scenario=scenario,
                 scope=BusinessIntelligenceScope.EXECUTIVE
             )
-            
             if executive_report:
                 # Executive summary
                 st.markdown("##### 📋 Executive Summary")
@@ -697,7 +625,7 @@ class UnifiedSimulationsTab:
             scenario_1_data = {
                 'title': config1.title,
                 'investment_required': config1.investment_required,
-                'expected_roi': config1.expected_roi,
+                'expected_roi': 0, # Placeholder, as config.expected_roi is removed
                 'timeline_months': config1.timeline_months,
                 'business_focus': config1.business_focus,
                 'risk_score': len(config1.risk_factors) / 10.0
@@ -706,7 +634,7 @@ class UnifiedSimulationsTab:
             scenario_2_data = {
                 'title': config2.title,
                 'investment_required': config2.investment_required,
-                'expected_roi': config2.expected_roi,
+                'expected_roi': 0, # Placeholder, as config.expected_roi is removed
                 'timeline_months': config2.timeline_months,
                 'business_focus': config2.business_focus,
                 'risk_score': len(config2.risk_factors) / 10.0
@@ -728,13 +656,13 @@ class UnifiedSimulationsTab:
             comparison_data = {
                 'Metric': ['Expected ROI (%)', 'Investment Required ($)', 'Timeline (months)', 'Business Focus'],
                 config1.title: [
-                    f"{config1.expected_roi:.1f}%",
+                    "See Benefits", # Placeholder, as config.expected_roi is removed
                     f"${config1.investment_required:,.0f}",
                     f"{config1.timeline_months}",
                     config1.business_focus
                 ],
                 config2.title: [
-                    f"{config2.expected_roi:.1f}%",
+                    "See Benefits", # Placeholder, as config.expected_roi is removed
                     f"${config2.investment_required:,.0f}",
                     f"{config2.timeline_months}",
                     config2.business_focus
@@ -782,13 +710,13 @@ class UnifiedSimulationsTab:
                     
                     with col1:
                         st.markdown(f"##### 💰 {config1.title} Investment Profile")
-                        st.metric("ROI", f"{config1.expected_roi:.1f}%")
+                        st.metric("ROI", "See Benefits") # Placeholder
                         st.metric("Investment", f"${config1.investment_required:,.0f}")
                         st.metric("Timeline", f"{config1.timeline_months} months")
                     
                     with col2:
                         st.markdown(f"##### 💰 {config2.title} Investment Profile")
-                        st.metric("ROI", f"{config2.expected_roi:.1f}%")
+                        st.metric("ROI", "See Benefits") # Placeholder
                         st.metric("Investment", f"${config2.investment_required:,.0f}")
                         st.metric("Timeline", f"{config2.timeline_months} months")
                     

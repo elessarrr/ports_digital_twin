@@ -28,12 +28,6 @@ from enum import Enum
 
 # Import existing business intelligence components
 try:
-    from .strategic_roi_calculator import (
-        StrategicROICalculator,
-        StrategicInvestmentScenario,
-        StrategicInvestmentType,
-        StrategicROIResult
-    )
     from .business_intelligence_utils import (
         SharedBusinessIntelligence,
         ROIAnalysisResult,
@@ -54,12 +48,6 @@ try:
     )
 except ImportError:
     # Fallback for direct imports
-    from strategic_roi_calculator import (
-        StrategicROICalculator,
-        StrategicInvestmentScenario,
-        StrategicInvestmentType,
-        StrategicROIResult
-    )
     from business_intelligence_utils import (
         SharedBusinessIntelligence,
         ROIAnalysisResult,
@@ -174,7 +162,6 @@ class ComprehensiveBusinessIntelligence:
         self.logger = logging.getLogger(__name__)
         
         # Initialize component systems
-        self.strategic_roi_calculator = StrategicROICalculator(financial_params)
         self.shared_bi = SharedBusinessIntelligence(financial_params)
         self.bi_engine = BusinessIntelligenceEngine()
         
@@ -263,25 +250,21 @@ class ComprehensiveBusinessIntelligence:
         scenario_params = self._get_scenario_parameters(scenario_name)
         business_metrics = scenario_params.business_metrics
         
-        # Generate strategic ROI analysis
-        investment_scenario = self._create_investment_scenario(scenario_params)
-        roi_result = self.strategic_roi_calculator.calculate_strategic_roi(investment_scenario)
-        
-        # Create executive summary
-        executive_summary = self._generate_executive_summary(scenario_params, roi_result)
-        
-        # Financial performance analysis
-        financial_performance = self._analyze_financial_performance(business_metrics, roi_result)
-        
+        # ROI analysis logic has been removed from this function.
+        # The following are placeholders and will be updated in subsequent steps.
+        roi_result = None  # Placeholder
+        executive_summary = "Executive summary to be generated."
+        financial_performance = {} # Placeholder
+        recommendations = {
+            'investment': [], 'immediate': [], 'medium_term': [], 'long_term': []
+        } # Placeholder
+
         # Operational performance analysis
         operational_performance = self._analyze_operational_performance(business_metrics)
         
         # Strategic insights
         market_position = self._analyze_market_position(business_metrics)
         competitive_analysis = self._analyze_competitive_position(business_metrics)
-        
-        # Generate recommendations
-        recommendations = self._generate_strategic_recommendations(scenario_params, roi_result)
         
         return ExecutiveBusinessReport(
             scenario_name=scenario_name,
@@ -423,73 +406,7 @@ class ComprehensiveBusinessIntelligence:
             implementation_complexity=self._assess_implementation_complexity(primary_params)
         )
     
-    def _create_investment_scenario(self, scenario_params: ScenarioParameters) -> StrategicInvestmentScenario:
-        """Create strategic investment scenario from scenario parameters."""
-        business_metrics = scenario_params.business_metrics
-        
-        # Estimate investment amount based on scenario characteristics
-        base_investment = 5000000  # $5M base investment
-        investment_multiplier = scenario_params.arrival_rate_multiplier * scenario_params.target_berth_utilization
-        investment_amount = base_investment * investment_multiplier
-        
-        # Calculate expected benefits
-        annual_benefits = []
-        for year in range(10):
-            annual_benefit = business_metrics.expected_revenue_per_hour * 8760 * 0.7  # 70% operational time
-            annual_benefits.append(annual_benefit * (1 + 0.03) ** year)  # 3% growth
-        
-        # Calculate expected costs
-        annual_costs = []
-        base_annual_cost = investment_amount * 0.1  # 10% of investment as annual cost
-        for year in range(10):
-            annual_costs.append(base_annual_cost * (1 + 0.02) ** year)  # 2% cost inflation
-        
-        return StrategicInvestmentScenario(
-            investment_type=StrategicInvestmentType.CAPACITY_EXPANSION,
-            investment_amount=investment_amount,
-            implementation_timeline_months=18,
-            expected_annual_benefits=annual_benefits,
-            expected_annual_costs=annual_costs,
-            risk_factors={
-                'market_risk': 0.15,
-                'technology_risk': 0.10,
-                'operational_risk': 0.08,
-                'regulatory_risk': 0.05
-            },
-            market_conditions={
-                'growth_rate': 0.05,
-                'competition_level': 0.7,
-                'market_maturity': 0.8
-            },
-            competitive_impact={
-                'market_share_gain': business_metrics.competitive_advantage_score / 100,
-                'pricing_power': 0.1,
-                'customer_retention': business_metrics.customer_satisfaction_target / 100
-            },
-            sustainability_impact={
-                'carbon_reduction': business_metrics.sustainability_impact_score / 100,
-                'efficiency_gain': business_metrics.expected_crane_efficiency / 100,
-                'waste_reduction': 0.15
-            }
-        )
-    
     # Additional helper methods for calculations and analysis
-    def _generate_executive_summary(self, scenario_params: ScenarioParameters, roi_result: StrategicROIResult) -> str:
-        """Generate executive summary for the scenario."""
-        business_metrics = scenario_params.business_metrics
-        
-        summary = f"""
-        {scenario_params.scenario_name} presents a strategic opportunity to achieve {business_metrics.expected_roi_percentage:.1f}% ROI 
-        through enhanced operational efficiency and capacity optimization. The scenario demonstrates strong potential for 
-        {business_metrics.expected_throughput_teu_per_hour:.0f} TEU/hour throughput with {business_metrics.expected_berth_utilization:.1f}% 
-        berth utilization. Strategic implementation would deliver ${business_metrics.expected_revenue_per_hour:,.0f} per hour 
-        in revenue generation while maintaining {business_metrics.customer_satisfaction_target:.0f}% customer satisfaction. 
-        The investment shows strong financial viability with a {roi_result.base_roi_analysis.payback_period_years:.1f}-year 
-        payback period and significant competitive advantage potential.
-        """
-        
-        return summary.strip()
-    
     def _extract_key_achievements(self, business_metrics: DemoBusinessMetrics) -> List[str]:
         """Extract key achievements from business metrics."""
         achievements = []

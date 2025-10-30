@@ -51,7 +51,6 @@ class ExecutiveMetrics:
     efficiency_improvement: float
     cost_savings: float
     customer_satisfaction: float
-    roi_percentage: float
     risk_score: float
     capacity_utilization: float
     throughput_improvement: float
@@ -113,7 +112,6 @@ class ExecutiveDashboard:
             st.metric(
                 "Cost Savings",
                 f"${metrics.cost_savings:,.0f}",
-                delta=f"+{metrics.roi_percentage:.1f}%",
                 help="Total cost savings from optimization"
             )
             
@@ -147,10 +145,9 @@ class ExecutiveDashboard:
         
         # Create before/after comparison chart
         fig = make_subplots(
-            rows=2, cols=2,
-            subplot_titles=('Revenue Impact', 'Efficiency Gains', 'Cost Reduction', 'ROI Timeline'),
-            specs=[[{"secondary_y": True}, {"secondary_y": True}],
-                   [{"secondary_y": True}, {"secondary_y": True}]]
+            rows=1, cols=3,
+            subplot_titles=('Revenue Impact', 'Efficiency Gains', 'Cost Reduction'),
+            specs=[[{"secondary_y": True}, {"secondary_y": True}, {"secondary_y": True}]]
         )
         
         # Revenue impact (top-left)
@@ -168,20 +165,9 @@ class ExecutiveDashboard:
             go.Scatter(x=scenarios, y=efficiency, mode='lines+markers', name="Efficiency", line_color="#ff7f0e"),
             row=1, col=2
         )
-        
-        # Cost reduction (bottom-left)
-        costs = [scenario_data[s]['cost_savings'] for s in scenarios]
         fig.add_trace(
             go.Bar(x=scenarios, y=costs, name="Cost Savings", marker_color="#2ca02c"),
-            row=2, col=1
-        )
-        
-        # ROI timeline (bottom-right)
-        months = list(range(1, 13))
-        roi_timeline = [5 + i * 2.5 + np.random.normal(0, 1) for i in months]
-        fig.add_trace(
-            go.Scatter(x=months, y=roi_timeline, mode='lines+markers', name="ROI %", line_color="#d62728"),
-            row=2, col=2
+            row=1, col=3
         )
         
         fig.update_layout(
@@ -379,7 +365,6 @@ class ExecutiveDashboard:
             efficiency_improvement=15.3,
             cost_savings=2500000.0,
             customer_satisfaction=92.5,
-            roi_percentage=22.8,
             risk_score=3.2,
             capacity_utilization=87.5,
             throughput_improvement=18.7

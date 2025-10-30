@@ -58,17 +58,17 @@ class BenchmarkMetric:
             return PerformanceLevel.AVERAGE
         
         # Define thresholds based on world class target and historical baseline
-        excellent_threshold = self.world_class_target * 0.95
-        good_threshold = self.industry_average * 1.1
-        poor_threshold = self.historical_baseline * 0.8
+        excellent_threshold = self.world_class_target
+        good_threshold = self.industry_average
+        average_threshold = self.historical_baseline
         
         if self.current_value >= excellent_threshold:
             return PerformanceLevel.EXCELLENT
         elif self.current_value >= good_threshold:
             return PerformanceLevel.GOOD
-        elif self.current_value >= poor_threshold:
+        elif self.current_value >= average_threshold:
             return PerformanceLevel.AVERAGE
-        elif self.current_value >= poor_threshold * 0.8:
+        elif self.current_value < average_threshold and self.current_value >= self.historical_baseline * 0.8:
             return PerformanceLevel.BELOW_AVERAGE
         else:
             return PerformanceLevel.POOR
@@ -374,11 +374,21 @@ class PerformanceBenchmarking:
             scores = []
             for metric in category_metrics:
                 if metric.current_value is not None:
-                    # Calculate score as percentage of world class target
-                    if metric.world_class_target > 0:
-                        score = min(100, (metric.current_value / metric.world_class_target) * 100)
+                    # Handle metrics where lower is better (e.g., waiting time)
+                    if metric.world_class_target < metric.historical_baseline:
+                        if metric.current_value <= metric.world_class_target:
+                            score = 100.0
+                        elif metric.current_value >= metric.historical_baseline:
+                            score = 0.0
+                        else:
+                            score = 100 * (metric.historical_baseline - metric.current_value) / (metric.historical_baseline - metric.world_class_target)
+                    # Handle metrics where higher is better
                     else:
-                        score = 50  # Default score if no target
+                        if metric.world_class_target > 0:
+                            score = min(100.0, (metric.current_value / metric.world_class_target) * 100)
+                        else:
+                            score = 50.0  # Default score if no target
+                    
                     scores.append(score)
             
             if scores:
@@ -395,11 +405,11 @@ class PerformanceBenchmarking:
         
         # Weight categories by importance
         weights = {
-            BenchmarkCategory.THROUGHPUT: 0.25,
-            BenchmarkCategory.EFFICIENCY: 0.20,
-            BenchmarkCategory.UTILIZATION: 0.20,
-            BenchmarkCategory.WAITING_TIME: 0.15,
-            BenchmarkCategory.TURNAROUND_TIME: 0.10,
+            BenchmarkCategory.THROUGHPUT: 0.20,
+            BenchmarkCategory.EFFICIENCY: 0.15,
+            BenchmarkCategory.UTILIZATION: 0.15,
+            BenchmarkCategory.WAITING_TIME: 0.20,
+            BenchmarkCategory.TURNAROUND_TIME: 0.20,
             BenchmarkCategory.COST_EFFECTIVENESS: 0.05,
             BenchmarkCategory.ENVIRONMENTAL: 0.03,
             BenchmarkCategory.SAFETY: 0.02

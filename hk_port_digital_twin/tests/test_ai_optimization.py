@@ -8,37 +8,18 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
 # Import the AI modules to test
-sys_path_added = False
-try:
-    from src.ai.optimization import (
-        Ship, Berth, OptimizationResult,
-        BerthAllocationOptimizer, ContainerHandlingScheduler, ResourceAllocationOptimizer
-    )
-    from src.ai.predictive_models import (
-        ArrivalPrediction, ProcessingTimePrediction, QueueForecast,
-        ShipArrivalPredictor, ProcessingTimeEstimator, QueueLengthForecaster
-    )
-    from src.ai.decision_support import (
-        Recommendation, DecisionContext, DecisionSupportEngine,
-        RecommendationType, Priority
-    )
-except ImportError:
-    import sys
-    import os
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-    sys_path_added = True
-    from src.ai.optimization import (
-        Ship, Berth, OptimizationResult,
-        BerthAllocationOptimizer, ContainerHandlingScheduler, ResourceAllocationOptimizer
-    )
-    from src.ai.predictive_models import (
-        ArrivalPrediction, ProcessingTimePrediction, QueueForecast,
-        ShipArrivalPredictor, ProcessingTimeEstimator, QueueLengthForecaster
-    )
-    from src.ai.decision_support import (
-        Recommendation, DecisionContext, DecisionSupportEngine,
-        RecommendationType, Priority
-    )
+from src.ai.optimization import (
+    Ship, Berth, OptimizationResult,
+    BerthAllocationOptimizer, ContainerHandlingScheduler, ResourceAllocationOptimizer
+)
+from src.ai.predictive_models import (
+    ArrivalPrediction, ProcessingTimePrediction, QueueForecast,
+    ShipArrivalPredictor, ProcessingTimeEstimator, QueueLengthForecaster
+)
+from src.ai.decision_support import (
+    Recommendation, DecisionContext, DecisionSupportEngine,
+    RecommendationType, Priority
+)
 
 class TestOptimization:
     """Test cases for optimization.py"""

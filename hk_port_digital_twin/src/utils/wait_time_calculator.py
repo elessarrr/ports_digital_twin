@@ -160,13 +160,15 @@ class WaitTimeCalculator:
     
     def calculate_wait_time(self,
                           scenario: str,
-                          num_samples: int = 1) -> Union[float, np.ndarray]:
+                          num_samples: int = 1,
+                          multiplier: Optional[float] = None) -> Union[float, np.ndarray]:
         """
         Calculate wait time(s) for a given scenario.
 
         Args:
             scenario (str): Scenario name ('Peak Season', 'Normal Operations', 'Low Season').
             num_samples (int, optional): Number of samples. Defaults to 1.
+            multiplier (float, optional): A factor to adjust the wait time.
 
         Returns:
             Union[float, np.ndarray]: Single wait time or array of wait times.
@@ -186,6 +188,11 @@ class WaitTimeCalculator:
         except Exception as e:
             logger.error(f"Error in calculation: {e}, falling back to default.")
             wait_times = np.random.uniform(4, 12, num_samples)
+
+        if multiplier is not None:
+            if not isinstance(multiplier, (int, float)) or multiplier < 0:
+                raise ValueError("multiplier must be a non-negative number")
+            wait_times *= multiplier
 
         wait_times = np.clip(wait_times, 0.1, 100.0)
 
@@ -306,13 +313,14 @@ class WaitTimeCalculator:
 
 
 # Convenience functions for backward compatibility and simplified usage
-def calculate_wait_time(scenario_name: str, use_legacy: bool = False) -> float:
+def calculate_wait_time(scenario_name: str, use_legacy: bool = False, multiplier: Optional[float] = None) -> float:
     """
     Calculate wait time based on scenario.
 
     Args:
         scenario_name (str): Name of the scenario key (e.g., 'peak', 'normal', 'low') or full scenario name.
         use_legacy (bool, optional): Use legacy method. Defaults to False.
+        multiplier (float, optional): A factor to adjust the wait time.
 
     Returns:
         float: Wait time in hours.
@@ -327,7 +335,7 @@ def calculate_wait_time(scenario_name: str, use_legacy: bool = False) -> float:
     calculator = WaitTimeCalculator(method=method)
     
     try:
-        result = calculator.calculate_wait_time(converted_scenario)
+        result = calculator.calculate_wait_time(converted_scenario, multiplier=multiplier)
         return result
     except (ValueError, TypeError) as e:
         logger.error(f"Error calculating wait time: {e}")

@@ -28,14 +28,7 @@ from copy import deepcopy
 import random
 
 # Import the existing optimization module
-try:
-    from ..ai.optimization import BerthAllocationOptimizer, Ship, Berth, OptimizationResult
-except ImportError:
-    # Fallback for testing or standalone usage
-    import sys
-    import os
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-    from ai.optimization import BerthAllocationOptimizer, Ship, Berth, OptimizationResult
+from ai.optimization import BerthAllocationOptimizer, Ship, Berth, OptimizationResult
 
 from .scenario_manager import ScenarioManager
 from .scenario_parameters import ScenarioParameters
@@ -96,14 +89,15 @@ class ScenarioAwareBerthOptimizer:
     changing the core optimization logic.
     """
     
-    def __init__(self, scenario_manager: Optional[ScenarioManager] = None):
+    def __init__(self, scenario_manager: Optional[ScenarioManager] = None, base_optimizer: Optional[BerthAllocationOptimizer] = None):
         """Initialize the scenario-aware optimizer.
         
         Args:
             scenario_manager: ScenarioManager instance (creates default if None)
+            base_optimizer: BerthAllocationOptimizer instance (creates default if None)
         """
         self.scenario_manager = scenario_manager or ScenarioManager()
-        self.base_optimizer = BerthAllocationOptimizer()
+        self.base_optimizer = base_optimizer or BerthAllocationOptimizer()
         self.optimization_history = []
         
         logger.info("ScenarioAwareBerthOptimizer initialized")
@@ -453,9 +447,15 @@ class ScenarioAwareBerthOptimizer:
                 )
                 relative_performance['waiting_time_improvement'] = waiting_time_improvement
             
-            if baseline_utilization > 0:
+            # Calculate average baseline utilization
+            avg_baseline_utilization = sum(baseline_utilization.values()) / len(baseline_utilization) if baseline_utilization else 0
+            
+            if avg_baseline_utilization > 0:
+                # Calculate average result utilization
+                avg_result_utilization = sum(result.base_result.berth_utilization.values()) / len(result.base_result.berth_utilization) if result.base_result.berth_utilization else 0
+                
                 utilization_improvement = (
-                    (result.base_result.berth_utilization - baseline_utilization) / baseline_utilization
+                    (avg_result_utilization - avg_baseline_utilization) / avg_baseline_utilization
                 )
                 relative_performance['utilization_improvement'] = utilization_improvement
             

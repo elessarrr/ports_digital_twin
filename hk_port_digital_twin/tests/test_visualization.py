@@ -13,7 +13,7 @@ import os
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from utils.visualization import (
+from hk_port_digital_twin.src.utils.visualization import (
     create_port_layout_chart,
     create_ship_queue_chart,
     create_berth_utilization_chart,
@@ -40,7 +40,7 @@ class TestPortLayoutChart:
         fig = create_port_layout_chart(berths_data)
         
         assert isinstance(fig, go.Figure)
-        assert len(fig.data) == 3  # One trace per berth
+        assert len(fig.data) == 2  # One trace per berth type
         assert "Hong Kong Port - Berth Layout" in fig.layout.title.text
     
     def test_create_port_layout_chart_empty(self):
@@ -77,9 +77,9 @@ class TestPortLayoutChart:
         
         # Check that different berth types have different colors
         colors = [trace.marker.color for trace in fig.data]
-        assert 'blue' in colors  # container
-        assert 'green' in colors  # bulk
-        assert 'orange' in colors  # mixed
+        assert 'blue' in colors
+        assert 'green' in colors
+        assert 'orange' in colors
 
 
 class TestShipQueueChart:

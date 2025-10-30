@@ -22,32 +22,8 @@ import os
 
 # Add the config directory to the path to import settings
 from pathlib import Path
-sys.path.append(str(Path(__file__).resolve().parents[2] / 'config'))
-try:
-    from settings import get_dashboard_preferences, get_default_section_states
-except ImportError:
-    # Fallback if settings module is not available
-    def get_dashboard_preferences():
-        # Import streamlit here to avoid circular imports
-        import streamlit as st
-        return {
-            'show_section_descriptions': True,
-            'enable_expand_collapse_all': True,
-            'show_section_navigation': st.session_state.get('show_section_navigation', False),  # Changed default to False
-            'remember_section_states': st.session_state.get('remember_section_states', True),
-            'scenarios_sections_expanded': st.session_state.get('scenarios_sections_expanded', False),
-            'section_auto_scroll': True,
-            'enable_quick_export': True
-        }
-    
-    def get_default_section_states():
-        return {
-            'overview': True,
-            'operations': False,
-            'analytics': False,
-            'cargo': False,
-            'advanced': False
-        }
+from hk_port_digital_twin.config.settings import get_dashboard_preferences, get_default_section_states
+
 
 # Import existing visualization and data functions
 # These will be imported as needed from existing modules

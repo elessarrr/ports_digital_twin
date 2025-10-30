@@ -12,8 +12,6 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 # Add src to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
-
 from utils.data_loader import (
     load_container_throughput,
     load_annual_container_throughput,

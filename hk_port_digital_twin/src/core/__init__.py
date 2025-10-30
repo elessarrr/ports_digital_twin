@@ -8,10 +8,7 @@ from .ship_manager import ShipManager, Ship
 from .container_handler import ContainerHandler
 
 # Import from other modules for compatibility
-try:
-    from ..logistics.yard_manager import Container
-except ImportError:
-    Container = None
+from logistics.yard_manager import Container
 
 # Create aliases for compatibility
 Vessel = Ship  # Vessel is an alias for Ship

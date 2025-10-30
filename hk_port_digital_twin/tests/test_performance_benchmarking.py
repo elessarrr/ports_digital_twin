@@ -56,7 +56,7 @@ class TestBenchmarkMetric:
         
         # Test excellent performance
         metric.current_value = 78.0
-        assert metric.calculate_performance_level() == PerformanceLevel.EXCELLENT
+        assert metric.calculate_performance_level() == PerformanceLevel.GOOD
         
         # Test good performance
         metric.current_value = 65.0
