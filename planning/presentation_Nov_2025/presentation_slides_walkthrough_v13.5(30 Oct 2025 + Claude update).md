@@ -37,7 +37,7 @@ Ports can transform from reactive to predictive operations through digital twin 
 
 I've built a working digital twin of Hong Kong Port that analyzes vessel patterns and identifies optimization opportunities in real-time. This is a fully functional MVP—a working system that demonstrates the approach using Hong Kong Port as a case study.
 
-Over the next 12 minutes, you'll see how combining domain expertise with modern AI tools can tackle complex logistics challenges. More importantly, you'll see a practical approach that demonstrates what's possible when you democratize technical development."
+Over the next 20 minutes, you'll see how combining domain expertise with modern AI tools can tackle complex logistics challenges. More importantly, you'll see a practical approach that demonstrates what's possible when you democratize technical development."
 
 **Design Notes:**
 - Avoid showing specific numbers or statistics on this opening slide

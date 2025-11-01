@@ -4021,3 +4021,39 @@ planning/presentation_21Sep/presentation_slides_walkthrough_v13.2(25 Oct 2025)md
 planning/presentation_21Sep/presentation_slides_walkthrough_v13.3(25 Oct 2025 + Claude update).md
 planning/presentation_21Sep/presentation_slides_walkthrough_v13.4(25 Oct 2025 + Claude update).md
 raw_data/Arrived_in_last_36_hours.xml
+
+# === SENSITIVE FILES AND DIRECTORIES ===
+# Exclude entire planning directory (contains internal strategy and development notes)
+planning/
+!planning/README.md
+
+# Exclude presentation materials (may contain sensitive business information)
+planning/presentation_Nov_2025/
+
+# Exclude internal development notes and strategies
+planning/*_plan*.md
+planning/notes.md
+planning/learnings_from_debugging.md
+
+# Exclude task management files (internal workflow)
+tasks/
+
+# Exclude raw data backups (large files, potentially sensitive vessel data)
+raw_data/vessel_data/backups/
+raw_data/vessel_data/logs/
+
+# Exclude environment and configuration files
+.env
+.env.local
+.env.production
+
+# Exclude large benchmark files
+benchmarks/
+.benchmarks/
+
+# Exclude backup directories
+backups/
+
+# Exclude system files
+.DS_Store
+**/.DS_Store
