@@ -65,6 +65,51 @@ VESSEL_XML_FILES = [
     'Expected_departures.xml'
 ]
 
+def refresh_vessel_data() -> Dict[str, any]:
+    """Manually trigger a vessel data refresh.
+
+    Comments for context:
+    - This function provides a simple, explicit entry point to download the latest
+      vessel XML files on demand. It is designed to be called by
+      `src/utils/manual_refresh_vessel_data.py`.
+    - It uses the existing `VesselDataFetcher` to perform the downloads and returns
+      a small status dictionary summarizing results. After fetching, it attempts to
+      load vessel data to warm any downstream caches.
+    - No sensitive data is logged; configuration (like URLs/intervals) should come
+      from environment variables.
+
+    Returns:
+        Dict[str, any]: Summary with status, and per-file download results if available.
+    """
+    try:
+        if VesselDataFetcher is None:
+            logger.warning("Vessel data pipeline modules not available")
+            return {
+                'status': 'disabled',
+                'message': 'Vessel data pipeline modules not available',
+            }
+
+        # Instantiate the fetcher and perform an immediate download of all files
+        fetcher = VesselDataFetcher()
+        results = fetcher.fetch_xml_files()
+
+        # Optionally warm caches by loading the freshly downloaded data
+        try:
+            _ = load_all_vessel_data()
+        except Exception as warm_err:
+            logger.warning(f"Post-fetch load failed: {warm_err}")
+
+        return {
+            'status': 'success',
+            'files': results,
+        }
+    except Exception as e:
+        logger.error(f"Error during manual vessel data refresh: {e}", exc_info=True)
+        return {
+            'status': 'error',
+            'error': str(e),
+        }
+
 def load_container_throughput() -> pd.DataFrame:
     """Load and process container throughput time series data.
     
