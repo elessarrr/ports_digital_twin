@@ -928,7 +928,7 @@ def main():
                     # Get recent vessel counts for the most recent day with data
                     vessel_counts = get_recent_vessel_counts()
                     st.metric("🚢 Arriving", vessel_counts['arriving'], help="Total number of vessels scheduled to arrive.")
-                    st.metric("⚓ In Port", vessel_counts['in_port'], help="Total number of vessels currently at the port.")
+                    #st.metric("⚓ In Port", vessel_counts['in_port'], help="Total number of vessels currently at the port.")
                     st.metric("🛳️ Departing", vessel_counts['departing'], help="Total number of vessels that have departed.")
 
                 with col2:
