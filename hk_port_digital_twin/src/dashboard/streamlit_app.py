@@ -913,7 +913,7 @@ def main():
 
             with key_metrics_placeholder.container():
                 # Metrics section
-                st.subheader("📊 Key Metrics")
+                st.subheader("📊 Key Metrics (last 24 hours)")
 
                 with st.expander("ℹ️ About this section"):
                     st.info("""
