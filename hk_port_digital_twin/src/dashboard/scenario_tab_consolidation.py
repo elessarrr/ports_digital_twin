@@ -479,16 +479,13 @@ class ConsolidatedScenariosTab:
             queue_data = simulation_data.ship_queue
             
             # Queue metrics
-            queue_col1, queue_col2, queue_col3, queue_col4 = st.columns(4)
+            queue_col1, queue_col2, queue_col3 = st.columns(3)
             with queue_col1:
                 st.metric("Ships in Queue", len(queue_data))
             with queue_col2:
-                avg_wait = sum(ship.get('waiting_time', 0) for ship in queue_data) / max(len(queue_data), 1)
-                st.metric("Avg Wait Time", f"{avg_wait:.1f} hrs")
-            with queue_col3:
                 priority_ships = sum(1 for ship in queue_data if ship.get('priority', 'normal') == 'high')
                 st.metric("Priority Ships", priority_ships)
-            with queue_col4:
+            with queue_col3:
                 total_cargo = sum(ship.get('cargo_volume', 0) for ship in queue_data)
                 st.metric("Total Cargo", f"{total_cargo:,.0f} TEU")
             
@@ -547,16 +544,13 @@ class ConsolidatedScenariosTab:
                 })
             
             # Sample metrics
-            queue_col1, queue_col2, queue_col3, queue_col4 = st.columns(4)
+            queue_col1, queue_col2, queue_col3 = st.columns(3)
             with queue_col1:
                 st.metric("Ships in Queue", len(sample_queue))
             with queue_col2:
-                avg_wait = sum(ship['waiting_time'] for ship in sample_queue) / len(sample_queue)
-                st.metric("Avg Wait Time", f"{avg_wait:.1f} hrs")
-            with queue_col3:
                 priority_ships = sum(1 for ship in sample_queue if ship['priority'] == 'high')
                 st.metric("Priority Ships", priority_ships)
-            with queue_col4:
+            with queue_col3:
                 total_cargo = sum(ship['cargo_volume'] for ship in sample_queue)
                 st.metric("Total Cargo", f"{total_cargo:,.0f} TEU")
             
