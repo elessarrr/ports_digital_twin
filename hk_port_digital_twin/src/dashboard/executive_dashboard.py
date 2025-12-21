@@ -69,21 +69,128 @@ class StrategicInsight:
 
 
 from hk_port_digital_twin.src.core.port_simulation import PortSimulation
+from hk_port_digital_twin.src.utils.data_loader import load_combined_vessel_data
 
 class ExecutiveDashboard:
     """Main class for executive dashboard functionality"""
     
-    def __init__(self, port_simulation: PortSimulation):
-        """Initialize the executive dashboard"""
+    def __init__(self, port_simulation: PortSimulation = None):
+        """Initialize the executive dashboard
+        
+        Args:
+            port_simulation: Optional PortSimulation instance. If None, dashboard will run in data-only mode.
+        """
         self.theme = DashboardTheme.EXECUTIVE
         self.strategic_controller = None
         self.bi_engine = None
         
-        # Initialize controllers if available
-        if StrategicSimulationController:
+        # Initialize controllers if available and simulation is provided
+        if StrategicSimulationController and port_simulation:
             self.strategic_controller = StrategicSimulationController(port_simulation)
+        
         if BusinessIntelligenceEngine:
             self.bi_engine = BusinessIntelligenceEngine()
+            
+    def calculate_metrics_from_vessel_data(self, vessel_data: pd.DataFrame) -> ExecutiveMetrics:
+        """Calculate executive metrics based on actual vessel data
+        
+        Args:
+            vessel_data: DataFrame containing vessel information
+            
+        Returns:
+            ExecutiveMetrics: Calculated metrics based on real data
+        """
+        if vessel_data.empty:
+            return self._get_sample_executive_metrics()
+            
+        try:
+            # Basic counts
+            total_vessels = len(vessel_data)
+            in_port = len(vessel_data[vessel_data['status'] == 'in_port'])
+            departed = len(vessel_data[vessel_data['status'] == 'departed'])
+            arriving = len(vessel_data[vessel_data['status'] == 'arriving'])
+            
+            # Constants for estimation (would be configured in a real system)
+            AVG_REVENUE_PER_VESSEL = 15000  # USD
+            MAX_PORT_CAPACITY = 150  # vessels
+            
+            # 1. Revenue/Hour (Estimated based on activity)
+            # Assumption: Higher activity = higher revenue rate
+            # For historical data, we need to normalize 'departed' to a recent window
+            # otherwise cumulative departures over a long period will skew the rate.
+            
+            # Find the latest timestamp to define "now" for this dataset
+            latest_time = pd.Timestamp.now()
+            timestamps = []
+            if 'timestamp' in vessel_data.columns:
+                timestamps.append(pd.to_datetime(vessel_data['timestamp'], errors='coerce'))
+            if 'arrival_time' in vessel_data.columns:
+                timestamps.append(pd.to_datetime(vessel_data['arrival_time'], errors='coerce'))
+            
+            if timestamps:
+                # Combine and find max
+                all_times = pd.concat(timestamps)
+                if not all_times.dropna().empty:
+                    latest_time = all_times.max()
+
+            # Count departures in the last 24 hours of the dataset window
+            recent_departed = 0
+            if 'departure_time' in vessel_data.columns:
+                try:
+                    dep_times = pd.to_datetime(vessel_data['departure_time'], errors='coerce')
+                    # Filter for departures in the last 24 hours relative to the dataset's end
+                    # We use a 24h window to estimate the daily rate
+                    recent_window = latest_time - timedelta(hours=24)
+                    recent_departed = len(vessel_data[
+                        (vessel_data['status'] == 'departed') & 
+                        (dep_times >= recent_window)
+                    ])
+                except Exception:
+                    # Fallback to a fraction of total if date parsing fails
+                    recent_departed = int(departed / 30) if departed > 30 else departed
+
+            # Use in_port (current load) + recent_departed (throughput rate)
+            # Normalize: 50 vessels is a "busy" port baseline
+            # If recent_departed is 0 (e.g. data gap), we rely on in_port
+            activity_count = in_port + recent_departed
+            activity_factor = activity_count / 50
+            
+            revenue_per_hour = 12000 * (1 + activity_factor * 0.5)
+            
+            # 2. Capacity Utilization
+            capacity_utilization = min((in_port / MAX_PORT_CAPACITY) * 100, 100.0)
+            
+            # 3. Efficiency (Throughput rate)
+            # Higher departed ratio implies better throughput
+            if total_vessels > 0:
+                throughput_rate = (departed / total_vessels) * 100
+                efficiency_improvement = (throughput_rate - 20) / 20 * 10  # baseline comparison
+            else:
+                efficiency_improvement = 0.0
+                
+            # 4. Throughput Improvement (Year over Year or period based)
+            # For now, base it on recent activity volume
+            throughput_improvement = min(max((total_vessels - 50) / 50 * 15, -10), 25)
+            
+            # 5. Cost Savings (Operational efficiency)
+            cost_savings = efficiency_improvement * 150000 + 1000000
+            
+            # 6. Risk Score (Congestion based)
+            risk_score = 2.0 + (capacity_utilization / 100 * 5.0)
+            
+            return ExecutiveMetrics(
+                revenue_per_hour=revenue_per_hour,
+                efficiency_improvement=efficiency_improvement,
+                cost_savings=cost_savings,
+                customer_satisfaction=92.5 - (risk_score * 1.5), # Higher risk lowers satisfaction
+                risk_score=risk_score,
+                capacity_utilization=capacity_utilization,
+                throughput_improvement=throughput_improvement
+            )
+            
+        except Exception as e:
+            # Fallback to sample metrics on error
+            return self._get_sample_executive_metrics()
     
     def render_executive_summary(self, metrics: Optional[ExecutiveMetrics] = None) -> None:
         """Render executive summary with key KPIs
@@ -194,8 +301,12 @@ class ExecutiveDashboard:
         with plan_tab3:
             self._render_risk_assessment()
     
-    def render_real_time_metrics(self) -> None:
-        """Render real-time business metrics dashboard"""
+    def render_real_time_metrics(self, vessel_data: Optional[pd.DataFrame] = None) -> None:
+        """Render real-time business metrics dashboard
+        
+        Args:
+            vessel_data: Optional DataFrame with vessel data for real metrics
+        """
         st.subheader("⏱️ Real-Time Business Metrics")
         
         # Create metrics columns
@@ -205,18 +316,47 @@ class ExecutiveDashboard:
             # Revenue tracking chart
             st.write("**Revenue per Hour Tracking**")
             
-            # Generate sample hourly revenue data
-            hours = pd.date_range(start=datetime.now() - timedelta(hours=24), end=datetime.now(), freq='H')
-            revenue_data = pd.DataFrame({
-                'hour': hours,
-                'revenue': [15000 + np.random.normal(0, 2000) + 5000 * np.sin(i/4) for i in range(len(hours))]
-            })
-            
-            fig_revenue = px.line(
-                revenue_data, x='hour', y='revenue',
-                title="24-Hour Revenue Tracking",
-                labels={'revenue': 'Revenue ($)', 'hour': 'Time'}
-            )
+            if vessel_data is not None and not vessel_data.empty and 'arrival_time' in vessel_data.columns:
+                # Calculate revenue based on arrivals over time
+                df = vessel_data.copy()
+                df['arrival_time'] = pd.to_datetime(df['arrival_time'])
+                
+                # Group by hour/day depending on range
+                # For simplicity, let's look at the last 24-48 hours of data present in the dataset
+                max_time = df['arrival_time'].max()
+                min_time = max(df['arrival_time'].min(), max_time - timedelta(hours=48))
+                
+                recent_data = df[(df['arrival_time'] >= min_time) & (df['arrival_time'] <= max_time)]
+                
+                if not recent_data.empty:
+                    # Resample to hourly counts
+                    hourly_counts = recent_data.set_index('arrival_time').resample('H').size().reset_index(name='count')
+                    # Estimate revenue ($12k base + variable)
+                    hourly_counts['revenue'] = hourly_counts['count'] * 15000 + 12000
+                    
+                    fig_revenue = px.line(
+                        hourly_counts, x='arrival_time', y='revenue',
+                        title=f"Revenue Tracking (Last 48h Activity)",
+                        labels={'revenue': 'Est. Revenue ($)', 'arrival_time': 'Time'}
+                    )
+                else:
+                    # Fallback if no recent data
+                    st.warning("No recent data found for revenue tracking.")
+                    fig_revenue = go.Figure()
+            else:
+                # Generate sample hourly revenue data
+                hours = pd.date_range(start=datetime.now() - timedelta(hours=24), end=datetime.now(), freq='H')
+                revenue_data = pd.DataFrame({
+                    'hour': hours,
+                    'revenue': [15000 + np.random.normal(0, 2000) + 5000 * np.sin(i/4) for i in range(len(hours))]
+                })
+                
+                fig_revenue = px.line(
+                    revenue_data, x='hour', y='revenue',
+                    title="24-Hour Revenue Tracking (Simulated)",
+                    labels={'revenue': 'Revenue ($)', 'hour': 'Time'}
+                )
+                
             fig_revenue.update_layout(height=300)
             st.plotly_chart(fig_revenue, use_container_width=True)
             
@@ -224,7 +364,17 @@ class ExecutiveDashboard:
             # Efficiency meter
             st.write("**Operational Efficiency**")
             
+            # Calculate efficiency from data if available
             current_efficiency = 87.5
+            if vessel_data is not None and not vessel_data.empty:
+                # Simple proxy: % of departed vs total active
+                total = len(vessel_data)
+                departed = len(vessel_data[vessel_data['status'] == 'departed'])
+                if total > 0:
+                    # Normalize to 60-95 range for realism
+                    raw_eff = (departed / total) * 100
+                    current_efficiency = 60 + (raw_eff * 0.35) 
+            
             target_efficiency = 95.0
             
             fig_gauge = go.Figure(go.Indicator(
@@ -420,6 +570,15 @@ def render_executive_dashboard_tab() -> None:
     # Initialize dashboard
     dashboard = ExecutiveDashboard()
     
+    # Load real vessel data for metrics calculation
+    try:
+        vessel_data = load_combined_vessel_data()
+        metrics = dashboard.calculate_metrics_from_vessel_data(vessel_data)
+    except Exception as e:
+        # Fallback if data loading fails
+        st.error(f"Error loading vessel data for executive metrics: {e}")
+        metrics = None
+    
     # Create main dashboard sections
     exec_tab1, exec_tab2, exec_tab3, exec_tab4 = st.tabs([
         "📊 Executive Summary", 
@@ -429,8 +588,8 @@ def render_executive_dashboard_tab() -> None:
     ])
     
     with exec_tab1:
-        dashboard.render_executive_summary()
-        dashboard.render_real_time_metrics()
+        dashboard.render_executive_summary(metrics=metrics)
+        dashboard.render_real_time_metrics(vessel_data=vessel_data if 'vessel_data' in locals() else None)
         
     with exec_tab2:
         dashboard.render_business_impact_chart()

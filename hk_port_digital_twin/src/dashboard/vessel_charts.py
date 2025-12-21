@@ -136,15 +136,10 @@ def render_arrival_activity_trend(vessel_analysis: Dict[str, Any]) -> None:
         activity_data = vessel_analysis.get('activity_trend', [])
         
         # Log data status for debugging
-        st.info(f"📊 Data Status: Found {len(activity_data) if hasattr(activity_data, '__len__') else 0} activity trend data points")
+        # st.info(f"📊 Data Status: Found {len(activity_data) if hasattr(activity_data, '__len__') else 0} activity trend data points")
         
         if not activity_data:
-            st.warning("No vessel activity trend data available")
-            st.info("💡 This could happen if: 1) No vessels have timestamps within the last 7 days, 2) Timestamp format issues, or 3) Data loading problems")
-            
-            # Show available keys for debugging
-            available_keys = list(vessel_analysis.keys()) if isinstance(vessel_analysis, dict) else []
-            st.write(f"Available data keys: {available_keys}")
+            st.warning("No vessel activity trend data available for the selected period")
             return
         
         # Data successfully loaded

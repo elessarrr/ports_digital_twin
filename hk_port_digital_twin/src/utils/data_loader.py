@@ -58,12 +58,106 @@ VESSEL_ARRIVALS_XML = (Path(__file__).parent.parent.parent / ".." / "raw_data" /
 
 # Vessel data pipeline configuration
 VESSEL_DATA_DIR = (Path(__file__).parent.parent.parent / ".." / "raw_data").resolve()
+HISTORICAL_DATA_FILE = (Path(__file__).parent.parent.parent / ".." / "data" / "vessel_data" / "historical_consolidated.csv").resolve()
 VESSEL_XML_FILES = [
     'Arrived_in_last_36_hours.xml',
     'Departed_in_last_36_hours.xml', 
     'Expected_arrivals.xml',
     'Expected_departures.xml'
 ]
+
+def load_all_vessel_data() -> pd.DataFrame:
+    """
+    Load and merge vessel data from live XML files and historical CSV.
+    
+    Returns:
+        pd.DataFrame: Consolidated vessel data
+    """
+    try:
+        # 1. Load Live XML Data
+        live_data = []
+        for xml_file in VESSEL_XML_FILES:
+            file_path = VESSEL_DATA_DIR / "vessel_data" / xml_file
+            if file_path.exists():
+                try:
+                    tree = ET.parse(file_path)
+                    root = tree.getroot()
+                    
+                    # Extract data from XML
+                    for child in root:
+                        record = {}
+                        for subchild in child:
+                            record[subchild.tag] = subchild.text
+                        
+                        # Add source metadata
+                        record['source_file_type'] = xml_file.replace('.xml', '')
+                        record['source_file_date'] = datetime.now().strftime("%Y%m%d")
+                        record['is_live'] = True
+                        live_data.append(record)
+                except Exception as e:
+                    logger.error(f"Error parsing live file {xml_file}: {e}")
+        
+        live_df = pd.DataFrame(live_data)
+        
+        # 2. Load Historical CSV Data
+        historical_df = pd.DataFrame()
+        if HISTORICAL_DATA_FILE.exists():
+            try:
+                historical_df = pd.read_csv(HISTORICAL_DATA_FILE)
+                historical_df['is_live'] = False
+                logger.info(f"Loaded historical data: {len(historical_df)} rows")
+            except Exception as e:
+                logger.error(f"Error loading historical CSV: {e}")
+        
+        # 3. Merge and Deduplicate
+        if live_df.empty and historical_df.empty:
+            return pd.DataFrame()
+        
+        if live_df.empty:
+            return historical_df
+        
+        if historical_df.empty:
+            return live_df
+            
+        # Combine both
+        combined_df = pd.concat([live_df, historical_df], ignore_index=True)
+        
+        # Deduplication Strategy:
+        # We assume a duplicate is defined by (VESSEL_NAME, ARRIVAL_TIME/DEPARTURE_TIME)
+        # If available, use a unique ID. Since we don't have a guaranteed unique ID across all files,
+        # we'll use a composite key for deduplication.
+        # Prefer 'is_live=True' records, then latest 'source_file_date'.
+        
+        # Create a temporary unique key for deduplication
+        # Adjust these column names based on actual XML tag names (e.g., 'VESSEL_NAME', 'ARRIVAL_TIME')
+        # We need to standardize column names first or handle case sensitivity
+        
+        # Standardize columns to upper case for easier processing if needed, 
+        # but let's assume raw data keys are consistent.
+        # Common keys observed: 'VESSEL_NAME', 'ARRIVAL_TIME', 'DEPARTURE_TIME'
+        
+        # Simple deduplication: Keep the first occurrence after sorting by is_live (True first)
+        combined_df.sort_values(by=['is_live', 'source_file_date'], ascending=[False, False], inplace=True)
+        
+        # Determine subset for duplicate checking
+        # Ideally: Vessel Name + Arrival/Departure Time
+        subset_cols = []
+        possible_cols = ['VESSEL_NAME', 'vessel_name', 'ARRIVAL_TIME', 'arrival_time', 'DEPARTURE_TIME', 'departure_time']
+        
+        found_cols = [c for c in possible_cols if c in combined_df.columns]
+        if found_cols:
+             # Use all found identifying columns
+             combined_df.drop_duplicates(subset=found_cols, keep='first', inplace=True)
+        else:
+            # Fallback: drop full duplicates
+            combined_df.drop_duplicates(inplace=True)
+            
+        logger.info(f"Merged data: {len(combined_df)} records (Live + Historical)")
+        return combined_df
+
+    except Exception as e:
+        logger.error(f"Error in load_all_vessel_data: {e}")
+        return pd.DataFrame()
 
 def refresh_vessel_data() -> Dict[str, any]:
     """Manually trigger a vessel data refresh.
@@ -1062,18 +1156,116 @@ def load_vessel_arrivals() -> pd.DataFrame:
         return pd.DataFrame()
 
 
+
+def load_historical_vessel_data() -> pd.DataFrame:
+    """Load and process historical vessel data from consolidated CSV.
+    
+    Returns:
+        pd.DataFrame: Processed historical vessel data compatible with live data
+    """
+    logger.info(f"Attempting to load historical data from: {HISTORICAL_DATA_FILE}")
+    
+    try:
+        if not HISTORICAL_DATA_FILE.exists():
+            logger.warning(f"Historical data file does not exist: {HISTORICAL_DATA_FILE}")
+            return pd.DataFrame()
+            
+        df = pd.read_csv(HISTORICAL_DATA_FILE)
+        
+        if df.empty:
+            return pd.DataFrame()
+            
+        # Create a new DataFrame with standardized columns
+        processed_df = pd.DataFrame()
+        
+        # Direct mappings
+        processed_df['call_sign'] = df.get('CALL_SIGN')
+        processed_df['vessel_name'] = df.get('VESSEL_NAME')
+        processed_df['ship_type'] = df.get('SHIP_TYPE')
+        processed_df['agent_name'] = df.get('AGENT_NAME')
+        processed_df['current_location'] = df.get('CURRENT_LOCATION')
+        processed_df['remark'] = df.get('REMARK')
+        
+        # Timestamp parsing
+        # Arrival Time
+        processed_df['arrival_time_str'] = df.get('ARRIVAL_TIME')
+        processed_df['source_file_date'] = df.get('source_file_date')
+        
+        def parse_time_with_fallback(row):
+            time_str = str(row['arrival_time_str'])
+            ts = pd.NaT
+            
+            # Try to parse the arrival time string first
+            if time_str != 'nan':
+                ts = _parse_vessel_timestamp(time_str)
+            
+            # If parsing failed or was missing, fallback to source file date
+            if pd.isna(ts) and pd.notna(row['source_file_date']):
+                try:
+                    # Use noon on the file date as a proxy
+                    ts = pd.to_datetime(str(row['source_file_date']), format='%Y%m%d') + pd.Timedelta(hours=12)
+                except:
+                    pass
+            return ts
+
+        # Apply parsing with fallback
+        processed_df['arrival_time'] = processed_df.apply(parse_time_with_fallback, axis=1)
+        
+        # Departure Time (ATD_TIME in CSV seems to correspond to departure)
+        if 'ATD_TIME' in df.columns:
+            processed_df['departure_time_str'] = df['ATD_TIME']
+            processed_df['departure_time'] = processed_df['departure_time_str'].astype(str).apply(lambda x: _parse_vessel_timestamp(x) if x != 'nan' else pd.NaT)
+        else:
+            processed_df['departure_time'] = pd.NaT
+            
+        # Status determination
+        if 'STATUS' in df.columns:
+            processed_df['status'] = df['STATUS'].astype(str).str.lower()
+            
+            # Normalize historical statuses
+            # 'approved' -> 'arriving' (Standard term for expected/approved arrivals)
+            # 'nan' -> 'departed' (Default for historical records where status is missing)
+            status_map = {
+                'approved': 'arriving',
+                'nan': 'departed',
+                'none': 'departed'
+            }
+            processed_df['status'] = processed_df['status'].replace(status_map)
+        else:
+            processed_df['status'] = 'departed'
+            
+        # Enrich with categories
+        processed_df['ship_category'] = processed_df['ship_type'].astype(str).apply(_categorize_ship_type)
+        processed_df['location_type'] = processed_df['current_location'].astype(str).apply(_categorize_location)
+        
+        # Source metadata
+        processed_df['data_source'] = 'historical_archive'
+        processed_df['is_historical'] = True
+        
+        # Remove empty rows
+        processed_df = processed_df.dropna(subset=['vessel_name'], how='any')
+        
+        logger.info(f"Loaded historical data: {len(processed_df)} vessels")
+        return processed_df
+        
+    except Exception as e:
+        logger.error(f"Error loading historical data: {e}")
+        return pd.DataFrame()
+
+
 def load_combined_vessel_data() -> pd.DataFrame:
-    """Load and combine all vessel data from four sources: arriving ships, vessel arrivals, expected departures, and departed ships.
+    """Load and combine all vessel data from five sources: arriving ships, vessel arrivals, expected departures, departed ships, and historical archives.
     
     Returns:
         pd.DataFrame: Combined vessel data with arriving, in-port, departing, and departed vessels
     """
     try:
-        # Load all four datasets
+        # Load all five datasets
         current_vessels = load_vessel_arrivals()  # in_port and departed status
         arriving_ships = load_arriving_ships()   # arriving status
         expected_departures = load_expected_departures()  # departing status
         departed_ships = load_departed_ships()   # departed status
+        historical_data = load_historical_vessel_data() # historical data
         
         # Combine the datasets
         combined_data = []
@@ -1093,6 +1285,10 @@ def load_combined_vessel_data() -> pd.DataFrame:
         if not departed_ships.empty:
             combined_data.append(departed_ships)
             logger.info(f"Added {len(departed_ships)} vessels from departed ships")
+            
+        if not historical_data.empty:
+            combined_data.append(historical_data)
+            logger.info(f"Added {len(historical_data)} vessels from historical archives")
         
         if not combined_data:
             logger.warning("No vessel data available from any source")
@@ -1102,7 +1298,7 @@ def load_combined_vessel_data() -> pd.DataFrame:
         combined_df = pd.concat(combined_data, ignore_index=True)
         
         # Handle duplicates by merging status information
-        # If a vessel appears in multiple datasets, prioritize arriving vessels to ensure they're visible
+        # If a vessel appears in multiple datasets, prioritize live/arriving vessels
         # Priority: 'arriving' > 'in_port' > 'departing' > 'departed' (as per debugging documentation)
         if len(combined_data) > 1:
             # Create a priority mapping for status values
@@ -1113,27 +1309,29 @@ def load_combined_vessel_data() -> pd.DataFrame:
             combined_df['_status_priority'] = combined_df['status'].map(status_priority).fillna(0)
             
             # Sort by priority (highest first) and remove duplicates
+            # Deduplicate based on vessel name and arrival time to capture unique visits
+            # This allows the same vessel to appear multiple times if it has different arrival times (historical visits)
             combined_df = combined_df.sort_values('_status_priority', ascending=False)
-            combined_df = combined_df.drop_duplicates(subset=['call_sign', 'vessel_name'], keep='first')
+            combined_df = combined_df.drop_duplicates(subset=['vessel_name', 'arrival_time'], keep='first')
             
             # Remove the temporary priority column
             combined_df = combined_df.drop('_status_priority', axis=1)
         else:
             # If only one dataset, just remove duplicates normally
-            combined_df = combined_df.drop_duplicates(subset=['call_sign', 'vessel_name'], keep='first')
+            combined_df = combined_df.drop_duplicates(subset=['vessel_name', 'arrival_time'], keep='first')
         
-        # Filter vessels to only show those with arrival times within the last 10 years
+        # Filter vessels to only show those with arrival times within the last 25 years
         # This removes very outdated data but allows demo data to be displayed
         if 'arrival_time' in combined_df.columns and not combined_df.empty:
             from datetime import datetime, timedelta
             
-            # Calculate the cutoff date (10 years ago from now) - extended for demo purposes with historical data
-            cutoff_date = datetime.now() - timedelta(days=365*10)
+            # Calculate the cutoff date (25 years ago from now) - extended to support historical data back to 2000
+            cutoff_date = datetime.now() - timedelta(days=365*25)
             
             # Count vessels before filtering
             vessels_before = len(combined_df)
             
-            # Filter vessels with valid arrival times within the last 10 years
+            # Filter vessels with valid arrival times within the last 25 years
             # Exclude vessels with None values (which display as 'None' strings) and keep only recent arrivals
             recent_vessels_mask = (
                 (combined_df['arrival_time'].notna()) &  # Only keep vessels with valid arrival times (exclude None/NaN)
@@ -1146,7 +1344,7 @@ def load_combined_vessel_data() -> pd.DataFrame:
             filtered_count = vessels_before - vessels_after
             
             if filtered_count > 0:
-                logger.info(f"Filtered out {filtered_count} outdated vessels (older than 10 years)")
+                logger.info(f"Filtered out {filtered_count} outdated vessels (older than 25 years)")
         
         # Sort by arrival time
         if 'arrival_time' in combined_df.columns:
@@ -1199,8 +1397,8 @@ def _parse_vessel_timestamp(time_str: str) -> Optional[pd.Timestamp]:
             return None
     
     # Data validation: Filter out obviously invalid dates
-    # Accept dates from 2020 onwards, including future dates for expected arrivals
-    if parsed_timestamp.year < 2020:
+    # Accept dates from 2000 onwards to support historical data
+    if parsed_timestamp.year < 2000:
         logger.warning(f"Rejecting invalid timestamp (year {parsed_timestamp.year}): {time_str}")
         return None
     
@@ -1667,12 +1865,22 @@ def get_comprehensive_vessel_analysis(include_historical_data: bool = True) -> D
             time_column = 'timestamp'
         
         if time_column:
+            # Determine anchor date for analysis
+            # If latest data is significantly older than today (e.g. historical dataset), use latest data date
+            # Otherwise use current date for real-time monitoring
+            max_date = combined_df[time_column].max()
             now = datetime.now()
             
-            # Recent activity (last 24 hours)
+            if pd.notna(max_date) and max_date < now - pd.Timedelta(days=2):
+                anchor_date = max_date
+                logger.info(f"Using latest data date {anchor_date} as anchor for analysis (historical mode)")
+            else:
+                anchor_date = now
+            
+            # Recent activity (last 24 hours from anchor)
             recent_vessels = combined_df[
                 (combined_df[time_column].notna()) & 
-                (combined_df[time_column] >= now - pd.Timedelta(hours=24))
+                (combined_df[time_column] >= anchor_date - pd.Timedelta(hours=24))
             ]
             
             analysis['recent_activity'] = {
@@ -1682,32 +1890,50 @@ def get_comprehensive_vessel_analysis(include_historical_data: bool = True) -> D
                 'expected_arrivals': len(combined_df[combined_df['status'] == 'expected'])
             }
             
-            # Generate activity trend data for the chart (last 7 days, grouped by day)
-            # Focus on actual arrivals using arrival_time for more accurate trend analysis
-            activity_trend = []
-            for days_back in range(6, -1, -1):  # 7 days ago to today
-                day_start = now - pd.Timedelta(days=days_back)
-                day_end = day_start + pd.Timedelta(days=1)
+            # Generate activity trend data for the chart
+            # If historical mode is active (include_historical_data=True), show wider range of data
+            # Otherwise default to last 7 days for readability
+            
+            if include_historical_data:
+                # Group by day for the entire dataset to show full history
+                trend_df = combined_df.copy()
+                # Ensure we have valid dates
+                trend_df = trend_df[trend_df[time_column].notna()]
+                trend_df['date'] = trend_df[time_column].dt.date
                 
-                # For arrival activity trend, focus on vessels with actual arrival times
-                if time_column == 'arrival_time':
-                    day_arrivals = combined_df[
-                        (combined_df['arrival_time'].notna()) & 
-                        (combined_df['arrival_time'] >= day_start) & 
-                        (combined_df['arrival_time'] < day_end)
-                    ]
-                else:
-                    # Fallback to timestamp if arrival_time not available
-                    day_arrivals = combined_df[
-                        (combined_df['timestamp'].notna()) & 
-                        (combined_df['timestamp'] >= day_start) & 
-                        (combined_df['timestamp'] < day_end)
-                    ]
+                daily_counts = trend_df.groupby('date').size().reset_index(name='arrivals')
+                daily_counts = daily_counts.sort_values('date')
                 
-                activity_trend.append({
-                    'time': day_start.strftime('%Y-%m-%d'),
-                    'arrivals': len(day_arrivals)
-                })
+                activity_trend = [
+                    {'time': row['date'].strftime('%Y-%m-%d'), 'arrivals': row['arrivals']}
+                    for _, row in daily_counts.iterrows()
+                ]
+            else:
+                # Default 7-day view relative to anchor date
+                activity_trend = []
+                for days_back in range(6, -1, -1):  # 7 days ago to anchor
+                    day_start = anchor_date - pd.Timedelta(days=days_back)
+                    day_end = day_start + pd.Timedelta(days=1)
+                    
+                    # For arrival activity trend, focus on vessels with actual arrival times
+                    if time_column == 'arrival_time':
+                        day_arrivals = combined_df[
+                            (combined_df['arrival_time'].notna()) & 
+                            (combined_df['arrival_time'] >= day_start) & 
+                            (combined_df['arrival_time'] < day_end)
+                        ]
+                    else:
+                        # Fallback to timestamp if arrival_time not available
+                        day_arrivals = combined_df[
+                            (combined_df['timestamp'].notna()) & 
+                            (combined_df['timestamp'] >= day_start) & 
+                            (combined_df['timestamp'] < day_end)
+                        ]
+                    
+                    activity_trend.append({
+                        'time': day_start.strftime('%Y-%m-%d'),
+                        'arrivals': len(day_arrivals)
+                    })
             
             analysis['activity_trend'] = activity_trend
             analysis['trend_data_source'] = time_column  # Track which column was used for transparency
@@ -1913,7 +2139,7 @@ class RealTimeDataManager:
                 return
             
             # Load comprehensive vessel data from all XML files
-            all_vessel_data = load_all_vessel_data()
+            all_vessel_data = load_all_vessel_data_as_dict()
             
             if all_vessel_data:
                 # Store individual file data
