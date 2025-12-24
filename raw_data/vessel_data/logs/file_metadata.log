@@ -16220,3 +16220,7 @@
 2025-12-21T20:57:18.705587,Departed_in_last_36_hours.xml,downloaded
 2025-12-21T20:57:20.779644,Expected_arrivals.xml,downloaded
 2025-12-21T20:57:22.882879,Expected_departures.xml,downloaded
+2025-12-23T06:00:16.587468,Arrived_in_last_36_hours.xml,downloaded
+2025-12-23T06:00:19.519172,Departed_in_last_36_hours.xml,downloaded
+2025-12-23T06:00:22.140926,Expected_arrivals.xml,downloaded
+2025-12-23T06:00:24.956805,Expected_departures.xml,downloaded
