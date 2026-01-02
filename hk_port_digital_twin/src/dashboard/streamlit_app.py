@@ -242,6 +242,11 @@ def count_backup_files():
         return 0
 
 
+@st.cache_data(ttl=300)
+def get_cached_combined_vessel_data():
+    """Cached wrapper for load_combined_vessel_data to prevent redundant I/O."""
+    return load_combined_vessel_data()
+
 def get_recent_vessel_counts():
     """
     Get vessel status counts for the most recent day with data.
@@ -249,7 +254,7 @@ def get_recent_vessel_counts():
     """
     try:
         # Load the combined vessel data (same as used in Vessel Insights tab)
-        vessel_data = load_combined_vessel_data()
+        vessel_data = get_cached_combined_vessel_data()
         
         if vessel_data is None or vessel_data.empty:
             logging.warning("No vessel data available for recent counts")
@@ -377,7 +382,10 @@ def load_sample_data(scenario='normal', use_real_throughput_data=True):
             print(f"Warning: Could not load real throughput data: {e}")
             
             if ScenarioAwareCalculator is not None:
-                calculator = ScenarioAwareCalculator()
+                if 'calculator' in st.session_state and st.session_state.calculator is not None:
+                    calculator = st.session_state.calculator
+                else:
+                    calculator = ScenarioAwareCalculator()
                 
                 # Determine scenario type based on scenario parameter
                 if scenario == 'peak':
@@ -418,7 +426,10 @@ def load_sample_data(scenario='normal', use_real_throughput_data=True):
     else:
         # Enhanced fallback data using ScenarioAwareCalculator
         if ScenarioAwareCalculator is not None:
-            calculator = ScenarioAwareCalculator()
+            if 'calculator' in st.session_state and st.session_state.calculator is not None:
+                calculator = st.session_state.calculator
+            else:
+                calculator = ScenarioAwareCalculator()
             
             # Determine scenario type based on scenario parameter
             if scenario == 'peak':
@@ -462,7 +473,10 @@ def load_sample_data(scenario='normal', use_real_throughput_data=True):
     
     if ScenarioAwareCalculator is not None:
         # Initialize enhanced calculator for scenario-aware data generation
-        calculator = ScenarioAwareCalculator()
+        if 'calculator' in st.session_state and st.session_state.calculator is not None:
+            calculator = st.session_state.calculator
+        else:
+            calculator = ScenarioAwareCalculator()
         
         # Determine scenario type based on scenario parameter
         if scenario == 'peak':
@@ -745,6 +759,15 @@ def initialize_session_state():
     # Initialize scenario manager if not in session state
     if 'scenario_manager' not in st.session_state:
         st.session_state.scenario_manager = ScenarioManager()
+    
+    # Initialize shared calculator
+    if 'calculator' not in st.session_state and ScenarioAwareCalculator is not None:
+        try:
+            st.session_state.calculator = ScenarioAwareCalculator()
+            logging.info("Shared ScenarioAwareCalculator initialized")
+        except Exception as e:
+            logging.warning(f"Could not initialize shared ScenarioAwareCalculator: {e}")
+            st.session_state.calculator = None
     
     # Initialize debug mode
     if 'debug_mode' not in st.session_state:
@@ -1640,7 +1663,7 @@ def main():
                     progress_bar.progress(10)
                     
                     # Load combined vessel data for better performance (following reference dashboard pattern)
-                    all_vessel_data = load_combined_vessel_data()
+                    all_vessel_data = get_cached_combined_vessel_data()
                     
                     progress_bar.progress(90)
                     status_text.text("🔄 Processing and deduplicating vessel records...")
@@ -1664,7 +1687,7 @@ def main():
                 # Load current vessel data and apply time filtering
                 if selected_time_range in ['Last 7 days', 'Last 30 days', 'Last 90 days', 'Last 180 days', 'Last 1 year', 'Last 2 years', 'Last 3 years']:
                     # Load combined vessel data for better performance, then filter by time range
-                    all_vessel_data = load_combined_vessel_data()
+                    all_vessel_data = get_cached_combined_vessel_data()
                     
                     # Process the combined vessel data (already a DataFrame)
                     if all_vessel_data is not None and not all_vessel_data.empty:
@@ -1683,7 +1706,7 @@ def main():
                         vessel_data = pd.DataFrame()
                 else:
                     # Load current vessel data only (for backward compatibility)
-                    vessel_data = load_combined_vessel_data()
+                    vessel_data = get_cached_combined_vessel_data()
             
             if vessel_data is None or vessel_data.empty:
                 st.warning("⚠️ No vessel data available")

@@ -1516,7 +1516,7 @@ def get_vessel_queue_analysis() -> Dict[str, any]:
         logger.error(f"Error in vessel queue analysis: {e}")
         return {}
 
-def load_all_vessel_data() -> Dict[str, pd.DataFrame]:
+def load_all_vessel_data_as_dict() -> Dict[str, pd.DataFrame]:
     """Load vessel data from all available XML files.
     
     This function loads data from multiple vessel XML files including:
@@ -1531,7 +1531,7 @@ def load_all_vessel_data() -> Dict[str, pd.DataFrame]:
     vessel_data = {}
     
     for xml_file in VESSEL_XML_FILES:
-        file_path = VESSEL_DATA_DIR / xml_file
+        file_path = VESSEL_DATA_DIR / "vessel_data" / xml_file
         
         try:
             if file_path.exists():
@@ -1567,7 +1567,7 @@ def load_all_vessel_data_with_backups(include_backups: bool = True, max_backup_f
     vessel_data = {}
     
     # First, load current data from main directory
-    current_data = load_all_vessel_data()
+    current_data = load_all_vessel_data_as_dict()
     vessel_data.update(current_data)
     
     if not include_backups:

@@ -225,6 +225,10 @@ class FileMonitor:
         """Check if file matches configured patterns."""
         file_name = os.path.basename(file_path).lower()
         
+        # Explicitly ignore internal state file
+        if file_name == '.file_monitor_state.json':
+            return False
+            
         for pattern in self.config.file_patterns:
             pattern = pattern.lower().replace('*', '')
             if pattern in file_name or file_name.endswith(pattern):

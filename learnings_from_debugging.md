@@ -58,3 +58,25 @@ There were two issues:
 *   **Silent Errors:** Be cautious of `try...except` blocks that might be hiding underlying issues. While important for production, they can make debugging difficult.
 *   **Configuration Mismatches:** Inconsistencies in configuration, such as enum values or dictionary keys across different parts of an application, can lead to subtle bugs that are hard to trace.
 *   **Code Review:** A thorough code review of the data flow and how different components interact can often reveal issues that are not immediately apparent from logs or testing.
+
+## Issue: Performance Regression in Scenarios Tab and "Reimport/Reload" Loops
+
+**Date:** 2026-01-02
+
+### Findings
+
+1.  **File Monitor Infinite Loop**: The `file_monitor.py` was recursively monitoring its own state file (`.file_monitor_state.json`), causing an infinite loop of file system events and reloads. This likely caused the reported "reimport/reload" issues.
+    *   **Fix**: Explicitly ignored `.file_monitor_state.json` in the file pattern matching logic.
+
+2.  **Profiling Script Limitations**: Headless profiling of Streamlit apps requires careful mocking of the `streamlit` module.
+    *   `st.session_state` needs a mock class that supports attribute access (`__getattr__`) to avoid `AttributeError`.
+    *   `st.columns` and `st.tabs` can receive various input types (int, list, tuple). Mocks must handle all these cases to avoid unpacking errors.
+    *   `st.tabs` return values are often unpacked (e.g., `tab1, tab2 = st.tabs(...)`). The mock must return an iterable of the correct length.
+    *   Mocked values must be comparable with primitives (e.g., `MagicMock` vs `float`) if the application logic involves comparisons (e.g., threshold checks).
+
+3.  **Optimizing Initialization**: `ScenarioAwareCalculator` was being initialized repeatedly in `streamlit_app.py`.
+    *   **Fix**: Moved initialization to `st.session_state` as a shared singleton. This reduces overhead and ensures consistent state.
+
+4.  **Data Caching**: `load_combined_vessel_data` was confirmed to be effectively cached in `streamlit_app.py` using `st.cache_data`. This is crucial for preventing redundant I/O operations during tab reloads.
+
+5.  **Historical Anchor Date**: The application uses a "historical anchor date" (2025-10-24) to simulate real-time behavior relative to a specific past point. This logic is embedded in `streamlit_app.py` and must be preserved when refactoring or optimizing data loading.
