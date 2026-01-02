@@ -17,7 +17,8 @@ def main():
     # Checks for a marker file (last_refresh.json) to determine if a refresh is needed.
 
     # Configuration from environment variables
-    max_age_hours = int(os.getenv("VESSEL_DATA_REFRESH_MAX_AGE_HOURS", 24))
+    # Default to 20 hours to allow for slight variations in execution time if running daily
+    max_age_hours = int(os.getenv("VESSEL_DATA_REFRESH_MAX_AGE_HOURS", 20))
     log_dir = os.path.join(project_root, "raw_data", "vessel_data", "logs")
     marker_file = os.path.join(log_dir, "last_refresh.json")
 
