@@ -16294,3 +16294,7 @@
 2026-01-02T23:07:15.656156,Departed_in_last_36_hours.xml,downloaded
 2026-01-02T23:07:17.721326,Expected_arrivals.xml,downloaded
 2026-01-02T23:07:19.816629,Expected_departures.xml,downloaded
+2026-01-03T06:00:08.469806,Arrived_in_last_36_hours.xml,downloaded
+2026-01-03T06:00:10.654835,Departed_in_last_36_hours.xml,downloaded
+2026-01-03T06:00:12.849576,Expected_arrivals.xml,downloaded
+2026-01-03T06:00:15.060114,Expected_departures.xml,downloaded
