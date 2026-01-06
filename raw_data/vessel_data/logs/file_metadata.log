@@ -16349,3 +16349,7 @@
 2026-01-05T10:05:48.892631,Expected_departures.xml,downloaded
 2026-01-05T10:05:51.902455,Expected_arrivals.xml,downloaded
 2026-01-05T10:05:53.965385,Expected_departures.xml,downloaded
+2026-01-06T06:00:18.411912,Arrived_in_last_36_hours.xml,downloaded
+2026-01-06T06:00:20.625376,Departed_in_last_36_hours.xml,downloaded
+2026-01-06T06:00:22.837203,Expected_arrivals.xml,downloaded
+2026-01-06T06:00:25.047321,Expected_departures.xml,downloaded
