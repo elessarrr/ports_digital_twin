@@ -38,6 +38,13 @@ A comprehensive digital twin simulation system for Hong Kong's port operations.
 - Thread-safe operations with memory management
 - Integration with data loading pipeline
 
+## Technical Scope and Honest Limitations
+
+- **Optimization is heuristic, not learned AI.** Berth allocation and most scenario recommendations use deterministic rules, configured multipliers, historical averages, standard deviations, and sampled values. They are useful prototype decision aids, not trained optimization models.
+- **The narrow trained-model exception is throughput forecasting.** Cargo forecasting fits scikit-learn `LinearRegression` models to historical throughput trends and applies simple seasonal adjustments. It does not power the broader scenario optimizer.
+- **Scenario outputs are illustrative.** Scenario parameter sets adjust arrival rates, vessel sizes, crane efficiency, processing rates, and related assumptions. Production decision support would require calibrated inputs, repeated Monte Carlo runs, confidence intervals, and validation against real outcomes.
+- **Persistence is file-based, not SQLite.** Source and generated data are stored in XML/CSV/JSON files; runtime state is held in Streamlit session state and in-memory caches. There is no application database in the current implementation.
+
 ## Getting Started
 
 1. Install dependencies:
