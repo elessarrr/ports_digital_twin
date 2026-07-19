@@ -19,6 +19,11 @@ __pycache__/
 .env.*
 !.env.example
 
+# Local ops / keep-alive helpers (not part of Streamlit Cloud deploy)
+install_cron.sh
+keep_app_alive.sh
+setup_cron.md
+
 # OS / editor
 .DS_Store
 **/.DS_Store
