@@ -62,12 +62,14 @@ Standard tools (Excel models, PowerBI dashboards) excel at historical reporting 
 
 ### Data Pipeline
 ```
-Hong Kong Marine Dept XML Feeds → Parser → Validation → SQLite Storage
-                                                           ↓
-                                              Simulation Engine (SimPy)
-                                                           ↓
-                                              Streamlit Dashboard
+Hong Kong Marine Dept XML Feeds → Parser → Validation → SQLite / file storage
+                                                                   ↓
+                                                      Streamlit Dashboard
+                                                      (aggregation, forecasting,
+                                                       scenario comparisons)
 ```
+
+> **Note on SimPy:** A discrete-event simulation engine (`src/core/`) using SimPy is implemented and tested. It is not wired into the current dashboard path; the scenario comparison tab uses a heuristic berth allocator (greedy/first-fit) for live calculations. Integrating the full SimPy engine into the interactive dashboard is a planned extension.
 
 ### Core Components
 
@@ -256,8 +258,7 @@ This project is released for educational and demonstration purposes. Data source
 
 ## Contact
 
-**Bhavesh Rajwani**  
-Product Manager, Digital Transformation & Industry 4.0  
+**Bhavesh Rajwani**
 
 - LinkedIn: [linkedin.com/in/bhavesh-rajwani](https://www.linkedin.com/in/bhavesh-rajwani/)
 - Conference Presentation: IET Digital Twins Conference, PolyU Hong Kong (January 2026)
